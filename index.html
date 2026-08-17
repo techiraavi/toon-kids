@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Toon Kids 🎈</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Toon Kids">
+<meta name="theme-color" content="#7b3fe4">
+<link rel="preconnect" href="https://www.youtube.com">
+<link rel="preconnect" href="https://i.ytimg.com">
+<link rel="preconnect" href="https://www.google.com">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-180.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body {
+    font-family: "Baloo 2", "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
+    background: linear-gradient(135deg, #4f2ba8 0%, #7b3fe4 40%, #3b82f6 100%);
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .float-emoji { position: fixed; font-size: 42px; opacity: .5; z-index: 0; animation: floaty 7s ease-in-out infinite; pointer-events: none; }
+  @keyframes floaty { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-26px) rotate(6deg); } }
+  .stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+
+  .app { position: relative; width: 100vw; height: 100dvh; background: #f4f1fb; overflow: hidden; }
+
+  /* ---- device-adaptive sizing: phone → tablet → laptop → TV ---- */
+  :root { --cardmin: 164px; }
+  @media (min-width: 700px)  { :root { --cardmin: 200px; } }
+  @media (min-width: 1200px) { :root { --cardmin: 230px; } }
+  @media (min-width: 1900px) { :root { --cardmin: 300px; } }
+
+  /* keyboard / TV-remote focus visibility */
+  button:focus-visible { outline: 4px solid #ffd54a; outline-offset: 2px; }
+
+  .view { position: absolute; inset: 0; display: none; flex-direction: column; }
+  .view.on { display: flex; }
+
+  /* ================= HOME ================= */
+  #homeView { background: #f4f1fb; }
+  .hd {
+    background: linear-gradient(90deg, #7b3fe4, #9d4ce0); color: #fff;
+    padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
+    display: flex; align-items: center; gap: 10px; flex: none;
+  }
+  .hd .logo { font-size: 24px; }
+  .hd h1 { margin: 0; font-size: 21px; flex: 1; letter-spacing: .5px; }
+  .agePill {
+    border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
+    background: #ffd54a; color: #4b2b00; padding: 8px 14px; border-radius: 999px; box-shadow: 0 3px 0 #c8a100;
+  }
+  .gearBtn { border: none; cursor: pointer; width: 38px; height: 38px; border-radius: 50%;
+             background: rgba(255,255,255,.2); color: #fff; font-size: 18px; }
+
+  .chips { display: flex; gap: 8px; padding: 12px 14px 4px; overflow-x: auto; scrollbar-width: none; flex: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip-btn {
+    border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
+    background: #fff; color: #4f4370; padding: 10px 16px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(60,40,120,.10);
+  }
+  .chip-btn.sel { background: #7b3fe4; color: #fff; }
+
+  .grid { flex: 1; overflow-y: auto; padding: 12px 14px calc(30px + env(safe-area-inset-bottom)); }
+  .shorts-banner {
+    border: none; cursor: pointer; font-family: inherit; width: 100%;
+    background: linear-gradient(100deg, #ff8a65, #ff5252); color: #fff; border-radius: 20px;
+    padding: 16px 18px; margin-bottom: 14px; text-align: left;
+    display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 18px rgba(255,82,82,.35);
+  }
+  .shorts-banner .big { font-size: 34px; }
+  .shorts-banner b { display: block; font-size: 18px; }
+  .shorts-banner span { font-size: 13px; font-weight: 600; opacity: .9; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cardmin), 1fr)); gap: 12px; max-width: 1460px; margin: 0 auto; }
+  .shorts-banner, #fileWarn { max-width: 1460px; margin-left: auto; margin-right: auto; }
+  .chips { max-width: 1488px; margin-left: auto; margin-right: auto; width: 100%; }
+  .card {
+    border: none; cursor: pointer; font-family: inherit; text-align: left; padding: 0;
+    background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 3px 12px rgba(60,40,120,.10);
+    display: flex; flex-direction: column;
+  }
+  .card:active { transform: scale(.97); }
+  .thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #b39ddb, #90caf9);
+           display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; }
+  .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .thumb .pl { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.55); color: #fff;
+               border-radius: 999px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .thumb .newb { position: absolute; left: 8px; top: 8px; background: #ffd54a; color: #4b2b00;
+                 font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .card .t { font-size: 13px; font-weight: 800; color: #26203d; padding: 8px 10px 2px; line-height: 1.25;
+             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .c { font-size: 11px; font-weight: 700; color: #8a82a6; padding: 0 10px 10px; }
+  .empty { text-align: center; color: #8a82a6; font-weight: 700; padding: 40px 20px; }
+
+  #fileWarn {
+    display: none; margin: 0 0 12px; font-size: 12.5px; font-weight: 700; color: #7a4f01;
+    background: #fff3cd; border: 1px solid #ffe08a; border-radius: 14px; padding: 10px 12px;
+  }
+
+  /* ================= AGE PICKER ================= */
+  #ageView { background: linear-gradient(160deg, #7b3fe4, #4f2ba8 55%, #2c1b5e); color: #fff;
+             align-items: center; justify-content: center; text-align: center;
+             padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); }
+  #ageView .mascots { font-size: 36px; letter-spacing: 6px; }
+  #ageView h2 { margin: 10px 0 2px; font-size: 26px; }
+  #ageView p { margin: 0 0 18px; opacity: .85; font-weight: 600; font-size: 14px; }
+  .ageGrid { display: grid; grid-template-columns: repeat(3, 78px); gap: 12px; justify-content: center; }
+  .ageBtn {
+    border: none; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 800; color: #4b2b00;
+    background: linear-gradient(180deg, #ffe082, #ffb300); width: 78px; height: 66px; border-radius: 20px;
+    box-shadow: 0 5px 0 #c88700;
+  }
+  .ageBtn:active { transform: translateY(4px); box-shadow: 0 1px 0 #c88700; }
+  .ageBtn small { display: block; font-size: 10px; font-weight: 800; }
+
+  /* ================= SHORTS FEED ================= */
+  /* on wide screens the feed becomes a centered portrait column, like desktop Shorts */
+  #shortsView { background: #05030f; flex-direction: row; justify-content: center; }
+  .feed { height: 100%; width: min(100%, calc(100dvh * 0.5625)); overflow-y: scroll; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+  .feed::-webkit-scrollbar { display: none; }
+  .reel { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; background: #000; overflow: hidden; }
+  .media { position: absolute; inset: 0; background: #000; overflow: hidden; }
+  .media iframe {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    height: 100%; width: auto; aspect-ratio: 9 / 16; min-width: 100%;
+    border: 0; display: block; pointer-events: none; background: #000;
+  }
+  .media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; pointer-events: none; background: #000; }
+  .tapzone { position: absolute; inset: 0; z-index: 5; }
+  .backBtn {
+    position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 12px; z-index: 10;
+    border: none; cursor: pointer; width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(255,255,255,.18); color: #fff; font-size: 19px; backdrop-filter: blur(6px);
+  }
+  /* instant thumbnail placeholders while players spin up */
+  .reel > .pre, .pvpre {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 2; filter: brightness(.85); pointer-events: none;
+  }
+  .spin { position: absolute; top: 50%; left: 50%; z-index: 3; width: 54px; height: 54px; margin: -27px 0 0 -27px;
+          border-radius: 50%; border: 6px solid rgba(255,255,255,.15); border-top-color: #ffd54a; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .oops { position: absolute; inset: 0; z-index: 6; display: none; flex-direction: column; align-items: center; justify-content: center;
+          gap: 10px; background: linear-gradient(160deg, #2b1c57, #0e0a1f); color: #fff; text-align: center; padding: 24px; }
+  .oops .big { font-size: 64px; }
+  .oops p { margin: 0; font-size: 17px; font-weight: 700; opacity: .9; }
+  .rail { position: absolute; right: 10px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 8;
+          display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  .rbtn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+          background: rgba(255,255,255,.16); backdrop-filter: blur(6px); font-size: 26px; line-height: 1;
+          display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+          transition: transform .12s; color: #fff; }
+  .rbtn:active { transform: scale(.86); }
+  .meta { position: absolute; left: 12px; right: 84px; bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 8; }
+  .chip { background: rgba(0,0,0,.45); backdrop-filter: blur(6px); color: #fff; font-weight: 700; font-size: 15px;
+          padding: 8px 14px; border-radius: 999px; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+          white-space: nowrap; display: inline-block; }
+  .progress { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom); height: 6px;
+              background: rgba(255,255,255,.18); z-index: 8; }
+  .progress i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #ffd54a, #ff8a65); border-radius: 0 4px 4px 0; }
+  .flash { position: absolute; top: 50%; left: 50%; z-index: 9; transform: translate(-50%,-50%) scale(.6);
+           font-size: 84px; opacity: 0; pointer-events: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+  .flash.show { animation: flashpop .7s ease forwards; }
+  @keyframes flashpop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.5);} 25% { opacity: 1; transform: translate(-50%,-50%) scale(1.1);} 100% { opacity: 0; transform: translate(-50%,-50%) scale(1);} }
+  .burst { position: absolute; z-index: 60; font-size: 26px; pointer-events: none; animation: burstup 1s ease-out forwards; }
+  @keyframes burstup { 0% { opacity: 1; transform: translateY(0) scale(.7);} 100% { opacity: 0; transform: translateY(-110px) scale(1.4);} }
+  .hint { position: absolute; top: calc(64px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
+          background: rgba(0,0,0,.55); color: #ffd54a; padding: 8px 16px; border-radius: 999px;
+          font-weight: 800; font-size: 14px; display: none; white-space: nowrap; }
+
+  /* ================= FULL PLAYER ================= */
+  #playerView { background: #0e0a1f; }
+  .pv-top { display: flex; align-items: center; gap: 10px; padding: calc(12px + env(safe-area-inset-top)) 12px 10px; flex: none; }
+  .pv-top button { border: none; cursor: pointer; width: 42px; height: 42px; border-radius: 50%; flex: none;
+                   background: rgba(255,255,255,.15); color: #fff; font-size: 19px; }
+  .pv-top .t { color: #fff; font-weight: 800; font-size: 15px; flex: 1; min-width: 0;
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pv-body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 0; }
+  .pv-media { position: relative; width: min(100%, calc((100dvh - 200px) * 1.7778)); aspect-ratio: 16/9; max-height: 100%; background: #000; }
+  .pv-media iframe, .pv-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; background: #000; }
+  .pv-tap { position: absolute; inset: 0; z-index: 5; }
+  .pv-controls { flex: none; padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 14px; }
+  .pv-controls .bar { flex: 1; height: 8px; border-radius: 6px; background: rgba(255,255,255,.18); overflow: hidden; }
+  .pv-controls .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #ffd54a, #ff8a65); }
+  .pv-btn { border: none; cursor: pointer; width: 52px; height: 52px; border-radius: 50%;
+            background: rgba(255,255,255,.16); color: #fff; font-size: 22px; flex: none; }
+  .pv-btn.main { width: 64px; height: 64px; font-size: 26px; background: #ffb300; color: #4b2b00; box-shadow: 0 5px 0 #c88700; }
+
+  /* ================= BREAK / GATE / PANEL ================= */
+  #breakScreen { position: absolute; inset: 0; z-index: 70; display: none; flex-direction: column; align-items: center;
+                 justify-content: center; gap: 14px; background: linear-gradient(180deg, #141034, #060412); color: #fff;
+                 text-align: center; padding: 28px; }
+  #breakScreen .big { font-size: 84px; animation: bounce 3s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px);} }
+  #breakScreen h2 { margin: 0; font-size: 30px; }
+  #breakScreen p { margin: 0; opacity: .8; font-weight: 600; }
+  .softbtn { margin-top: 16px; border: none; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 700;
+             color: #fff; background: rgba(255,255,255,.14); padding: 12px 22px; border-radius: 999px; }
+
+  .modal-wrap { position: absolute; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center;
+                background: rgba(8,5,20,.7); backdrop-filter: blur(4px); padding: 20px; }
+  .modal { background: #fff; color: #26203d; border-radius: 24px; padding: 22px; width: 100%; max-width: 340px;
+           text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .modal h3 { margin: 0 0 6px; font-size: 20px; }
+  .modal .sub { margin: 0 0 14px; font-size: 14px; color: #6b6486; font-weight: 600; }
+  .gate-q { font-size: 30px; font-weight: 800; margin: 8px 0 14px; }
+  .gate-input { width: 130px; font-family: inherit; font-size: 26px; font-weight: 800; text-align: center;
+                padding: 10px; border-radius: 14px; border: 3px solid #d8d2ee; outline: none; }
+  .gate-input:focus { border-color: #7b3fe4; }
+  .mrow { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+  .mbtn { border: none; cursor: pointer; font-family: inherit; font-size: 16px; font-weight: 800; padding: 12px 22px; border-radius: 999px; }
+  .mbtn.primary { background: #7b3fe4; color: #fff; box-shadow: 0 5px 0 #5426ad; }
+  .mbtn.ghost { background: #efecf9; color: #4f4370; }
+  .shake { animation: shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+  #parentPanel { position: absolute; inset: 0; z-index: 75; display: none; flex-direction: column; background: #f4f1fb; color: #26203d; }
+  .pp-head { display: flex; align-items: center; justify-content: space-between;
+             padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: #7b3fe4; color: #fff; }
+  .pp-head h2 { margin: 0; font-size: 20px; }
+  .pp-close { border: none; background: rgba(255,255,255,.2); color: #fff; font-size: 18px; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; }
+  .pp-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(40px + env(safe-area-inset-bottom)); }
+  .pp-card { background: #fff; border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 3px 12px rgba(60,40,120,.08); }
+  .pp-card h4 { margin: 0 0 10px; font-size: 15px; color: #4f4370; }
+  .pp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pp-select, .pp-input { font-family: inherit; font-size: 15px; font-weight: 600; color: #26203d; padding: 10px 12px;
+                          border-radius: 12px; border: 2px solid #ddd6f0; background: #fff; outline: none; }
+  .pp-input { flex: 1; min-width: 0; }
+  .pp-input:focus, .pp-select:focus { border-color: #7b3fe4; }
+  .pp-btn { border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; background: #7b3fe4;
+            color: #fff; padding: 10px 16px; border-radius: 12px; white-space: nowrap; }
+  .pp-btn.warn { background: #e5544b; }
+  .pp-btn.soft { background: #efecf9; color: #4f4370; }
+  .plist { display: flex; flex-direction: column; gap: 8px; }
+  .pitem { display: flex; align-items: center; gap: 10px; background: #faf9ff; border: 1px solid #eee9fa; border-radius: 14px; padding: 8px; }
+  .pitem img, .pitem .ph { width: 64px; height: 40px; border-radius: 8px; object-fit: cover; background: #ddd6f0; flex: none;
+                           display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .pitem .nm { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pitem button { border: none; cursor: pointer; background: #fdecea; color: #c62828; width: 32px; height: 32px; border-radius: 10px; font-size: 14px; flex: none; }
+  .pp-note { font-size: 12px; color: #8a82a6; margin: 8px 0 0; font-weight: 600; }
+  .tierChecks { display: flex; gap: 8px; margin-top: 8px; }
+  .tierChecks label { font-size: 12px; font-weight: 800; color: #4f4370; background: #efecf9; border-radius: 10px;
+                      padding: 8px 10px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+
+  /* ---- eye comfort overlays (tint every view, never block touches) ---- */
+  #warmOv, #dimOv { position: absolute; inset: 0; z-index: 95; pointer-events: none; opacity: 0; transition: opacity 1.2s; }
+  #warmOv { background: #ff8c3c; mix-blend-mode: multiply; }
+  #dimOv { background: #000; }
+
+  /* update toast */
+  #updToast {
+    position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    z-index: 96; display: none; background: #26203d; color: #ffd54a;
+    font-weight: 800; font-size: 14px; padding: 12px 20px; border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); white-space: nowrap;
+  }
+
+  /* bedtime lock screen */
+  #bedScreen { position: absolute; inset: 0; z-index: 71; display: none; flex-direction: column; align-items: center;
+               justify-content: center; gap: 12px; background: linear-gradient(180deg, #1b1240, #060412); color: #fff;
+               text-align: center; padding: 28px; }
+  #bedScreen .big { font-size: 84px; animation: bounce 3s ease-in-out infinite; }
+  #bedScreen h2 { margin: 0; font-size: 30px; }
+  #bedScreen p { margin: 0; opacity: .85; font-weight: 600; }
+
+  /* resume-progress strip on cards */
+  .thumb .resb { position: absolute; left: 0; bottom: 0; height: 5px; background: #ff5252; border-radius: 0 3px 3px 0; }
+
+  /* blink-break screen */
+  #eyeBreak { position: absolute; inset: 0; z-index: 72; display: none; flex-direction: column; align-items: center;
+              justify-content: center; gap: 12px; background: linear-gradient(180deg, #10254a, #060412); color: #fff;
+              text-align: center; padding: 28px; }
+  #eyeBreak .big { font-size: 84px; animation: bounce 3s ease-in-out infinite; }
+  #eyeBreak h2 { margin: 0; font-size: 30px; }
+  #eyeBreak p { margin: 0; opacity: .85; font-weight: 600; }
+  #eyeCount { font-size: 54px; font-weight: 800; color: #ffd54a; }
+
+  /* ---- TV / very large screens: 10-foot UI ---- */
+  @media (min-width: 1900px) {
+    .hd { padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: 20px; }
+    .hd h1 { font-size: 36px; } .hd .logo { font-size: 40px; }
+    .agePill { font-size: 21px; padding: 12px 22px; }
+    .gearBtn { width: 56px; height: 56px; font-size: 27px; }
+    .chip-btn { font-size: 21px; padding: 15px 26px; }
+    .card .t { font-size: 19px; } .card .c { font-size: 15px; }
+    .shorts-banner .big { font-size: 50px; } .shorts-banner b { font-size: 27px; } .shorts-banner span { font-size: 17px; }
+    .ageGrid { grid-template-columns: repeat(3, 116px); gap: 18px; }
+    .ageBtn { width: 116px; height: 96px; font-size: 36px; border-radius: 28px; }
+    #ageView h2 { font-size: 40px; } #ageView p { font-size: 20px; }
+    .pv-top .t { font-size: 24px; }
+    .pv-top button { width: 56px; height: 56px; font-size: 25px; }
+    .pv-btn { width: 72px; height: 72px; font-size: 30px; }
+    .pv-btn.main { width: 92px; height: 92px; font-size: 38px; }
+    .chip { font-size: 20px; padding: 11px 18px; }
+    .rbtn { width: 72px; height: 72px; font-size: 33px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="float-emoji" style="top:8%; left:6%;">🎈</div>
+<div class="float-emoji" style="top:16%; right:8%; animation-delay:1s;">⭐</div>
+<div class="float-emoji" style="bottom:14%; left:10%; animation-delay:2s;">🌈</div>
+<div class="float-emoji" style="bottom:10%; right:6%; animation-delay:.5s;">🎨</div>
+<div class="float-emoji" style="top:48%; left:3%; animation-delay:1.6s;">🦄</div>
+<div class="float-emoji" style="top:44%; right:3%; animation-delay:2.4s;">🚀</div>
+
+<div class="stage">
+<div class="app" id="app">
+
+  <!-- ============ AGE PICKER ============ -->
+  <div class="view" id="ageView">
+    <div class="mascots">🐷🦈🐻🐭🐧</div>
+    <h2>How old is your child?</h2>
+    <p>We'll show only videos made for that age</p>
+    <div class="ageGrid" id="ageGrid"></div>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <div class="view" id="homeView">
+    <div class="hd">
+      <span class="logo">🎈</span>
+      <h1>Toon Kids</h1>
+      <button class="agePill" id="agePill">Age 4</button>
+      <button class="gearBtn" id="gearBtn">⚙️</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- ============ SHORTS ============ -->
+  <div class="view" id="shortsView">
+    <div class="feed" id="feed"></div>
+    <button class="backBtn" id="shortsBack">←</button>
+    <div class="hint" id="soundHint">🔊 Tap the sound button to unmute</div>
+  </div>
+
+  <!-- ============ FULL PLAYER ============ -->
+  <div class="view" id="playerView">
+    <div class="pv-top">
+      <button id="pvBack">←</button>
+      <div class="t" id="pvTitle">Cartoon</div>
+      <button id="pvLike">🤍</button>
+      <button id="pvSound">🔊</button>
+    </div>
+    <div class="pv-body">
+      <div class="pv-media" id="pvMedia"></div>
+      <div class="pv-tap" id="pvTap"></div>
+      <div class="spin" id="pvSpin" style="display:none"></div>
+    </div>
+    <div class="pv-controls">
+      <button class="pv-btn main" id="pvToggle">⏸</button>
+      <div class="bar"><i id="pvBar"></i></div>
+      <button class="pv-btn" id="pvNext">⏭</button>
+    </div>
+  </div>
+
+  <!-- ============ EYE COMFORT ============ -->
+  <div id="warmOv"></div>
+  <div id="dimOv"></div>
+  <div id="eyeBreak">
+    <div class="big">🦉</div>
+    <h2>Blink break!</h2>
+    <p>Look at something far away<br>and blink slowly like an owl…</p>
+    <div id="eyeCount">20</div>
+  </div>
+
+  <div id="updToast">✨ Getting the newest cartoons…</div>
+
+  <!-- ============ BEDTIME ============ -->
+  <div id="bedScreen">
+    <div class="big">😴</div>
+    <h2>It's sleepy time!</h2>
+    <p>The cartoons are sleeping now.<br>See you in the morning! 🌙</p>
+    <button class="softbtn" id="bedUnlockBtn">👨‍👩‍👧 Parents: unlock 15 minutes</button>
+  </div>
+
+  <!-- ============ BREAK ============ -->
+  <div id="breakScreen">
+    <div class="big">🌙</div>
+    <h2>Time for a break!</h2>
+    <p>Great watching today! Time to rest your eyes,<br>play, or have a snack. 🧸</p>
+    <button class="softbtn" id="unlockBtn">👨‍👩‍👧 Parents: unlock 15 more minutes</button>
+  </div>
+
+  <!-- ============ GATE ============ -->
+  <div class="modal-wrap" id="gateWrap">
+    <div class="modal" id="gateModal">
+      <h3>👨‍👩‍👧 Parents only</h3>
+      <p class="sub">Solve this to continue</p>
+      <div class="gate-q" id="gateQ">7 × 4 = ?</div>
+      <input class="gate-input" id="gateA" type="text" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="mrow">
+        <button class="mbtn ghost" id="gateCancel">Cancel</button>
+        <button class="mbtn primary" id="gateOk">Unlock</button>
+      </div>
+      <button id="gateForgotBtn" style="display:none;border:none;background:none;color:#8a82a6;font-family:inherit;font-weight:700;font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline">Forgot PIN?</button>
+    </div>
+  </div>
+
+  <!-- ============ PARENT PANEL ============ -->
+  <div id="parentPanel">
+    <div class="pp-head">
+      <h2>⚙️ Parent Zone</h2>
+      <button class="pp-close" id="ppClose">✕</button>
+    </div>
+    <div class="pp-body">
+      <div class="pp-card">
+        <h4>🧒 Child's age</h4>
+        <div class="pp-row">
+          <select class="pp-select" id="ppAge" style="flex:1"></select>
+        </div>
+        <p class="pp-note">Only videos tagged for this age group are shown.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>⏰ Daily screen time limit</h4>
+        <div class="pp-row">
+          <select class="pp-select" id="ppLimit" style="flex:1">
+            <option value="0">No limit</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="20">20 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">1 hour</option>
+          </select>
+        </div>
+        <p class="pp-note" id="ppWatched">Watched today: 0 min</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>🔒 Parent PIN</h4>
+        <div class="pp-row">
+          <input class="pp-input" id="ppPin" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" autocomplete="off">
+          <button class="pp-btn" id="ppPinSave">Save</button>
+          <button class="pp-btn soft" id="ppPinOff">Remove</button>
+        </div>
+        <p class="pp-note" id="ppPinNote"></p>
+      </div>
+
+      <div class="pp-card">
+        <h4>😴 Bedtime lock</h4>
+        <div class="pp-row" style="margin-bottom:8px">
+          <label class="switch"><input type="checkbox" id="ppBedOn"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">Lock the app during sleep hours</span>
+        </div>
+        <div class="pp-row">
+          <span style="font-size:13px;font-weight:800;color:#4f4370">From</span>
+          <select class="pp-select" id="ppBedStart" style="flex:1"></select>
+          <span style="font-size:13px;font-weight:800;color:#4f4370">to</span>
+          <select class="pp-select" id="ppBedEnd" style="flex:1"></select>
+        </div>
+        <p class="pp-note">Parents can always unlock 15 minutes with the gate.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>👁️ Eye comfort</h4>
+        <div class="pp-row" style="margin-bottom:8px">
+          <span style="font-size:13px;font-weight:800;color:#4f4370;width:110px">🌙 Warm light</span>
+          <select class="pp-select" id="ppWarm" style="flex:1">
+            <option value="0">Off</option><option value="1">Low</option>
+            <option value="2">Medium</option><option value="3">High</option>
+          </select>
+        </div>
+        <div class="pp-row" style="margin-bottom:8px">
+          <span style="font-size:13px;font-weight:800;color:#4f4370;width:110px">🔅 Dim screen</span>
+          <select class="pp-select" id="ppDim" style="flex:1">
+            <option value="0">Off</option><option value="1">Gentle</option>
+            <option value="2">Medium</option><option value="3">Strong</option>
+          </select>
+        </div>
+        <div class="pp-row" style="margin-bottom:8px">
+          <span style="font-size:13px;font-weight:800;color:#4f4370;width:110px">🦉 Blink breaks</span>
+          <select class="pp-select" id="ppEyeBreak" style="flex:1">
+            <option value="0">Off</option><option value="15">Every 15 min</option>
+            <option value="20">Every 20 min</option><option value="30">Every 30 min</option>
+          </select>
+        </div>
+        <div class="pp-row">
+          <label class="switch"><input type="checkbox" id="ppAutoEve"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">Auto evening mode (7 PM – 6 AM: warm + dim)</span>
+        </div>
+        <p class="pp-note">Blink breaks follow the doctors' 20-20-20 rule: pause every 20 minutes and look far away for 20 seconds. Note: apps cannot change the device's hardware brightness — please also lower it in the device settings.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>🎯 Show newly added videos to ages</h4>
+        <div class="tierChecks">
+          <label><input type="checkbox" id="tL"> 2–4</label>
+          <label><input type="checkbox" id="tB"> 5–7</label>
+          <label><input type="checkbox" id="tS"> 8–10</label>
+        </div>
+        <p class="pp-note">Applies to Quick Add packs, keyword search and pasted links below.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>✨ Quick Add packs</h4>
+        <div class="pp-row" id="ppBundles"></div>
+        <p class="pp-note">One tap adds a ready-made set of videos from official channels.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>🔎 Search YouTube by keyword</h4>
+        <div id="ppKeyZone">
+          <p class="pp-note" style="margin-top:0">To search any keyword ("tom and jerry", "batman", "animals"…) the app needs your own free YouTube API key. It is saved only on this device.</p>
+          <details style="margin:8px 0">
+            <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">How to get a free key (about 5 minutes)</summary>
+            <ol style="font-size:12px;color:#6b6486;font-weight:600;padding-left:18px;margin:8px 0">
+              <li>Open <b>console.cloud.google.com</b> and sign in with your Google account</li>
+              <li>Create a new project (any name)</li>
+              <li>Search for "<b>YouTube Data API v3</b>" and press Enable</li>
+              <li>Go to Credentials → Create credentials → <b>API key</b></li>
+              <li>Copy the key and paste it here</li>
+            </ol>
+          </details>
+          <div class="pp-row">
+            <input class="pp-input" id="ppKey" type="password" placeholder="Paste API key…" autocomplete="off">
+            <button class="pp-btn" id="ppKeySave">Save</button>
+          </div>
+        </div>
+        <div id="ppSearchZone" style="display:none">
+          <div class="pp-row">
+            <input class="pp-input" id="ppQ" type="text" placeholder="e.g. tom and jerry, batman, frozen…">
+            <button class="pp-btn" id="ppSearchBtn">Search</button>
+          </div>
+          <p class="pp-note" id="ppSearchMsg" style="display:none"></p>
+          <div class="plist" id="ppResults" style="margin-top:8px"></div>
+          <div class="pp-row" style="margin-top:8px">
+            <button class="pp-btn soft" id="ppKeyForget" style="font-size:12px">Remove API key</button>
+          </div>
+        </div>
+        <p class="pp-note">Results use YouTube's strict Safe Search. You choose what gets added — nothing reaches your child without your tap.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>➕ Add a YouTube video or Short by link</h4>
+        <div class="pp-row">
+          <input class="pp-input" id="ppUrl" type="text" placeholder="Paste YouTube link…">
+          <button class="pp-btn" id="ppAdd">Add</button>
+        </div>
+        <div class="tierChecks">
+          <label><input type="checkbox" id="tShort"> It's a Short</label>
+        </div>
+        <p class="pp-note">Added videos appear under "My Videos" for the ticked age groups. Use official channels only.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>📁 Add videos from this device</h4>
+        <div class="pp-row">
+          <input type="file" id="ppFile" accept="video/*" multiple style="display:none">
+          <button class="pp-btn soft" id="ppFileBtn" style="flex:1">Choose video files…</button>
+        </div>
+        <p class="pp-note">Play offline, never show ads, stored only on this device.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>🎬 My added videos</h4>
+        <div class="plist" id="ppList"></div>
+        <div class="pp-row" style="margin-top:12px">
+          <button class="pp-btn warn" id="ppReset" style="flex:1">Remove all added videos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+/* =====================================================================
+   Toon Kids — a YouTube-Kids-style, age-filtered kids video app.
+   Catalog: official channels only, every id validated via oEmbed.
+   Tiers: little = 2–4, big = 5–7, super = 8–10.
+   ===================================================================== */
+
+const CATALOG = [
+  /* ---- SONGS & RHYMES (2–4) : full videos ---- */
+  { kind:"yt", id:"qXcMNBQnQMM", title:"CoComelon Songs for Kids", ch:"Cocomelon", cat:"song", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"e_04ZrNroTo", title:"Wheels on the Bus", ch:"Cocomelon", cat:"song", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"XqZsoesa55w", title:"Baby Shark Dance", ch:"Pinkfong", cat:"song", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"1n9Hdk-UvRM", title:"Kids' Song Collection", ch:"Super Simple Songs", cat:"song", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"VXokId-v7oU", title:"Head, Shoulders, Knees & Toes", ch:"ChuChu TV", cat:"song", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"mHLLclRQ10o", title:"If You're Happy and You Know It", ch:"Dave and Ava", cat:"song", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"a3qY1d1X4cs", title:"ABC Song", ch:"Dave and Ava", cat:"learn", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"HI5upQGIqmY", title:"Johny Johny Yes Papa + Colors", ch:"LooLoo Kids", cat:"song", fmt:"video", tiers:["little"] },
+
+  /* ---- SONGS & RHYMES (2–4) : shorts ---- */
+  { kind:"yt", id:"TODdgN_TfZw", title:"Spin with JJ!", ch:"Cocomelon", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"o04HM1InBIM", title:"Learn Colors with Balls", ch:"Cocomelon", cat:"learn", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"rh6p7lI93xs", title:"If You're Happy, Spin Around!", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"B0J4bDD_9oU", title:"One Potato, Two Potato", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"_xmvMS5-QKk", title:"This Is The Way", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"RncOk4MQYSQ", title:"Count & Play with Caitie", ch:"Super Simple Play", cat:"learn", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"NFP_RP7Jh5c", title:"Head Shoulders Football Fun", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"h5_6Z0GJTHs", title:"Baa Baa Black Sheep", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"iWVKbdtjKkc", title:"The Boo Boo Song", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"r2R0u4CBJkc", title:"Johny Johny with Daddy", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"Oqz8Ry7omUU", title:"The Planets", ch:"ChuChu TV", cat:"learn", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"t4j8JWKGjVY", title:"Amazing Animals", ch:"ChuChu TV", cat:"learn", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"UZCiGPiLE0I", title:"Shark Finger Family", ch:"Pinkfong", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"Fc371LglkNo", title:"Shape Dance with Melody", ch:"Pinkfong", cat:"learn", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"w0Q6jqiXCCo", title:"Swimming Time!", ch:"Pinkfong", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"zgfvooa05wc", title:"Sensory Play Fun", ch:"Pinkfong", cat:"learn", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"0iBkJfK2JOs", title:"Hospitals Help You!", ch:"Pinkfong", cat:"learn", fmt:"short", tiers:["little"] },
+
+  /* ---- CARTOONS (5–7) : full videos ---- */
+  { kind:"yt", id:"9qShcQMq1cA", title:"Peppa Pig: The Longest Water Slide", ch:"Peppa Pig", cat:"cartoon", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"vtG1jwJRGzU", title:"Masha & The Bear: Worm Weather", ch:"Masha and The Bear", cat:"cartoon", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"vGNEqXRwJ7M", title:"Booba: Funny Episodes", ch:"Booba", cat:"cartoon", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"n20lUtzvBcA", title:"Oddbods: Fuse Tries to Be Calm", ch:"Oddbods", cat:"cartoon", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"swVI1aYW8E0", title:"Pocoyo: It's Shopping Day!", ch:"Pocoyo", cat:"cartoon", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"A5bOFOPi2c4", title:"Chhota Bheem: Jadui Taviz", ch:"Green Gold Kids", cat:"cartoon", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"YyuliF8pV-s", title:"Shaun the Sheep: Movie Nights", ch:"Shaun the Sheep", cat:"cartoon", fmt:"video", tiers:["big","super"] },
+
+  /* ---- CARTOONS (5–7) : shorts ---- */
+  { kind:"yt", id:"NuoOtCSjG5Y", title:"Peppa: George's Hearing Aid", ch:"Peppa Pig", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"St9Yci_CaCM", title:"Peppa: Marble Run", ch:"Peppa Pig", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"B7xU-pjMX08", title:"Peppa: Mr Dinosaur", ch:"Peppa Pig", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"3IGG3MBsnIA", title:"Peppa: Mystery Button", ch:"Peppa Pig", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"H1WDhcOFqHg", title:"Peppa: Baby Evie", ch:"Peppa Pig", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"-vTtkluEnjk", title:"Masha: Snack Time", ch:"Masha and The Bear", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"xG-mY-bCRYc", title:"Booba Rides the Train", ch:"Booba", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"-4QeoiFGgv4", title:"Booba: Sharing Candy", ch:"Booba", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"9AR3OHAWkBY", title:"Booba: Jingle Bell Dance", ch:"Booba", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"DZCXNk5vXW8", title:"Booba: The Director", ch:"Booba", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"7bhMq5G6qes", title:"Pocoyo: Dance Around the Sun", ch:"Pocoyo", cat:"cartoon", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"QHBsZXOCs0k", title:"Meet the Oddbods!", ch:"Oddbods", cat:"cartoon", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"sSlLQLMtzkM", title:"Oddbods: Morning Routine", ch:"Oddbods", cat:"cartoon", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"OHaB6DdWZw8", title:"Crafting Oddbod Zee", ch:"Oddbods", cat:"cartoon", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"vT5OXb2uPiY", title:"Crafting Oddbod Pogo", ch:"Oddbods", cat:"cartoon", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"jSDINIFOSkw", title:"Oddbods: Boogie Box", ch:"Oddbods & Friends", cat:"cartoon", fmt:"short", tiers:["big","super"] },
+
+  /* ---- CARTOONS + LEARNING (8–10) : full videos ---- */
+  { kind:"yt", id:"_GE6zf_hH48", title:"Tom & Jerry Classics", ch:"Warner Classics", cat:"cartoon", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"HOYpAgWPTps", title:"Mr Bean: Ice Cream", ch:"Mr Bean Animated", cat:"cartoon", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"jvkW1MKSyOc", title:"Talking Tom Marathon", ch:"Talking Tom", cat:"cartoon", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"xsGdymsZ-_U", title:"Grizzy & the Lemmings: Dragons", ch:"Grizzy", cat:"cartoon", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"h6aGB1MbE7U", title:"Grizzy: Mechatronics Bear", ch:"Grizzy", cat:"cartoon", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"WdHXFHuveBM", title:"Motu Patlu: Ajab Gazab Poster", ch:"JioHotstar Kids", cat:"cartoon", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"8vo59AKzU4Q", title:"The Human Cell — Dr. Binocs", ch:"Peekaboo Kidz", cat:"learn", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"QZCOIfLLeR4", title:"Weird But True: Oceans", ch:"Nat Geo Kids", cat:"learn", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"hq3n3J1NmBg", title:"Weird But True: Plants", ch:"Nat Geo Kids", cat:"learn", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"SHQ6NwxUMC4", title:"Funny Animals Compilation", ch:"Nat Geo Kids", cat:"learn", fmt:"video", tiers:["super"] },
+
+  /* ---- (8–10) : shorts ---- */
+  { kind:"yt", id:"AzLo90wTk08", title:"Tom & Jerry: Hot Soup", ch:"Boomerang UK", cat:"cartoon", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"-IVUhpKFX5o", title:"Talking Becca's Spotlight", ch:"Talking Tom", cat:"cartoon", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"ioEYFlDpF70", title:"Talking Tom: New Character!", ch:"Talking Tom", cat:"cartoon", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"94fxnFbzp7I", title:"Tom Plays Talking Tom 2", ch:"Talking Tom", cat:"cartoon", fmt:"short", tiers:["super"] },
+
+  /* ---- CLASSICS (free public-domain films — play even without YouTube) ---- */
+  { kind:"mp4", url:"https://archive.org/download/SantasSurprise/ClaCinOnl_an_SantasSurprise.mp4",
+    aid:"SantasSurprise", title:"Santa's Surprise (1947)", ch:"Classic Cartoons", cat:"classic", fmt:"video", tiers:["little","big","super"] },
+  { kind:"mp4", url:"https://archive.org/download/greedy-humpty-dumpty-1936/Greedy%20Humpty%20Dumpty%20%281936%29.mp4",
+    aid:"greedy-humpty-dumpty-1936", title:"Greedy Humpty Dumpty (1936)", ch:"Classic Cartoons", cat:"classic", fmt:"video", tiers:["little","big","super"] },
+  { kind:"mp4", url:"https://archive.org/download/PopeyeTheSailorMeetsSindbadTheSailor1936/Popeye%20the%20Sailor%20Meets%20Sindbad%20the%20Sailor%20%281936%29.mp4",
+    aid:"PopeyeTheSailorMeetsSindbadTheSailor1936", title:"Popeye Meets Sindbad the Sailor", ch:"Classic Cartoons", cat:"classic", fmt:"video", tiers:["big","super"] },
+  { kind:"mp4", url:"https://archive.org/download/comic-toons-popeye-the-sailor-in-aladdin-and-his-wonderful-lamp/ComicToons%20-%20Popeye%20the%20Sailor%20in%20Aladdin%20and%20his%20Wonderful%20Lamp.mp4",
+    aid:"comic-toons-popeye-the-sailor-in-aladdin-and-his-wonderful-lamp", title:"Popeye: Aladdin's Wonderful Lamp", ch:"Classic Cartoons", cat:"classic", fmt:"video", tiers:["big","super"] }
+];
+
+/* Quick Add packs — every id oEmbed-validated, official channels only. */
+const BUNDLES = [
+  { key:"tomjerry", label:"🐱 Tom & Jerry", items:[
+    { id:"_GE6zf_hH48", title:"Tom & Jerry Classics", ch:"Warner Classics", fmt:"video" },
+    { id:"AzLo90wTk08", title:"Tom & Jerry: Hot Soup", ch:"Boomerang UK", fmt:"short" } ] },
+  { key:"batman", label:"🦇 Batman", items:[
+    { id:"KFdc0dEK_q8", title:"Batman: His Full Story", ch:"DC Kids", fmt:"video" } ] },
+  { key:"frozen", label:"❄️ Frozen Songs", items:[
+    { id:"L0MK7qz13bU", title:"Let It Go (Sing-Along)", ch:"Disney Music", fmt:"video" },
+    { id:"TeQ_TTyLGMs", title:"Do You Want to Build a Snowman?", ch:"Disney Music", fmt:"video" } ] },
+  { key:"bheem", label:"🏹 Chhota Bheem", items:[
+    { id:"A5bOFOPi2c4", title:"Chhota Bheem: Jadui Taviz", ch:"Green Gold Kids", fmt:"video" },
+    { id:"EzNUvHTj-3I", title:"Chhota Bheem: Bhoot Trouble", ch:"Green Gold TV", fmt:"video" } ] },
+  { key:"dino", label:"🦖 Dinosaurs", items:[
+    { id:"9UIN9mqkvQ8", title:"Dinosaur Songs Compilation", ch:"Pinkfong", fmt:"video" },
+    { id:"SZzPLdAWKOE", title:"StoryBots: Dinosaur Songs", ch:"Netflix Jr.", fmt:"video" } ] },
+  { key:"animals", label:"🦁 Animals", items:[
+    { id:"QZCOIfLLeR4", title:"Weird But True: Oceans", ch:"Nat Geo Kids", fmt:"video" },
+    { id:"SHQ6NwxUMC4", title:"Funny Animals Compilation", ch:"Nat Geo Kids", fmt:"video" },
+    { id:"t4j8JWKGjVY", title:"Amazing Animals", ch:"ChuChu TV", fmt:"short" } ] },
+  { key:"trains", label:"🚂 Trains", items:[
+    { id:"BpB-Ixdzw2A", title:"Celebrate Chuggington!", ch:"Chuggington", fmt:"video" } ] }
+];
+
+const TIER_OF_AGE = a => (a <= 4 ? "little" : a <= 7 ? "big" : "super");
+const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", song:"🎵 Songs", learn:"🧠 Learning", classic:"🍿 Classics", my:"📁 My Videos" };
+const LS_KEY = "toonKids.v1";
+const isFileProto = location.protocol === "file:";
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function loadCfg() {
+  let c = null;
+  try { c = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) {}
+  if (!c) c = { age: null, soundOn: true, timeLimitMin: 0, liked: {}, custom: [], watch: { date: todayStr(), secs: 0, bonus: 0 } };
+  if (!c.watch || c.watch.date !== todayStr()) c.watch = { date: todayStr(), secs: 0, bonus: 0 };
+  if (!c.liked) c.liked = {};
+  if (!c.custom) c.custom = [];
+  if (!c.eye) c.eye = { warm: 0, dim: 0, autoEve: true, breakMin: 20 };
+  if (!c.seen) c.seen = {};
+  if (c.pin === undefined) c.pin = null;
+  if (!c.resume) c.resume = {};
+  if (!c.bedtime) c.bedtime = { on: false, start: 21, end: 7 };
+  return c;
+}
+let cfg = loadCfg();
+function saveCfg() { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} }
+
+function ytFailMessage() {
+  if (isFileProto) return "YouTube needs the app opened from a web link";
+  if (!navigator.onLine) return "Internet needed for this cartoon";
+  return "YouTube isn't responding — check the internet";
+}
+
+/* ---------------- IndexedDB (local videos) ---------------- */
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("toonreels", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("videos");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbPut(k, b) { const d = await idbOpen(); return new Promise((res, rej) => { const t = d.transaction("videos","readwrite"); t.objectStore("videos").put(b,k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+async function idbGet(k) { const d = await idbOpen(); return new Promise((res, rej) => { const q = d.transaction("videos").objectStore("videos").get(k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>rej(q.error); }); }
+async function idbDel(k) { const d = await idbOpen(); return new Promise((res) => { const t = d.transaction("videos","readwrite"); t.objectStore("videos").delete(k); t.oncomplete=res; t.onerror=res; }); }
+
+/* ---------------- content selection ---------------- */
+function allItems() { return CATALOG.concat(cfg.custom); }
+function tier() { return TIER_OF_AGE(cfg.age || 4); }
+function itemsForAge() { return allItems().filter(it => (it.tiers || []).includes(tier())); }
+function gridItems(cat) {
+  if (cat === "fav") return itemsForAge().filter(it => cfg.liked[itemKey(it)]);
+  const items = itemsForAge().filter(it => it.fmt === "video" || it.kind === "local");
+  if (cat === "all") return items;
+  if (cat === "my") return items.filter(it => it.my);
+  return items.filter(it => it.cat === cat && !it.my);
+}
+function shortItems() { return itemsForAge().filter(it => it.fmt === "short"); }
+function itemKey(it) { return it.kind === "yt" ? "yt:" + it.id : it.kind === "local" ? "local:" + it.localKey : "mp4:" + (it.aid || it.url); }
+function thumbFor(it) {
+  if (it.kind === "yt") return "https://i.ytimg.com/vi/" + it.id + "/mqdefault.jpg";
+  if (it.kind === "mp4" && it.aid) return "https://archive.org/services/img/" + it.aid;
+  return null;
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+
+/* ---------------- freshness rotation ----------------
+   Watched items drift to the back so the feed changes over time.
+   Shorts reshuffle on every visit; the home grid rotates daily. */
+function seenCount(it) { const s = cfg.seen[itemKey(it)]; return s ? s.n : 0; }
+function bumpSeen(key) {
+  const s = cfg.seen[key] || (cfg.seen[key] = { n: 0, t: 0 });
+  s.n++; s.t = Date.now();
+  saveCfg();
+}
+function hashJitter(key) {
+  let h = 0;
+  const s = key + todayStr();
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
+  return h / 997;
+}
+function freshSort(items, dailyStable) {
+  return items
+    .map(it => ({ it, score: seenCount(it) + (dailyStable ? hashJitter(itemKey(it)) : Math.random()) * 0.9 }))
+    .sort((a, b) => a.score - b.score)
+    .map(x => x.it);
+}
+
+/* ---------------- views ---------------- */
+const views = { age: document.getElementById("ageView"), home: document.getElementById("homeView"),
+                shorts: document.getElementById("shortsView"), player: document.getElementById("playerView") };
+let curView = null;
+function showView(name) {
+  if (curView === "shorts" && name !== "shorts") teardownFeed();
+  if (curView === "player" && name !== "player") teardownPlayer();
+  Object.values(views).forEach(v => v.classList.remove("on"));
+  views[name].classList.add("on");
+  curView = name;
+  if (name === "home" || name === "age") setTimeout(() => maybeApplyUpdate(), 400);
+}
+
+/* ---------------- age picker ---------------- */
+const ageGrid = document.getElementById("ageGrid");
+for (let a = 2; a <= 10; a++) {
+  const b = document.createElement("button");
+  b.className = "ageBtn";
+  b.innerHTML = a + "<small>years</small>";
+  b.addEventListener("click", () => { cfg.age = a; saveCfg(); renderHome(); showView("home"); });
+  ageGrid.appendChild(b);
+}
+const ppAge = document.getElementById("ppAge");
+for (let a = 2; a <= 10; a++) { const o = document.createElement("option"); o.value = a; o.textContent = a + " years old"; ppAge.appendChild(o); }
+
+/* ---------------- home ---------------- */
+let curCat = "all";
+function renderHome() {
+  document.getElementById("agePill").textContent = "Age " + cfg.age;
+  const chipsEl = document.getElementById("chips");
+  chipsEl.innerHTML = "";
+  const avail = ["all"];
+  if (gridItems("fav").length) avail.push("fav");
+  ["cartoon","song","learn","classic"].forEach(c => { if (gridItems(c).length) avail.push(c); });
+  if (gridItems("my").length) avail.push("my");
+  if (!avail.includes(curCat)) curCat = "all";
+  avail.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip-btn" + (curCat === c ? " sel" : "");
+    b.textContent = c === "all" ? "⭐ All" : CAT_LABELS[c];
+    b.addEventListener("click", () => { curCat = c; renderHome(); });
+    chipsEl.appendChild(b);
+  });
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  const warn = document.createElement("div");
+  warn.id = "fileWarn";
+  warn.innerHTML = "⚠️ Opened as a local file — YouTube videos may not play here. Classics and your own videos still work. Open the app from its web link for everything.";
+  if (isFileProto) warn.style.display = "block";
+  grid.appendChild(warn);
+
+  if (shortItems().length) {
+    const sb = document.createElement("button");
+    sb.className = "shorts-banner";
+    sb.innerHTML = '<span class="big">⚡</span><span><b>Shorts</b><span>Swipe fun mini cartoons!</span></span>';
+    sb.addEventListener("click", () => openShorts());
+    grid.appendChild(sb);
+  }
+
+  const cards = document.createElement("div");
+  cards.className = "cards";
+  const items = freshSort(gridItems(curCat), true);
+  if (!items.length) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "Nothing here yet!";
+    grid.appendChild(e);
+  }
+  items.forEach((it) => {
+    const card = document.createElement("button");
+    card.className = "card";
+    const th = thumbFor(it);
+    const rs = cfg.resume[itemKey(it)];
+    const resStrip = rs && rs.d ? '<i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i>' : "";
+    card.innerHTML =
+      '<div class="thumb">' + (it.kind === "local" ? "🎞️" : "🎬") +
+        (th ? '<img loading="lazy" src="' + th + '" alt="" onerror="this.remove()">' : "") +
+        (seenCount(it) === 0 ? '<div class="newb">✨ New</div>' : "") +
+        resStrip +
+        '<div class="pl">▶</div></div>' +
+      '<div class="t">' + escapeHtml(it.title) + "</div>" +
+      '<div class="c">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · ⚡ Short" : "") + "</div>";
+    card.addEventListener("click", () => {
+      if (it.fmt === "short") {
+        const shorts = items.filter(x => x.fmt === "short");
+        openShorts(shorts, shorts.indexOf(it));
+      } else {
+        const vids = items.filter(x => x.fmt !== "short");
+        openPlayer(vids, vids.indexOf(it));
+      }
+    });
+    cards.appendChild(card);
+  });
+  grid.appendChild(cards);
+}
+
+document.getElementById("agePill").addEventListener("click", () => openGate(() => showView("age")));
+
+/* ---------------- YouTube API ---------------- */
+let apiReady = false, apiFailed = false;
+const apiWaiters = [];
+window.onYouTubeIframeAPIReady = function () { apiReady = true; apiWaiters.splice(0).forEach(f => f()); };
+(function loadYT() {
+  const s = document.createElement("script");
+  s.src = "https://www.youtube.com/iframe_api";
+  s.onerror = () => { apiFailed = true; };
+  document.head.appendChild(s);
+  setTimeout(() => { if (!apiReady) apiFailed = true; }, 8000);
+})();
+function whenApi(fn) { if (apiReady) fn(); else apiWaiters.push(fn); }
+
+/* Prime YouTube's embed engine once at startup (tiny hidden player) so the
+   first real player starts much faster — its scripts land in browser cache. */
+let primed = false;
+function primeEmbed() {
+  if (primed || Object.keys(players).length || pv) { primed = true; return; }
+  primed = true;
+  const d = document.createElement("div");
+  d.style.cssText = "position:absolute;left:-99px;top:-99px;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none";
+  d.innerHTML = '<div id="prime-hold"></div>';
+  document.body.appendChild(d);
+  let pp = null;
+  const cleanup = () => { try { pp && pp.destroy(); } catch (e) {} d.remove(); };
+  try {
+    pp = new YT.Player("prime-hold", {
+      width: 2, height: 2, videoId: "NuoOtCSjG5Y",
+      playerVars: { autoplay: 0, mute: 1 },
+      events: { onReady: () => setTimeout(cleanup, 400) }
+    });
+    setTimeout(cleanup, 15000);
+  } catch (e) { cleanup(); }
+}
+whenApi(() => setTimeout(primeEmbed, 700));
+
+/* =====================================================================
+   SHORTS FEED (swipe reels)
+   ===================================================================== */
+const feed = document.getElementById("feed");
+let entries = [], reelEls = [], players = {}, active = null, paused = false;
+let io = null;
+
+function openShorts(list, startIdx) {
+  const src = list && list.length ? list : freshSort(shortItems(), false);
+  entries = src.map(it => ({ ...it, dead: false }));
+  buildFeed();
+  showView("shorts");
+  const s = startIdx > 0 && startIdx < entries.length ? startIdx : 0;
+  if (s > 0) { feed.scrollTop = s * feed.clientHeight; setActive(s); }
+  if (entries.length) setTimeout(() => playReel(active === null ? s : active), 100);
+}
+document.getElementById("shortsBack").addEventListener("click", () => { showView("home"); renderHome(); });
+
+function buildFeed() {
+  teardownFeed();
+  feed.innerHTML = "";
+  reelEls = [];
+  io = new IntersectionObserver((ents) => {
+    ents.forEach(en => { if (en.isIntersecting && en.intersectionRatio >= 0.6) setActive(+en.target.dataset.i); });
+  }, { root: feed, threshold: [0.6] });
+
+  entries.forEach((e, i) => {
+    const sec = document.createElement("section");
+    sec.className = "reel";
+    sec.dataset.i = i;
+    const liked = !!cfg.liked[itemKey(e)];
+    sec.innerHTML =
+      '<div class="media"><div id="hold-' + i + '"></div></div>' +
+      (e.kind === "yt"
+        ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + e.id + '/hqdefault.jpg\'">'
+        : "") +
+      '<div class="spin"></div>' +
+      '<div class="oops"><div class="big">🙈</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
+      '<div class="tapzone"></div>' +
+      '<div class="rail">' +
+        '<button class="rbtn btn-sound">' + (cfg.soundOn ? "🔊" : "🔇") + "</button>" +
+        '<button class="rbtn btn-like">' + (liked ? "❤️" : "🤍") + "</button>" +
+      "</div>" +
+      '<div class="meta"><span class="chip">' + escapeHtml(e.title || "Cartoon") + "</span></div>" +
+      '<div class="progress"><i></i></div>' +
+      '<div class="flash">⏸️</div>';
+    feed.appendChild(sec);
+    reelEls.push(sec);
+    sec.querySelector(".tapzone").addEventListener("click", () => onTap(i));
+    sec.querySelector(".btn-sound").addEventListener("click", (ev) => { ev.stopPropagation(); toggleSound(); });
+    sec.querySelector(".btn-like").addEventListener("click", (ev) => { ev.stopPropagation(); toggleLike(i); });
+    io.observe(sec);
+  });
+  active = null;
+  feed.scrollTop = 0;
+  if (entries.length) setActive(0);
+}
+
+function teardownFeed() {
+  Object.keys(players).forEach(k => destroyPlayer(+k));
+  if (io) { io.disconnect(); io = null; }
+  active = null; paused = false;
+}
+
+function ensurePlayer(i) {
+  const e = entries[i];
+  if (!e || players[i] || e.dead) return;
+  if (apiFailed) { reelError(i, "🎈", ytFailMessage()); return; }
+  const rec = { kind: "yt", ready: false, p: null };
+  players[i] = rec;
+  whenApi(() => {
+    if (players[i] !== rec) return;
+    rec.p = new YT.Player("hold-" + i, {
+      width: "100%", height: "100%", videoId: e.id,
+      playerVars: { autoplay: 0, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
+      events: {
+        onReady: () => {
+          rec.ready = true; hideSpin(i); applySoundReel(i);
+          if (i === active && !paused && curView === "shorts") rec.p.playVideo();
+          else if (i === active + 1) warmUp(i);
+        },
+        onStateChange: (ev) => {
+          if (ev.data === YT.PlayerState.ENDED && i === active) nextReel();
+          if (ev.data === YT.PlayerState.PLAYING) {
+            hideSpin(i); hidePre(i);
+            if (i === active) {
+              if (active + 1 < entries.length) { ensurePlayer(active + 1); warmUp(active + 1); }
+              if (active + 2 < entries.length) ensurePlayer(active + 2);
+            }
+          }
+        },
+        onError: () => reelError(i)
+      }
+    });
+    setTimeout(() => { if (players[i] === rec && !rec.ready && !entries[i].dead) reelError(i, "📡", ytFailMessage()); }, 10000);
+  });
+}
+function destroyPlayer(i) {
+  const rec = players[i];
+  if (!rec) return;
+  try { rec.p && rec.p.destroy(); } catch (e) {}
+  const media = reelEls[i] && reelEls[i].querySelector(".media");
+  if (media) media.innerHTML = '<div id="hold-' + i + '"></div>';
+  delete players[i];
+}
+/* Pre-buffer an upcoming reel: play it muted for a moment, then pause at 0.
+   When the child swipes to it, several seconds are already downloaded. */
+function warmUp(i) {
+  const rec = players[i], e = entries[i];
+  if (!rec || !rec.ready || !e || e.dead || i === active || rec.warmed) return;
+  rec.warmed = true;
+  try {
+    rec.p.mute();
+    rec.p.playVideo();
+    setTimeout(() => {
+      if (players[i] === rec && i !== active) { try { rec.p.pauseVideo(); rec.p.seekTo(0, true); } catch (e2) {} }
+    }, 1500);
+  } catch (e2) {}
+}
+function hidePre(i) { const p = reelEls[i] && reelEls[i].querySelector(".pre"); if (p) p.remove(); }
+
+function playReel(i) {
+  const rec = players[i];
+  if (!rec) { ensurePlayer(i); return; }
+  if (!rec.ready) return;
+  applySoundReel(i);
+  rec.p.playVideo();
+  setTimeout(() => {
+    if (i !== active || paused || !players[i] || curView !== "shorts") return;
+    const st = rec.p.getPlayerState();
+    if (st !== YT.PlayerState.PLAYING && st !== YT.PlayerState.BUFFERING) {
+      try { rec.p.mute(); rec.p.playVideo(); showSoundHint(); } catch (e) {}
+    }
+  }, 1200);
+}
+function pauseReel(i) { const r = players[i]; if (r) { try { r.ready && r.p.pauseVideo(); } catch (e) {} } }
+function reelPlaying(i) { const r = players[i]; try { return !!r && r.ready && r.p.getPlayerState() === YT.PlayerState.PLAYING; } catch (e) { return false; } }
+function applySoundReel(i) { const r = players[i]; if (!r || !r.ready) return; try { cfg.soundOn ? (r.p.unMute(), r.p.setVolume(100)) : r.p.mute(); } catch (e) {} }
+function hideSpin(i) { const s = reelEls[i] && reelEls[i].querySelector(".spin"); if (s) s.style.display = "none"; }
+function reelError(i, icon, msg) {
+  const e = entries[i];
+  if (!e || e.dead) return;
+  e.dead = true;
+  destroyPlayer(i);
+  hideSpin(i);
+  const oops = reelEls[i].querySelector(".oops");
+  if (icon) oops.querySelector(".big").textContent = icon;
+  if (msg) oops.querySelector(".oops-msg").textContent = msg;
+  oops.style.display = "flex";
+  if (i === active) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 1400);
+}
+function setActive(i) {
+  if (i === active || !entries[i]) return;
+  const prev = active;
+  active = i; paused = false;
+  if (prev !== null) pauseReel(prev);
+  for (let k = i - 1; k <= i + 1; k++) if (k >= 0 && k < entries.length) ensurePlayer(k);
+  Object.keys(players).forEach(k => { if (Math.abs(+k - i) > 3) destroyPlayer(+k); });
+  if (entries[i].dead) { setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900); return; }
+  if (curView === "shorts") playReel(i);
+}
+function nextReel() {
+  if (!entries.length) return;
+  let n = active;
+  for (let s = 1; s <= entries.length; s++) { const c = (active + s) % entries.length; if (!entries[c].dead) { n = c; break; } }
+  if (n === active) return;
+  feed.scrollTo({ top: n * feed.clientHeight, behavior: n > active ? "smooth" : "auto" });
+}
+function onTap(i) {
+  if (i !== active) return;
+  paused = !paused;
+  const f = reelEls[i].querySelector(".flash");
+  f.textContent = paused ? "⏸️" : "▶️";
+  f.classList.remove("show"); void f.offsetWidth; f.classList.add("show");
+  paused ? pauseReel(i) : playReel(i);
+}
+function toggleLike(i) {
+  const key = itemKey(entries[i]);
+  cfg.liked[key] = !cfg.liked[key];
+  saveCfg();
+  const btn = reelEls[i].querySelector(".btn-like");
+  btn.textContent = cfg.liked[key] ? "❤️" : "🤍";
+  if (cfg.liked[key]) {
+    for (let n = 0; n < 6; n++) {
+      const h = document.createElement("div");
+      h.className = "burst";
+      h.textContent = ["❤️","💛","🧡","💜","⭐","💖"][n];
+      const r = btn.getBoundingClientRect(), a = document.getElementById("app").getBoundingClientRect();
+      h.style.left = (r.left - a.left + (Math.random() * 40 - 25)) + "px";
+      h.style.top = (r.top - a.top - 10 - Math.random() * 20) + "px";
+      h.style.animationDelay = (n * 60) + "ms";
+      document.getElementById("app").appendChild(h);
+      setTimeout(() => h.remove(), 1400);
+    }
+  }
+}
+
+/* =====================================================================
+   FULL PLAYER
+   ===================================================================== */
+let pvList = [], pvIdx = 0, pv = null, pvPaused = false;
+const pvMedia = document.getElementById("pvMedia");
+
+function openPlayer(list, idx) {
+  pvList = list; pvIdx = idx;
+  showView("player");
+  loadPvItem();
+}
+function loadPvItem() {
+  teardownPlayer(true);
+  const it = pvList[pvIdx];
+  if (!it) { showView("home"); renderHome(); return; }
+  document.getElementById("pvTitle").textContent = it.title;
+  document.getElementById("pvSound").textContent = cfg.soundOn ? "🔊" : "🔇";
+  document.getElementById("pvLike").textContent = cfg.liked[itemKey(it)] ? "❤️" : "🤍";
+  document.getElementById("pvToggle").textContent = "⏸";
+  document.getElementById("pvSpin").style.display = "block";
+  pvPaused = false;
+
+  if (it.kind === "yt") {
+    if (apiFailed) { pvFail(); return; }
+    pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onerror="this.remove()"><div id="pv-hold"></div>';
+    const rec = { kind: "yt", ready: false, p: null };
+    pv = rec;
+    whenApi(() => {
+      if (pv !== rec) return;
+      rec.p = new YT.Player("pv-hold", {
+        width: "100%", height: "100%", videoId: it.id,
+        playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
+        events: {
+          onReady: () => {
+            rec.ready = true;
+            document.getElementById("pvSpin").style.display = "none";
+            try { cfg.soundOn ? (rec.p.unMute(), rec.p.setVolume(100)) : rec.p.mute(); } catch (e) {}
+            rec.p.playVideo();
+            const rsy = cfg.resume[itemKey(it)];
+            if (rsy && rsy.t > 10) { try { rec.p.seekTo(rsy.t, true); } catch (e) {} }
+          },
+          onStateChange: (ev) => {
+            if (ev.data === YT.PlayerState.ENDED) { delete cfg.resume[itemKey(it)]; saveCfg(); pvNext(); }
+            if (ev.data === YT.PlayerState.PLAYING) {
+              document.getElementById("pvSpin").style.display = "none";
+              const pp = pvMedia.querySelector(".pvpre");
+              if (pp) pp.remove();
+            }
+          },
+          onError: () => pvFail()
+        }
+      });
+      setTimeout(() => { if (pv === rec && !rec.ready) pvFail(); }, 12000);
+    });
+  } else if (it.kind === "mp4" || it.kind === "local") {
+    const v = document.createElement("video");
+    v.setAttribute("playsinline", "");
+    v.preload = "auto";
+    v.muted = !cfg.soundOn;
+    pvMedia.innerHTML = (it.kind === "mp4" && it.aid)
+      ? '<img class="pvpre" src="https://archive.org/services/img/' + it.aid + '" onerror="this.remove()">'
+      : "";
+    pvMedia.appendChild(v);
+    pv = { kind: "vid", v };
+    v.onplaying = () => {
+      document.getElementById("pvSpin").style.display = "none";
+      const pp = pvMedia.querySelector(".pvpre");
+      if (pp) pp.remove();
+    };
+    v.onended = () => { delete cfg.resume[itemKey(it)]; saveCfg(); pvNext(); };
+    v.onerror = () => pvFail();
+    v.onloadedmetadata = () => {
+      const rsv = cfg.resume[itemKey(it)];
+      if (rsv && rsv.t > 10 && v.duration > rsv.t + 30) v.currentTime = rsv.t;
+    };
+    const start = () => {
+      const pr = v.play();
+      if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play().catch(() => {}); });
+    };
+    if (it.kind === "mp4") { v.src = it.url; start(); }
+    else idbGet(it.localKey).then(b => { if (b) { v.src = URL.createObjectURL(b); start(); } else pvFail(); }).catch(() => pvFail());
+  }
+}
+function pvFail() {
+  document.getElementById("pvSpin").style.display = "none";
+  pvMedia.innerHTML =
+    '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;padding:20px;background:linear-gradient(160deg,#2b1c57,#0e0a1f)">' +
+    '<div style="font-size:56px">🙈</div><p style="margin:0;font-weight:700">' + escapeHtml(ytFailMessage()) + "</p></div>";
+  pv = null;
+}
+function teardownPlayer(keepView) {
+  if (pv) {
+    if (pv.kind === "yt") { try { pv.p && pv.p.destroy(); } catch (e) {} }
+    else { try { pv.v.pause(); pv.v.removeAttribute("src"); pv.v.load(); } catch (e) {} }
+  }
+  pv = null;
+  pvMedia.innerHTML = "";
+  if (!keepView) pvPaused = false;
+}
+function pvPlaying() {
+  if (!pv) return false;
+  if (pv.kind === "yt") { try { return pv.ready && pv.p.getPlayerState() === YT.PlayerState.PLAYING; } catch (e) { return false; } }
+  return !pv.v.paused && !pv.v.ended;
+}
+function pvToggle() {
+  if (!pv) return;
+  pvPaused = !pvPaused;
+  document.getElementById("pvToggle").textContent = pvPaused ? "▶" : "⏸";
+  if (pv.kind === "yt") { try { pvPaused ? pv.p.pauseVideo() : pv.p.playVideo(); } catch (e) {} }
+  else pvPaused ? pv.v.pause() : pv.v.play().catch(() => {});
+}
+function pvNext() { pvIdx = (pvIdx + 1) % pvList.length; loadPvItem(); }
+document.getElementById("pvBack").addEventListener("click", () => { showView("home"); renderHome(); });
+document.getElementById("pvToggle").addEventListener("click", pvToggle);
+document.getElementById("pvTap").addEventListener("click", pvToggle);
+document.getElementById("pvNext").addEventListener("click", pvNext);
+document.getElementById("pvSound").addEventListener("click", () => { toggleSound(); document.getElementById("pvSound").textContent = cfg.soundOn ? "🔊" : "🔇"; });
+document.getElementById("pvLike").addEventListener("click", () => {
+  const it = pvList[pvIdx];
+  if (!it) return;
+  const k = itemKey(it);
+  cfg.liked[k] = !cfg.liked[k];
+  saveCfg();
+  document.getElementById("pvLike").textContent = cfg.liked[k] ? "❤️" : "🤍";
+});
+
+/* ---------------- sound ---------------- */
+const soundHint = document.getElementById("soundHint");
+let hintTimer = null;
+function showSoundHint() { soundHint.style.display = "block"; clearTimeout(hintTimer); hintTimer = setTimeout(() => soundHint.style.display = "none", 4000); }
+function toggleSound() {
+  cfg.soundOn = !cfg.soundOn;
+  saveCfg();
+  Object.keys(players).forEach(k => applySoundReel(+k));
+  if (pv) { if (pv.kind === "yt") { try { cfg.soundOn ? (pv.p.unMute(), pv.p.setVolume(100)) : pv.p.mute(); } catch (e) {} } else pv.v.muted = !cfg.soundOn; }
+  document.querySelectorAll(".btn-sound").forEach(b => b.textContent = cfg.soundOn ? "🔊" : "🔇");
+  if (cfg.soundOn) soundHint.style.display = "none";
+}
+
+/* ---------------- progress + watch time ---------------- */
+setInterval(() => {
+  if (curView === "shorts" && active !== null && players[active]) {
+    const r = players[active];
+    let t = 0, d = 0;
+    try { if (r.ready) { t = r.p.getCurrentTime(); d = r.p.getDuration(); } } catch (e) {}
+    const bar = reelEls[active] && reelEls[active].querySelector(".progress i");
+    if (bar) bar.style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
+  }
+  if (curView === "player" && pv) {
+    let t = 0, d = 0;
+    if (pv.kind === "yt") { try { if (pv.ready) { t = pv.p.getCurrentTime(); d = pv.p.getDuration(); } } catch (e) {} }
+    else { t = pv.v.currentTime; d = pv.v.duration || 0; }
+    document.getElementById("pvBar").style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
+    // continue-watching: remember position in longer videos
+    const cw = pvList[pvIdx];
+    if (cw && cw.fmt !== "short" && d > 60 && t > 10) {
+      const rk = itemKey(cw);
+      if (t > d - 30) { if (cfg.resume[rk]) { delete cfg.resume[rk]; saveCfg(); } }
+      else if (!cfg.resume[rk] || Math.abs(cfg.resume[rk].t - t) > 5) { cfg.resume[rk] = { t: Math.floor(t), d: Math.floor(d) }; saveCfg(); }
+    }
+  }
+}, 400);
+
+let expKey = null, expSecs = 0;
+setInterval(() => {
+  if (document.visibilityState !== "visible") return;
+  const inShorts = curView === "shorts" && active !== null && !paused && reelPlaying(active);
+  const inPlayer = curView === "player" && !pvPaused && pvPlaying();
+  const watching = inShorts || inPlayer;
+  if (!watching) return;
+  // freshness tracking: a short counts as seen after 3s, a video after 10s
+  const curItem = inShorts ? entries[active] : pvList[pvIdx];
+  if (curItem) {
+    const k = itemKey(curItem);
+    if (k !== expKey) { expKey = k; expSecs = 0; }
+    expSecs++;
+    if (expSecs === (inShorts ? 3 : 10)) bumpSeen(k);
+  }
+  cfg.watch.secs++;
+  if (cfg.watch.secs % 15 === 0) saveCfg();
+  const lim = cfg.timeLimitMin > 0 ? cfg.timeLimitMin * 60 + (cfg.watch.bonus || 0) : Infinity;
+  if (cfg.watch.secs >= lim) { showBreak(); return; }
+  eyeSecs++;
+  if (cfg.eye.breakMin > 0 && eyeSecs >= cfg.eye.breakMin * 60 &&
+      document.getElementById("eyeBreak").style.display !== "flex") startEyeBreak();
+}, 1000);
+
+/* ---------------- eye comfort ---------------- */
+const WARM_LEVELS = [0, .25, .4, .55];
+const DIM_LEVELS = [0, .2, .35, .5];
+function applyEye() {
+  const e = cfg.eye;
+  let warm = e.warm, dim = e.dim;
+  if (e.autoEve) {
+    const h = new Date().getHours();
+    if (h >= 19 || h < 6) { warm = Math.max(warm, 2); dim = Math.max(dim, 1); }
+  }
+  document.getElementById("warmOv").style.opacity = WARM_LEVELS[warm] || 0;
+  document.getElementById("dimOv").style.opacity = DIM_LEVELS[dim] || 0;
+}
+setInterval(applyEye, 60000);
+applyEye();
+
+let eyeSecs = 0;
+function startEyeBreak() {
+  eyeSecs = 0;
+  const wasShorts = curView === "shorts" && active !== null;
+  const wasPlayer = curView === "player" && !!pv;
+  if (wasShorts) { paused = true; pauseReel(active); }
+  if (wasPlayer && !pvPaused) pvToggle();
+  const ov = document.getElementById("eyeBreak");
+  ov.style.display = "flex";
+  // timestamp-based so background-tab timer throttling can't stall the break
+  const endAt = Date.now() + 20000;
+  document.getElementById("eyeCount").textContent = 20;
+  const t = setInterval(() => {
+    const left = Math.ceil((endAt - Date.now()) / 1000);
+    document.getElementById("eyeCount").textContent = Math.max(0, left);
+    if (left <= 0) {
+      clearInterval(t);
+      ov.style.display = "none";
+      if (wasShorts && curView === "shorts") { paused = false; playReel(active); }
+      if (wasPlayer && curView === "player" && pvPaused) pvToggle();
+    }
+  }, 500);
+}
+
+/* ---------------- bedtime lock ---------------- */
+let bedOverrideUntil = 0;
+function inBedtime() {
+  if (!cfg.bedtime.on) return false;
+  if (Date.now() < bedOverrideUntil) return false;
+  const h = new Date().getHours();
+  const s = cfg.bedtime.start, e = cfg.bedtime.end;
+  if (s === e) return false;
+  return s < e ? (h >= s && h < e) : (h >= s || h < e);
+}
+function checkBedtime() {
+  const bs = document.getElementById("bedScreen");
+  if (inBedtime()) {
+    if (bs.style.display !== "flex") {
+      bs.style.display = "flex";
+      if (curView === "shorts" && active !== null) { paused = true; pauseReel(active); }
+      if (curView === "player" && pv && !pvPaused) pvToggle();
+    }
+  } else if (bs.style.display === "flex") {
+    bs.style.display = "none";
+  }
+}
+setInterval(checkBedtime, 30000);
+document.getElementById("bedUnlockBtn").addEventListener("click", () => {
+  openGate(() => {
+    bedOverrideUntil = Date.now() + 15 * 60 * 1000;
+    checkBedtime();
+  });
+});
+
+/* ---------------- break ---------------- */
+const breakScreen = document.getElementById("breakScreen");
+function showBreak() {
+  if (breakScreen.style.display === "flex") return;
+  breakScreen.style.display = "flex";
+  if (curView === "shorts" && active !== null) { paused = true; pauseReel(active); }
+  if (curView === "player" && pv && !pvPaused) pvToggle();
+  saveCfg();
+}
+document.getElementById("unlockBtn").addEventListener("click", () => {
+  openGate(() => {
+    cfg.watch.bonus = (cfg.watch.bonus || 0) + 15 * 60;
+    saveCfg();
+    breakScreen.style.display = "none";
+  });
+});
+
+/* ---------------- gate ---------------- */
+const gateWrap = document.getElementById("gateWrap"), gateModal = document.getElementById("gateModal"),
+      gateQ = document.getElementById("gateQ"), gateA = document.getElementById("gateA");
+let gateAnswer = 0, gateCb = null;
+let gateForgotMode = false;
+function newGateQuestion() {
+  const forgotBtn = document.getElementById("gateForgotBtn");
+  if (cfg.pin && !gateForgotMode) {
+    gateQ.textContent = "Enter your PIN";
+    gateA.type = "password"; gateA.maxLength = 4; gateA.placeholder = "••••";
+    forgotBtn.style.display = "block";
+  } else {
+    // forgot-PIN uses harder maths, and solving it clears the PIN
+    const hard = gateForgotMode;
+    const a = hard ? 23 + Math.floor(Math.random() * 17) : 3 + Math.floor(Math.random() * 7);
+    const b = hard ? 6 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 8);
+    gateAnswer = a * b;
+    gateQ.textContent = a + " × " + b + " = ?";
+    gateA.type = "text"; gateA.maxLength = 6; gateA.placeholder = "?";
+    forgotBtn.style.display = "none";
+  }
+  gateA.value = "";
+}
+function openGate(cb) { gateCb = cb; gateForgotMode = false; newGateQuestion(); gateWrap.style.display = "flex"; setTimeout(() => gateA.focus(), 50); }
+document.getElementById("gateCancel").addEventListener("click", () => { gateWrap.style.display = "none"; gateCb = null; });
+document.getElementById("gateForgotBtn").addEventListener("click", () => { gateForgotMode = true; newGateQuestion(); });
+function tryGate() {
+  const ok = (cfg.pin && !gateForgotMode) ? gateA.value === cfg.pin : parseInt(gateA.value, 10) === gateAnswer;
+  if (ok) {
+    if (gateForgotMode && cfg.pin) { cfg.pin = null; saveCfg(); }
+    gateWrap.style.display = "none";
+    const cb = gateCb; gateCb = null;
+    if (cb) cb();
+  } else { gateModal.classList.remove("shake"); void gateModal.offsetWidth; gateModal.classList.add("shake"); newGateQuestion(); }
+}
+document.getElementById("gateOk").addEventListener("click", tryGate);
+gateA.addEventListener("keydown", (e) => { if (e.key === "Enter") tryGate(); });
+
+/* ---------------- parent panel ---------------- */
+const panel = document.getElementById("parentPanel");
+document.getElementById("gearBtn").addEventListener("click", () => openGate(() => {
+  document.getElementById("tL").checked = tier() === "little";
+  document.getElementById("tB").checked = tier() === "big";
+  document.getElementById("tS").checked = tier() === "super";
+  document.getElementById("ppResults").innerHTML = "";
+  searchMsg("");
+  renderPanel();
+  panel.style.display = "flex";
+}));
+document.getElementById("ppClose").addEventListener("click", () => { panel.style.display = "none"; renderHome(); });
+
+function parseYouTubeId(str) {
+  str = (str || "").trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(str)) return str;
+  try {
+    const u = new URL(str);
+    if (u.hostname.includes("youtu.be")) { const p = u.pathname.slice(1).split("/")[0]; if (/^[A-Za-z0-9_-]{11}$/.test(p)) return p; }
+    const v = u.searchParams.get("v");
+    if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+    const m = u.pathname.match(/\/(shorts|embed|live)\/([A-Za-z0-9_-]{11})/);
+    if (m) return m[2];
+  } catch (e) {}
+  const m = str.match(/[A-Za-z0-9_-]{11}/);
+  return m ? m[0] : null;
+}
+function isShortsUrl(str) { return /\/shorts\//.test(str || ""); }
+
+function renderPanel() {
+  ppAge.value = String(cfg.age || 4);
+  document.getElementById("ppLimit").value = String(cfg.timeLimitMin || 0);
+  document.getElementById("ppWatched").textContent = "Watched today: " + Math.round(cfg.watch.secs / 60) + " min";
+  document.getElementById("ppWarm").value = String(cfg.eye.warm || 0);
+  document.getElementById("ppDim").value = String(cfg.eye.dim || 0);
+  document.getElementById("ppEyeBreak").value = String(cfg.eye.breakMin || 0);
+  document.getElementById("ppAutoEve").checked = !!cfg.eye.autoEve;
+  document.getElementById("ppPinNote").textContent = cfg.pin
+    ? "PIN is ON — the parent gate asks for this PIN."
+    : "No PIN set — the gate uses a simple maths question that older kids might solve. Setting a PIN is recommended.";
+  document.getElementById("ppBedOn").checked = !!cfg.bedtime.on;
+  document.getElementById("ppBedStart").value = String(cfg.bedtime.start);
+  document.getElementById("ppBedEnd").value = String(cfg.bedtime.end);
+  renderBundles();
+  renderKeyZone();
+  renderCustomList();
+}
+
+function renderCustomList() {
+  const list = document.getElementById("ppList");
+  list.innerHTML = "";
+  if (!cfg.custom.length) list.innerHTML = '<p class="pp-note">Nothing added yet.</p>';
+  cfg.custom.forEach((r, idx) => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML =
+      (r.kind === "yt" ? '<img src="https://i.ytimg.com/vi/' + r.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' : '<div class="ph">🎞️</div>') +
+      '<div class="nm">' + escapeHtml(r.title || "Video") + " <span style='color:#8a82a6'>(" + (r.tiers || []).map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
+      '<button class="del" title="Remove">✕</button>';
+    row.querySelector(".del").addEventListener("click", () => {
+      const rm = cfg.custom.splice(idx, 1)[0];
+      if (rm && rm.kind === "local") idbDel(rm.localKey);
+      saveCfg(); renderCustomList();
+    });
+    list.appendChild(row);
+  });
+}
+ppAge.addEventListener("change", (e) => { cfg.age = parseInt(e.target.value, 10); saveCfg(); });
+document.getElementById("ppLimit").addEventListener("change", (e) => { cfg.timeLimitMin = parseInt(e.target.value, 10) || 0; saveCfg(); });
+document.getElementById("ppWarm").addEventListener("change", (e) => { cfg.eye.warm = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
+document.getElementById("ppDim").addEventListener("change", (e) => { cfg.eye.dim = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
+document.getElementById("ppEyeBreak").addEventListener("change", (e) => { cfg.eye.breakMin = parseInt(e.target.value, 10) || 0; eyeSecs = 0; saveCfg(); });
+document.getElementById("ppAutoEve").addEventListener("change", (e) => { cfg.eye.autoEve = e.target.checked; saveCfg(); applyEye(); });
+
+/* PIN management */
+document.getElementById("ppPinSave").addEventListener("click", () => {
+  const inp = document.getElementById("ppPin");
+  const v = inp.value.trim();
+  if (!/^\d{4}$/.test(v)) { inp.value = ""; inp.placeholder = "Must be exactly 4 digits"; return; }
+  cfg.pin = v;
+  saveCfg();
+  inp.value = "";
+  renderPanel();
+});
+document.getElementById("ppPinOff").addEventListener("click", () => { cfg.pin = null; saveCfg(); renderPanel(); });
+
+/* bedtime controls */
+["ppBedStart", "ppBedEnd"].forEach(id => {
+  const sel = document.getElementById(id);
+  for (let h = 0; h < 24; h++) {
+    const o = document.createElement("option");
+    o.value = h;
+    o.textContent = (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM");
+    sel.appendChild(o);
+  }
+});
+document.getElementById("ppBedOn").addEventListener("change", (e) => { cfg.bedtime.on = e.target.checked; saveCfg(); checkBedtime(); });
+document.getElementById("ppBedStart").addEventListener("change", (e) => { cfg.bedtime.start = parseInt(e.target.value, 10); saveCfg(); checkBedtime(); });
+document.getElementById("ppBedEnd").addEventListener("change", (e) => { cfg.bedtime.end = parseInt(e.target.value, 10); saveCfg(); checkBedtime(); });
+
+function pickedTiers() {
+  const t = [];
+  if (document.getElementById("tL").checked) t.push("little");
+  if (document.getElementById("tB").checked) t.push("big");
+  if (document.getElementById("tS").checked) t.push("super");
+  return t.length ? t : [tier()];
+}
+
+/* Add a yt item to the parent's list; merges age tiers if it already exists. */
+function addCustomYt(id, title, ch, fmt, tiers) {
+  const existing = cfg.custom.find(c => c.kind === "yt" && c.id === id);
+  if (existing) {
+    tiers.forEach(t => { if (!existing.tiers.includes(t)) existing.tiers.push(t); });
+    saveCfg();
+    return false;
+  }
+  cfg.custom.push({ kind: "yt", id, title, ch: ch || "Added by parent", cat: "my", my: true, fmt: fmt || "video", tiers: tiers.slice() });
+  saveCfg();
+  return true;
+}
+
+/* ---------------- quick add packs ---------------- */
+function renderBundles() {
+  const box = document.getElementById("ppBundles");
+  box.innerHTML = "";
+  BUNDLES.forEach(b => {
+    const btn = document.createElement("button");
+    btn.className = "pp-btn soft";
+    btn.textContent = b.label;
+    btn.addEventListener("click", () => {
+      const tiers = pickedTiers();
+      let n = 0;
+      b.items.forEach(it => { if (addCustomYt(it.id, it.title, it.ch, it.fmt, tiers)) n++; });
+      btn.textContent = "✓ " + b.label.replace(/^\S+\s/, "") + (n ? " added" : " updated");
+      btn.disabled = true;
+      setTimeout(() => { btn.disabled = false; btn.textContent = b.label; }, 2500);
+      renderCustomList();
+    });
+    box.appendChild(btn);
+  });
+}
+
+/* ---------------- keyword search (parent's own YouTube API key) ---------------- */
+function renderKeyZone() {
+  const has = !!cfg.apiKey;
+  document.getElementById("ppKeyZone").style.display = has ? "none" : "block";
+  document.getElementById("ppSearchZone").style.display = has ? "block" : "none";
+}
+document.getElementById("ppKeySave").addEventListener("click", () => {
+  const v = document.getElementById("ppKey").value.trim();
+  if (v.length < 20) { document.getElementById("ppKey").placeholder = "That doesn't look like an API key"; return; }
+  cfg.apiKey = v;
+  saveCfg();
+  document.getElementById("ppKey").value = "";
+  renderKeyZone();
+});
+document.getElementById("ppKeyForget").addEventListener("click", () => {
+  delete cfg.apiKey;
+  saveCfg();
+  document.getElementById("ppResults").innerHTML = "";
+  renderKeyZone();
+});
+
+function decodeEntities(s) { const t = document.createElement("textarea"); t.innerHTML = s || ""; return t.value; }
+function isoDurToSecs(d) {
+  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d || "");
+  if (!m) return 0;
+  return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
+}
+function searchMsg(txt) {
+  const el = document.getElementById("ppSearchMsg");
+  el.style.display = txt ? "block" : "none";
+  el.textContent = txt || "";
+}
+async function ytSearch(q) {
+  const key = encodeURIComponent(cfg.apiKey);
+  const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&safeSearch=strict&maxResults=12&q=" + encodeURIComponent(q) + "&key=" + key);
+  const j = await r.json();
+  if (j.error) {
+    const reason = (j.error.errors && j.error.errors[0] && j.error.errors[0].reason) || "";
+    if (/keyInvalid|API_KEY_INVALID|badRequest/i.test(reason + " " + j.error.message)) throw new Error("The API key was rejected — check it and save again.");
+    if (/quota/i.test(reason)) throw new Error("Daily free search limit reached — try again tomorrow.");
+    throw new Error(j.error.message || "Search failed");
+  }
+  const ids = (j.items || []).map(i => i.id && i.id.videoId).filter(Boolean);
+  const durs = {};
+  if (ids.length) {
+    try {
+      const r2 = await fetch("https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" + ids.join(",") + "&key=" + key);
+      const j2 = await r2.json();
+      (j2.items || []).forEach(v => { durs[v.id] = isoDurToSecs(v.contentDetails && v.contentDetails.duration); });
+    } catch (e) {}
+  }
+  return (j.items || []).filter(i => i.id && i.id.videoId).map(i => ({
+    id: i.id.videoId,
+    title: decodeEntities(i.snippet.title),
+    ch: decodeEntities(i.snippet.channelTitle),
+    secs: durs[i.id.videoId] || 0
+  }));
+}
+async function doSearch() {
+  const q = document.getElementById("ppQ").value.trim();
+  if (!q) return;
+  const box = document.getElementById("ppResults");
+  box.innerHTML = "";
+  searchMsg("Searching…");
+  try {
+    const results = await ytSearch(q);
+    searchMsg(results.length ? "Tap ➕ to add for the ticked age groups:" : "No results found.");
+    results.forEach(res => {
+      const fmt = res.secs > 0 && res.secs <= 180 ? "short" : "video";
+      const row = document.createElement("div");
+      row.className = "pitem";
+      row.innerHTML =
+        '<img src="https://i.ytimg.com/vi/' + res.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
+        '<div class="nm">' + escapeHtml(res.title) + '<br><span style="color:#8a82a6">' + escapeHtml(res.ch) + (fmt === "short" ? " · Short" : "") + "</span></div>" +
+        '<button class="addb" style="background:#e8f5e9;color:#2e7d32">➕</button>';
+      row.querySelector(".addb").addEventListener("click", (ev) => {
+        addCustomYt(res.id, res.title, res.ch, fmt, pickedTiers());
+        ev.target.textContent = "✓";
+        ev.target.disabled = true;
+        renderCustomList();
+      });
+      box.appendChild(row);
+    });
+  } catch (e) {
+    searchMsg("⚠️ " + e.message);
+  }
+}
+document.getElementById("ppSearchBtn").addEventListener("click", doSearch);
+document.getElementById("ppQ").addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+document.getElementById("ppAdd").addEventListener("click", async () => {
+  const input = document.getElementById("ppUrl");
+  const id = parseYouTubeId(input.value);
+  if (!id) { input.value = ""; input.placeholder = "Hmm, that's not a YouTube link"; return; }
+  const fmt = (document.getElementById("tShort").checked || isShortsUrl(input.value)) ? "short" : "video";
+  addCustomYt(id, "New video", "Added by parent", fmt, pickedTiers());
+  input.value = "";
+  renderCustomList();
+  try {
+    const r = await fetch("https://noembed.com/embed?url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + id));
+    const j = await r.json();
+    const item = cfg.custom.find(c => c.kind === "yt" && c.id === id);
+    if (item && j && j.title) { item.title = j.title; item.ch = j.author_name || item.ch; saveCfg(); renderCustomList(); }
+  } catch (e) {}
+});
+document.getElementById("ppFileBtn").addEventListener("click", () => document.getElementById("ppFile").click());
+document.getElementById("ppFile").addEventListener("change", async (e) => {
+  for (const f of e.target.files) {
+    const key = "v" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
+    try {
+      await idbPut(key, f);
+      cfg.custom.push({ kind: "local", localKey: key, title: f.name.replace(/\.[^.]+$/, ""), ch: "My device", cat: "my", my: true, fmt: "video", tiers: pickedTiers() });
+    } catch (err) { alert("Could not save " + f.name + " (storage full?)"); }
+  }
+  e.target.value = "";
+  saveCfg(); renderCustomList();
+});
+document.getElementById("ppReset").addEventListener("click", () => {
+  if (!confirm("Remove all parent-added videos?")) return;
+  cfg.custom.filter(r => r.kind === "local").forEach(r => idbDel(r.localKey));
+  cfg.custom = [];
+  saveCfg(); renderCustomList();
+});
+
+/* ---------------- misc ---------------- */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") {
+    if (curView === "shorts" && active !== null) { paused = true; pauseReel(active); }
+    if (curView === "player" && pv && !pvPaused) pvToggle();
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if (curView !== "shorts" || panel.style.display === "flex" || gateWrap.style.display === "flex") return;
+  if (e.key === "ArrowDown") { e.preventDefault(); nextReel(); }
+  if (e.key === "ArrowUp") { e.preventDefault(); if (active > 0) feed.scrollTo({ top: (active - 1) * feed.clientHeight, behavior: "smooth" }); }
+  if (e.key === " ") { e.preventDefault(); onTap(active); }
+});
+window.addEventListener("resize", () => { if (curView === "shorts" && active !== null) feed.scrollTop = active * feed.clientHeight; });
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+/* ---------------- auto-update for installed (home-screen) apps ----------------
+   The server's ETag changes with every deploy. We snapshot it at launch and
+   re-check on resume + every 30 min; a change means a new version was deployed,
+   so the app refreshes itself at a safe moment (never mid-video). */
+let appEtag = null, pendingUpdate = false;
+async function fetchEtag() {
+  try {
+    const r = await fetch(location.pathname || "/", { method: "HEAD", cache: "no-store" });
+    return r.headers.get("etag") || r.headers.get("last-modified") || null;
+  } catch (e) { return null; }
+}
+async function checkForUpdate(initial) {
+  if (isFileProto) return;
+  const e = await fetchEtag();
+  if (!e) return;
+  if (initial || appEtag === null) { appEtag = e; return; }
+  if (e !== appEtag) pendingUpdate = true;
+  maybeApplyUpdate();
+}
+function maybeApplyUpdate() {
+  if (!pendingUpdate) return;
+  if (curView === "shorts" || curView === "player") return; // wait until they're back home
+  pendingUpdate = false;
+  document.getElementById("updToast").style.display = "block";
+  setTimeout(() => location.reload(), 1500);
+}
+if ("serviceWorker" in navigator && !isFileProto) {
+  try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (e) {}
+}
+checkForUpdate(true);
+setInterval(() => checkForUpdate(false), 30 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") checkForUpdate(false);
+});
+
+/* ---------------- boot ---------------- */
+if (cfg.age === null) showView("age");
+else { renderHome(); showView("home"); }
+checkBedtime();
+</script>
+</body>
+</html>
