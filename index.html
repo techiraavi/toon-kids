@@ -56,7 +56,8 @@
   .gearBtn { border: none; cursor: pointer; width: 38px; height: 38px; border-radius: 50%;
              background: rgba(255,255,255,.2); color: #fff; font-size: 18px; }
 
-  .chips { display: flex; gap: 8px; padding: 12px 14px 4px; overflow-x: auto; scrollbar-width: none; flex: none; }
+  .chips { display: none; } /* replaced by home shelves + bottom nav */
+  .chips-legacy { display: flex; gap: 8px; padding: 12px 14px 4px; overflow-x: auto; scrollbar-width: none; flex: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip-btn {
     border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
@@ -95,6 +96,28 @@
   }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cardmin), 1fr)); gap: 12px; max-width: 1460px; margin: 0 auto; }
   #fileWarn { max-width: 1460px; margin-left: auto; margin-right: auto; }
+
+  /* ---------- home shelves (YouTube-Kids-style rows) ---------- */
+  :root { --shelfcard: 176px; }
+  @media (min-width: 1200px) { :root { --shelfcard: 220px; } }
+  @media (min-width: 1900px) { :root { --shelfcard: 290px; } }
+  .shelf { max-width: 1460px; margin: 0 auto 18px; }
+  .shelf h3 { margin: 4px 2px 10px; font-size: 17px; color: #26203d; }
+  .shelf-row { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; padding: 2px 2px 6px; }
+  .shelf-row::-webkit-scrollbar { display: none; }
+  .shelf-row .card { flex: 0 0 var(--shelfcard); width: var(--shelfcard); scroll-snap-align: start; }
+  .sshort { flex: 0 0 118px; width: 118px; border: none; cursor: pointer; font-family: inherit; padding: 0; background: none; scroll-snap-align: start; }
+  .sshort .sthumb { width: 118px; height: 200px; border-radius: 14px; background: linear-gradient(135deg, #b39ddb, #90caf9); overflow: hidden; position: relative; box-shadow: 0 3px 10px rgba(60,40,120,.14); }
+  .sshort .sthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sshort:active .sthumb { transform: scale(.96); }
+  .sshort .t { font-size: 11.5px; font-weight: 800; color: #26203d; margin-top: 6px; text-align: left;
+               display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  @media (min-width: 1900px) {
+    .shelf h3 { font-size: 24px; }
+    .sshort { flex-basis: 164px; width: 164px; }
+    .sshort .sthumb { width: 164px; height: 278px; }
+    .sshort .t { font-size: 15px; }
+  }
   .chips { max-width: 1488px; margin-left: auto; margin-right: auto; width: 100%; }
   .card {
     border: none; cursor: pointer; font-family: inherit; text-align: left; padding: 0;
@@ -480,6 +503,39 @@
           <button class="pp-btn soft" id="ppPinOff">Remove</button>
         </div>
         <p class="pp-note" id="ppPinNote"></p>
+      </div>
+
+      <div class="pp-card">
+        <h4>☁️ Google account sync</h4>
+        <div id="gsSetup">
+          <p class="pp-note" style="margin-top:0">Sign in with Google to keep your parent settings — API key, PIN, limits, keywords, added videos — saved to <b>your own Google account</b>. Set up once, restore on any device. Stored in your own Google Drive's hidden app storage; no third-party servers.</p>
+          <details style="margin:8px 0">
+            <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">One-time setup (same Google project as the API key, ~5 min)</summary>
+            <ol style="font-size:12px;color:#6b6486;font-weight:600;padding-left:18px;margin:8px 0">
+              <li>console.cloud.google.com → APIs &amp; Services → <b>OAuth consent screen</b>: External, app name "Toon Kids", add your Gmail under <b>Test users</b></li>
+              <li>Library → enable the <b>Google Drive API</b></li>
+              <li>Credentials → Create credentials → <b>OAuth client ID</b> → Web application</li>
+              <li>Under Authorized JavaScript origins add: <b>https://toon-kids-raavi.netlify.app</b></li>
+              <li>Copy the <b>Client ID</b> (ends in .apps.googleusercontent.com) and paste it below</li>
+            </ol>
+          </details>
+          <div class="pp-row">
+            <input class="pp-input" id="gsClientId" type="text" placeholder="Paste OAuth Client ID…" autocomplete="off">
+            <button class="pp-btn" id="gsClientSave">Save</button>
+          </div>
+        </div>
+        <div id="gsZone" style="display:none">
+          <p class="pp-note" id="gsStatus" style="margin-top:0"></p>
+          <div class="pp-row">
+            <button class="pp-btn" id="gsSignIn">Sign in with Google</button>
+            <button class="pp-btn soft" id="gsPush">⬆ Save to account</button>
+            <button class="pp-btn soft" id="gsPull">⬇ Restore</button>
+          </div>
+          <div class="pp-row" style="margin-top:8px">
+            <button class="pp-btn soft" id="gsForget" style="font-size:12px">Disconnect</button>
+          </div>
+        </div>
+        <p class="pp-note">Device videos, watch history and each child's age stay on each device — only parent settings sync.</p>
       </div>
 
       <div class="pp-card">
@@ -903,7 +959,8 @@ function loadCfg() {
     watch: { date: todayStr(), secs: 0, bonus: 0 },
     eye: { warm: 0, dim: 0, autoEve: true, breakMin: 20 },
     bedtime: { on: false, start: 21, end: 7 },
-    fresh: { on: true, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] }
+    fresh: { on: true, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] },
+    gClientId: null, gEmail: null, gLastSync: 0
   };
   const m = {};
   Object.keys(D).forEach(k => {
@@ -1099,23 +1156,64 @@ for (let a = 2; a <= 10; a++) { const o = document.createElement("option"); o.va
 
 /* ---------------- home ---------------- */
 let curCat = "all";
+function makeCard(it, ctxItems) {
+  const card = document.createElement("button");
+  card.className = "card";
+  const th = thumbFor(it);
+  const rs = cfg.resume[itemKey(it)];
+  const resStrip = rs && rs.d ? '<i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i>' : "";
+  card.innerHTML =
+    '<div class="thumb">' + (it.kind === "local" ? "🎞️" : "🎬") +
+      (th ? '<img loading="lazy" src="' + th + '" alt="" onerror="this.remove()">' : "") +
+      (seenCount(it) === 0 ? '<div class="newb">✨ New</div>' : "") +
+      resStrip +
+      '<div class="pl">▶</div></div>' +
+    '<div class="t">' + escapeHtml(it.title) + "</div>" +
+    '<div class="c">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · ⚡ Short" : "") + "</div>";
+  card.addEventListener("click", () => {
+    if (it.fmt === "short") {
+      const shorts = ctxItems.filter(x => x.fmt === "short");
+      openShorts(shorts, shorts.indexOf(it));
+    } else {
+      const vids = ctxItems.filter(x => x.fmt !== "short");
+      openPlayer(vids, vids.indexOf(it));
+    }
+  });
+  return card;
+}
+
+function makeShelf(title, items, kind) {
+  const sec = document.createElement("section");
+  sec.className = "shelf";
+  const h = document.createElement("h3");
+  h.textContent = title;
+  sec.appendChild(h);
+  const row = document.createElement("div");
+  row.className = "shelf-row";
+  if (kind === "shorts") {
+    const full = freshSort(shortItems(), true).slice(0, 60);
+    items.forEach(it => {
+      const b = document.createElement("button");
+      b.className = "sshort";
+      b.setAttribute("aria-label", it.title);
+      b.innerHTML =
+        '<div class="sthumb"><img loading="lazy" src="https://i.ytimg.com/vi/' + it.id + '/oardefault.jpg" alt="" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg\'"></div>' +
+        '<div class="t">' + escapeHtml(it.title) + "</div>";
+      b.addEventListener("click", () => {
+        const idx = full.findIndex(x => x.id === it.id);
+        openShorts(full, idx >= 0 ? idx : 0);
+      });
+      row.appendChild(b);
+    });
+  } else {
+    items.forEach(it => row.appendChild(makeCard(it, items)));
+  }
+  sec.appendChild(row);
+  return sec;
+}
+
 function renderHome() {
   document.getElementById("agePill").textContent = "Age " + cfg.age;
-  const chipsEl = document.getElementById("chips");
-  chipsEl.innerHTML = "";
-  const avail = ["all"];
-  if (gridItems("fav").length) avail.push("fav");
-  ["cartoon","song","learn","classic"].forEach(c => { if (gridItems(c).length) avail.push(c); });
-  if (gridItems("my").length) avail.push("my");
-  if (!avail.includes(curCat) && curCat !== "fav") curCat = "all"; // fav is always a valid tab
-  avail.forEach(c => {
-    const b = document.createElement("button");
-    b.className = "chip-btn" + (curCat === c ? " sel" : "");
-    b.textContent = c === "all" ? "⭐ All" : CAT_LABELS[c];
-    b.addEventListener("click", () => { curCat = c; renderHome(); });
-    chipsEl.appendChild(b);
-  });
-
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
   const warn = document.createElement("div");
@@ -1124,43 +1222,43 @@ function renderHome() {
   if (isFileProto) warn.style.display = "block";
   grid.appendChild(warn);
 
-  const cards = document.createElement("div");
-  cards.className = "cards";
-  const items = freshSort(gridItems(curCat), true);
-  if (!items.length) {
+  if (curCat === "fav") {
+    // Favorites tab: simple grid of everything hearted
+    const items = freshSort(gridItems("fav"), true);
+    if (!items.length) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.innerHTML = '<div style="font-size:56px;margin-bottom:8px">🤍</div>No favorites yet!<br>Tap the heart on cartoons you love.';
+      grid.appendChild(e);
+    } else {
+      const cards = document.createElement("div");
+      cards.className = "cards";
+      items.forEach(it => cards.appendChild(makeCard(it, items)));
+      grid.appendChild(cards);
+    }
+    updateNav();
+    return;
+  }
+
+  // Home tab: YouTube-Kids-style shelves
+  const all = freshSort(gridItems("all"), true);
+  const resumeItems = all.filter(it => cfg.resume[itemKey(it)]);
+  if (resumeItems.length) grid.appendChild(makeShelf("▶ Continue watching", resumeItems, "video"));
+  const newItems = all.filter(it => seenCount(it) === 0).slice(0, 12);
+  if (newItems.length) grid.appendChild(makeShelf("✨ New for you", newItems, "video"));
+  const shortsShelf = freshSort(shortItems(), true).slice(0, 12);
+  if (shortsShelf.length) grid.appendChild(makeShelf("⚡ Shorts", shortsShelf, "shorts"));
+  [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["classic", "🍿 Classics"], ["my", "📁 My Videos"]].forEach(([c, label]) => {
+    const its = freshSort(gridItems(c), true);
+    if (its.length) grid.appendChild(makeShelf(label, its, "video"));
+  });
+  if (!grid.querySelector(".shelf")) {
     const e = document.createElement("div");
     e.className = "empty";
-    e.innerHTML = curCat === "fav"
-      ? '<div style="font-size:56px;margin-bottom:8px">🤍</div>No favorites yet!<br>Tap the heart on cartoons you love.'
-      : "Nothing here yet!";
+    e.textContent = "Nothing here yet!";
     grid.appendChild(e);
   }
-  items.forEach((it) => {
-    const card = document.createElement("button");
-    card.className = "card";
-    const th = thumbFor(it);
-    const rs = cfg.resume[itemKey(it)];
-    const resStrip = rs && rs.d ? '<i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i>' : "";
-    card.innerHTML =
-      '<div class="thumb">' + (it.kind === "local" ? "🎞️" : "🎬") +
-        (th ? '<img loading="lazy" src="' + th + '" alt="" onerror="this.remove()">' : "") +
-        (seenCount(it) === 0 ? '<div class="newb">✨ New</div>' : "") +
-        resStrip +
-        '<div class="pl">▶</div></div>' +
-      '<div class="t">' + escapeHtml(it.title) + "</div>" +
-      '<div class="c">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · ⚡ Short" : "") + "</div>";
-    card.addEventListener("click", () => {
-      if (it.fmt === "short") {
-        const shorts = items.filter(x => x.fmt === "short");
-        openShorts(shorts, shorts.indexOf(it));
-      } else {
-        const vids = items.filter(x => x.fmt !== "short");
-        openPlayer(vids, vids.indexOf(it));
-      }
-    });
-    cards.appendChild(card);
-  });
-  grid.appendChild(cards);
+  updateNav();
 }
 
 document.getElementById("agePill").addEventListener("click", () => openGate(() => showView("age")));
@@ -1909,6 +2007,7 @@ function renderPanel() {
   renderBundles();
   renderKeyZone();
   renderFreshZone();
+  renderGsZone();
   renderCustomList();
 }
 
@@ -2380,6 +2479,181 @@ checkForUpdate(true);
 setInterval(() => checkForUpdate(false), 30 * 60 * 1000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") checkForUpdate(false);
+});
+
+/* ---------------- Google account sync (user's own Drive appDataFolder) ---------------- */
+let gsToken = null, gsTokenExp = 0;
+function gsLoadLib() {
+  return new Promise((res, rej) => {
+    if (window.google && window.google.accounts) return res();
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.onload = () => res();
+    s.onerror = () => rej(new Error("Couldn't load Google sign-in — check the internet"));
+    document.head.appendChild(s);
+  });
+}
+async function gsGetToken() {
+  if (gsToken && Date.now() < gsTokenExp - 60000) return gsToken;
+  await gsLoadLib();
+  return new Promise((res, rej) => {
+    try {
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: cfg.gClientId,
+        scope: "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email",
+        callback: (t) => {
+          if (t && t.access_token) {
+            gsToken = t.access_token;
+            gsTokenExp = Date.now() + ((t.expires_in || 3600) * 1000);
+            res(gsToken);
+          } else rej(new Error("Sign-in was cancelled"));
+        },
+        error_callback: () => rej(new Error("Sign-in was cancelled"))
+      });
+      client.requestAccessToken({ prompt: "" });
+    } catch (e) { rej(new Error("Sign-in failed — check the Client ID")); }
+  });
+}
+/* only PARENT settings sync; per-device things (age, history, local files) stay local */
+function gsSyncPayload() {
+  return {
+    v: 1, ts: Date.now(),
+    apiKey: cfg.apiKey || null,
+    pin: cfg.pin,
+    timeLimitMin: cfg.timeLimitMin,
+    bedtime: cfg.bedtime,
+    eye: cfg.eye,
+    freshOn: cfg.fresh.on,
+    kws: cfg.fresh.kws,
+    blocked: cfg.fresh.blocked,
+    custom: cfg.custom.filter(it => it.kind === "yt")
+  };
+}
+function gsApplyPayload(p) {
+  if (!p || typeof p !== "object") return false;
+  if (p.apiKey) cfg.apiKey = p.apiKey;
+  if (p.pin !== undefined) cfg.pin = p.pin;
+  if (typeof p.timeLimitMin === "number") cfg.timeLimitMin = p.timeLimitMin;
+  if (p.bedtime && typeof p.bedtime === "object") Object.assign(cfg.bedtime, p.bedtime);
+  if (p.eye && typeof p.eye === "object") Object.assign(cfg.eye, p.eye);
+  if (typeof p.freshOn === "boolean") cfg.fresh.on = p.freshOn;
+  if (Array.isArray(p.kws)) cfg.fresh.kws = p.kws.filter(k => k && k.q && Array.isArray(k.tiers));
+  if (Array.isArray(p.blocked)) cfg.fresh.blocked = p.blocked.filter(okId).slice(-500);
+  if (Array.isArray(p.custom)) {
+    p.custom.filter(it => it && it.kind === "yt" && okId(it.id) && Array.isArray(it.tiers)).forEach(it => {
+      addCustomYt(it.id, it.title || "Video", it.ch || "Synced", it.fmt === "short" ? "short" : "video", it.tiers);
+    });
+  }
+  saveCfg();
+  applyEye();
+  checkBedtime();
+  return true;
+}
+async function gsFindFile(token) {
+  const r = await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)&q=" + encodeURIComponent("name='toonkids.json'"), { headers: { Authorization: "Bearer " + token } });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || "Google Drive error");
+  return (j.files && j.files[0] && j.files[0].id) || null;
+}
+async function gsPushSettings() {
+  const token = await gsGetToken();
+  const id = await gsFindFile(token);
+  const body = JSON.stringify(gsSyncPayload());
+  let r;
+  if (id) {
+    r = await fetch("https://www.googleapis.com/upload/drive/v3/files/" + id + "?uploadType=media", { method: "PATCH", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body });
+  } else {
+    const boundary = "tk" + Date.now();
+    const mp = "--" + boundary + "\r\nContent-Type: application/json\r\n\r\n" + JSON.stringify({ name: "toonkids.json", parents: ["appDataFolder"] }) + "\r\n--" + boundary + "\r\nContent-Type: application/json\r\n\r\n" + body + "\r\n--" + boundary + "--";
+    r = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "multipart/related; boundary=" + boundary }, body: mp });
+  }
+  if (!r.ok) throw new Error("Saving to Google Drive failed");
+  cfg.gLastSync = Date.now();
+  saveCfg();
+}
+async function gsPullSettings() {
+  const token = await gsGetToken();
+  const id = await gsFindFile(token);
+  if (!id) throw new Error("No saved settings in this Google account yet — use Save first");
+  const r = await fetch("https://www.googleapis.com/drive/v3/files/" + id + "?alt=media", { headers: { Authorization: "Bearer " + token } });
+  if (!r.ok) throw new Error("Loading from Google Drive failed");
+  const ok = gsApplyPayload(await r.json());
+  if (ok) { cfg.gLastSync = Date.now(); saveCfg(); }
+  return ok;
+}
+async function gsWhoAmI(token) {
+  try {
+    const r = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: "Bearer " + token } });
+    const j = await r.json();
+    return j.email || null;
+  } catch (e) { return null; }
+}
+function renderGsZone() {
+  const has = !!cfg.gClientId;
+  document.getElementById("gsSetup").style.display = has ? "none" : "block";
+  document.getElementById("gsZone").style.display = has ? "block" : "none";
+  if (!has) return;
+  const st = document.getElementById("gsStatus");
+  if (cfg.gEmail) {
+    st.textContent = "Connected: " + cfg.gEmail +
+      (cfg.gLastSync ? " • last sync " + new Date(cfg.gLastSync).toLocaleString() : " • not synced yet");
+  } else {
+    st.textContent = "Client ID saved — sign in with your Google account to sync.";
+  }
+}
+function gsStatus(msg) { document.getElementById("gsStatus").textContent = msg; }
+document.getElementById("gsClientSave").addEventListener("click", () => {
+  const v = document.getElementById("gsClientId").value.trim();
+  if (!/\.apps\.googleusercontent\.com$/.test(v)) {
+    document.getElementById("gsClientId").value = "";
+    document.getElementById("gsClientId").placeholder = "That doesn't look like a Client ID";
+    return;
+  }
+  cfg.gClientId = v;
+  saveCfg();
+  document.getElementById("gsClientId").value = "";
+  renderGsZone();
+});
+document.getElementById("gsSignIn").addEventListener("click", async () => {
+  try {
+    gsStatus("Opening Google sign-in…");
+    const token = await gsGetToken();
+    cfg.gEmail = (await gsWhoAmI(token)) || cfg.gEmail || "your account";
+    saveCfg();
+    // fresh device with no local setup? restore automatically
+    if (!cfg.apiKey && !cfg.pin) {
+      try {
+        await gsPullSettings();
+        renderPanel();
+        gsStatus("✓ Signed in as " + cfg.gEmail + " — your settings were restored!");
+        return;
+      } catch (e) {}
+    }
+    renderGsZone();
+  } catch (e) { gsStatus("⚠️ " + e.message); }
+});
+document.getElementById("gsPush").addEventListener("click", async () => {
+  try {
+    gsStatus("Saving to your Google account…");
+    await gsPushSettings();
+    renderGsZone();
+    gsStatus("✓ Settings saved to " + (cfg.gEmail || "your Google account"));
+  } catch (e) { gsStatus("⚠️ " + e.message); }
+});
+document.getElementById("gsPull").addEventListener("click", async () => {
+  try {
+    gsStatus("Restoring from your Google account…");
+    await gsPullSettings();
+    renderPanel();
+    gsStatus("✓ Settings restored!");
+  } catch (e) { gsStatus("⚠️ " + e.message); }
+});
+document.getElementById("gsForget").addEventListener("click", () => {
+  if (!confirm("Disconnect Google sync on this device? (Nothing is deleted from your Google account.)")) return;
+  cfg.gClientId = null; cfg.gEmail = null; cfg.gLastSync = 0;
+  gsToken = null; gsTokenExp = 0;
+  saveCfg();
+  renderGsZone();
 });
 
 /* ---------------- cross-tab settings sync ----------------
