@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Toon Kids 🎈</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -24,8 +24,6 @@
     user-select: none; -webkit-user-select: none;
     touch-action: manipulation;
   }
-  .float-emoji { position: fixed; font-size: 42px; opacity: .5; z-index: 0; animation: floaty 7s ease-in-out infinite; pointer-events: none; }
-  @keyframes floaty { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-26px) rotate(6deg); } }
   .stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
 
   .app { position: relative; width: 100vw; height: 100vh; height: 100dvh; background: #f4f1fb; overflow: hidden; }
@@ -95,8 +93,8 @@
                  font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
   .card .t { font-size: 13px; font-weight: 800; color: #26203d; padding: 8px 10px 2px; line-height: 1.25;
              display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .card .c { font-size: 11px; font-weight: 700; color: #8a82a6; padding: 0 10px 10px; }
-  .empty { text-align: center; color: #8a82a6; font-weight: 700; padding: 40px 20px; }
+  .card .c { font-size: 11px; font-weight: 700; color: #6b6486; padding: 0 10px 10px; }
+  .empty { text-align: center; color: #6b6486; font-weight: 700; padding: 40px 20px; }
 
   #fileWarn {
     display: none; margin: 0 0 12px; font-size: 12.5px; font-weight: 700; color: #7a4f01;
@@ -258,7 +256,7 @@
                            display: flex; align-items: center; justify-content: center; font-size: 20px; }
   .pitem .nm { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pitem button { border: none; cursor: pointer; background: #fdecea; color: #c62828; width: 32px; height: 32px; border-radius: 10px; font-size: 14px; flex: none; }
-  .pp-note { font-size: 12px; color: #8a82a6; margin: 8px 0 0; font-weight: 600; }
+  .pp-note { font-size: 12px; color: #6b6486; margin: 8px 0 0; font-weight: 600; }
   .tierChecks { display: flex; gap: 8px; margin-top: 8px; }
   .tierChecks label { font-size: 12px; font-weight: 800; color: #4f4370; background: #efecf9; border-radius: 10px;
                       padding: 8px 10px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
@@ -319,13 +317,6 @@
 </head>
 <body>
 
-<div class="float-emoji" style="top:8%; left:6%;">🎈</div>
-<div class="float-emoji" style="top:16%; right:8%; animation-delay:1s;">⭐</div>
-<div class="float-emoji" style="bottom:14%; left:10%; animation-delay:2s;">🌈</div>
-<div class="float-emoji" style="bottom:10%; right:6%; animation-delay:.5s;">🎨</div>
-<div class="float-emoji" style="top:48%; left:3%; animation-delay:1.6s;">🦄</div>
-<div class="float-emoji" style="top:44%; right:3%; animation-delay:2.4s;">🚀</div>
-
 <div class="stage">
 <div class="app" id="app">
 
@@ -342,8 +333,8 @@
     <div class="hd">
       <span class="logo">🎈</span>
       <h1>Toon Kids</h1>
-      <button class="agePill" id="agePill">Age 4</button>
-      <button class="gearBtn" id="gearBtn">⚙️</button>
+      <button class="agePill" id="agePill" aria-label="Change child's age">Age 4</button>
+      <button class="gearBtn" id="gearBtn" aria-label="Parent settings">⚙️</button>
     </div>
     <div class="chips" id="chips"></div>
     <div class="grid" id="grid"></div>
@@ -353,7 +344,7 @@
   <div class="view" id="shortsView">
     <div id="shortsPlayerWrap"></div>
     <div class="feed" id="feed"></div>
-    <button class="backBtn" id="shortsBack">←</button>
+    <button class="backBtn" id="shortsBack" aria-label="Back to home">←</button>
     <div id="shortsOffline" style="display:none; position:absolute; inset:0; z-index:12; background:linear-gradient(160deg,#2b1c57,#0e0a1f); color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:28px;">
       <div style="font-size:72px">📡</div>
       <h2 style="margin:0;font-size:26px">No internet right now</h2>
@@ -366,10 +357,10 @@
   <!-- ============ FULL PLAYER ============ -->
   <div class="view" id="playerView">
     <div class="pv-top">
-      <button id="pvBack">←</button>
+      <button id="pvBack" aria-label="Back to home">←</button>
       <div class="t" id="pvTitle">Cartoon</div>
-      <button id="pvLike">🤍</button>
-      <button id="pvSound">🔊</button>
+      <button id="pvLike" aria-label="Like this video">🤍</button>
+      <button id="pvSound" aria-label="Sound on or off">🔊</button>
     </div>
     <div class="pv-body">
       <div class="pv-media" id="pvMedia"></div>
@@ -377,9 +368,9 @@
       <div class="spin" id="pvSpin" style="display:none"></div>
     </div>
     <div class="pv-controls">
-      <button class="pv-btn main" id="pvToggle">⏸</button>
+      <button class="pv-btn main" id="pvToggle" aria-label="Play or pause">⏸</button>
       <div class="bar"><i id="pvBar"></i></div>
-      <button class="pv-btn" id="pvNext">⏭</button>
+      <button class="pv-btn" id="pvNext" aria-label="Next video">⏭</button>
     </div>
   </div>
 
@@ -413,7 +404,7 @@
 
   <!-- ============ GATE ============ -->
   <div class="modal-wrap" id="gateWrap">
-    <div class="modal" id="gateModal">
+    <div class="modal" id="gateModal" role="dialog" aria-modal="true" aria-label="Parents only">
       <h3>👨‍👩‍👧 Parents only</h3>
       <p class="sub">Solve this to continue</p>
       <div class="gate-q" id="gateQ">7 × 4 = ?</div>
@@ -422,7 +413,7 @@
         <button class="mbtn ghost" id="gateCancel">Cancel</button>
         <button class="mbtn primary" id="gateOk">Unlock</button>
       </div>
-      <button id="gateForgotBtn" style="display:none;border:none;background:none;color:#8a82a6;font-family:inherit;font-weight:700;font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline">Forgot PIN?</button>
+      <button id="gateForgotBtn" style="display:none;border:none;background:none;color:#6b6486;font-family:inherit;font-weight:700;font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline">Forgot PIN?</button>
     </div>
   </div>
 
@@ -430,7 +421,7 @@
   <div id="parentPanel">
     <div class="pp-head">
       <h2>⚙️ Parent Zone</h2>
-      <button class="pp-close" id="ppClose">✕</button>
+      <button class="pp-close" id="ppClose" aria-label="Close parent zone">✕</button>
     </div>
     <div class="pp-body">
       <div class="pp-card">
@@ -539,6 +530,7 @@
               <li>Create a new project (any name)</li>
               <li>Search for "<b>YouTube Data API v3</b>" and press Enable</li>
               <li>Go to Credentials → Create credentials → <b>API key</b></li>
+              <li><b>Protect the key</b>: Edit key → Application restrictions → <b>Websites</b> → add this app's address; then API restrictions → <b>YouTube Data API v3</b> only</li>
               <li>Copy the key and paste it here</li>
             </ol>
           </details>
@@ -1181,11 +1173,12 @@ let io = null;
 let sp = null, spReady = false, spVideoId = null;
 
 function openShorts(list, startIdx) {
-  const src = list && list.length ? list : freshSort(shortItems(), false);
+  // 60 per visit is plenty — the freshness shuffle picks a different set next time
+  const src = list && list.length ? list : freshSort(shortItems(), false).slice(0, 60);
   entries = src.map(it => ({ ...it, dead: false }));
   deadStreak = 0;
   document.getElementById("shortsOffline").style.display = "none";
-  buildFeed();
+  buildFeed((startIdx || 0) + 3);
   const wasShorts = curView === "shorts";
   showView("shorts");
   if (!wasShorts) pushNav("shorts");
@@ -1200,40 +1193,52 @@ window.addEventListener("online", () => {
 });
 document.getElementById("shortsBack").addEventListener("click", goBack);
 
-function buildFeed() {
+function makeReel(i) {
+  const e = entries[i];
+  const sec = document.createElement("section");
+  sec.className = "reel";
+  sec.dataset.i = i;
+  const liked = !!cfg.liked[itemKey(e)];
+  sec.innerHTML =
+    (e.kind === "yt"
+      ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + e.id + '/hqdefault.jpg\'">'
+      : "") +
+    '<div class="spin"></div>' +
+    '<div class="oops"><div class="big">🙈</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
+    '<div class="tapzone"></div>' +
+    '<div class="rail">' +
+      '<button class="rbtn btn-sound" aria-label="Sound on or off">' + (cfg.soundOn ? "🔊" : "🔇") + "</button>" +
+      '<button class="rbtn btn-like" aria-label="Like">' + (liked ? "❤️" : "🤍") + "</button>" +
+    "</div>" +
+    '<div class="meta"><span class="chip">' + escapeHtml(e.title || "Cartoon") + "</span></div>" +
+    '<div class="progress"><i></i></div>' +
+    '<div class="flash">⏸️</div>';
+  feed.appendChild(sec);
+  reelEls.push(sec);
+  sec.querySelector(".tapzone").addEventListener("click", () => onTap(i));
+  sec.querySelector(".btn-sound").addEventListener("click", (ev) => { ev.stopPropagation(); toggleSound(); });
+  sec.querySelector(".btn-like").addEventListener("click", (ev) => { ev.stopPropagation(); toggleLike(i); });
+  io.observe(sec);
+}
+let feedBuildToken = 0;
+function buildFeed(minSync) {
   teardownFeed();
   feed.innerHTML = "";
   reelEls = [];
   io = new IntersectionObserver((ents) => {
     ents.forEach(en => { if (en.isIntersecting && en.intersectionRatio >= 0.6) setActive(+en.target.dataset.i); });
   }, { root: feed, threshold: [0.6] });
-
-  entries.forEach((e, i) => {
-    const sec = document.createElement("section");
-    sec.className = "reel";
-    sec.dataset.i = i;
-    const liked = !!cfg.liked[itemKey(e)];
-    sec.innerHTML =
-      (e.kind === "yt"
-        ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + e.id + '/hqdefault.jpg\'">'
-        : "") +
-      '<div class="spin"></div>' +
-      '<div class="oops"><div class="big">🙈</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
-      '<div class="tapzone"></div>' +
-      '<div class="rail">' +
-        '<button class="rbtn btn-sound">' + (cfg.soundOn ? "🔊" : "🔇") + "</button>" +
-        '<button class="rbtn btn-like">' + (liked ? "❤️" : "🤍") + "</button>" +
-      "</div>" +
-      '<div class="meta"><span class="chip">' + escapeHtml(e.title || "Cartoon") + "</span></div>" +
-      '<div class="progress"><i></i></div>' +
-      '<div class="flash">⏸️</div>';
-    feed.appendChild(sec);
-    reelEls.push(sec);
-    sec.querySelector(".tapzone").addEventListener("click", () => onTap(i));
-    sec.querySelector(".btn-sound").addEventListener("click", (ev) => { ev.stopPropagation(); toggleSound(); });
-    sec.querySelector(".btn-like").addEventListener("click", (ev) => { ev.stopPropagation(); toggleLike(i); });
-    io.observe(sec);
-  });
+  // build the first screens synchronously, the rest in idle chunks so tapping
+  // Shorts never blocks the main thread on a long feed
+  const token = ++feedBuildToken;
+  let idx = 0;
+  const buildSome = (n) => {
+    if (token !== feedBuildToken) return; // feed was rebuilt meanwhile
+    const end = Math.min(entries.length, idx + n);
+    for (; idx < end; idx++) makeReel(idx);
+    if (idx < entries.length) setTimeout(() => buildSome(24), 0);
+  };
+  buildSome(Math.max(8, minSync || 0));
   active = null;
   feed.scrollTop = 0;
 }
@@ -1619,7 +1624,7 @@ setInterval(() => {
     if (cw && cw.fmt !== "short" && d > 60 && t > 10) {
       const rk = itemKey(cw);
       if (t > d - 30) { if (cfg.resume[rk]) { delete cfg.resume[rk]; saveCfg(); } }
-      else if (!cfg.resume[rk] || Math.abs(cfg.resume[rk].t - t) > 5) { cfg.resume[rk] = { t: Math.floor(t), d: Math.floor(d) }; saveCfg(); }
+      else if (!cfg.resume[rk] || Math.abs(cfg.resume[rk].t - t) > 10) { cfg.resume[rk] = { t: Math.floor(t), d: Math.floor(d) }; saveCfg(); }
     }
   }
 }, 400);
@@ -1834,8 +1839,9 @@ function parseYouTubeId(str) {
     const m = u.pathname.match(/\/(shorts|embed|live)\/([A-Za-z0-9_-]{11})/);
     if (m) return m[2];
   } catch (e) {}
-  const m = str.match(/[A-Za-z0-9_-]{11}/);
-  return m ? m[0] : null;
+  // deliberately NO loose substring fallback: random pasted text must never
+  // silently become a video in a child's catalog
+  return null;
 }
 function isShortsUrl(str) { return /\/shorts\//.test(str || ""); }
 
@@ -1868,7 +1874,7 @@ function renderCustomList() {
     row.className = "pitem";
     row.innerHTML =
       (r.kind === "yt" ? '<img src="https://i.ytimg.com/vi/' + r.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' : '<div class="ph">🎞️</div>') +
-      '<div class="nm">' + escapeHtml(r.title || "Video") + " <span style='color:#8a82a6'>(" + (r.tiers || []).map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
+      '<div class="nm">' + escapeHtml(r.title || "Video") + " <span style='color:#6b6486'>(" + (r.tiers || []).map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
       '<button class="del" title="Remove">✕</button>';
     row.querySelector(".del").addEventListener("click", () => {
       const rm = cfg.custom.splice(idx, 1)[0];
@@ -1921,6 +1927,7 @@ function pickedTiers() {
 
 /* Add a yt item to the parent's list; merges age tiers if it already exists. */
 function addCustomYt(id, title, ch, fmt, tiers) {
+  if (!okId(id)) return false;
   const existing = cfg.custom.find(c => c.kind === "yt" && c.id === id);
   if (existing) {
     tiers.forEach(t => { if (!existing.tiers.includes(t)) existing.tiers.push(t); });
@@ -2026,7 +2033,7 @@ async function doSearch() {
       row.className = "pitem";
       row.innerHTML =
         '<img src="https://i.ytimg.com/vi/' + res.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
-        '<div class="nm">' + escapeHtml(res.title) + '<br><span style="color:#8a82a6">' + escapeHtml(res.ch) + (fmt === "short" ? " · Short" : "") + "</span></div>" +
+        '<div class="nm">' + escapeHtml(res.title) + '<br><span style="color:#6b6486">' + escapeHtml(res.ch) + (fmt === "short" ? " · Short" : "") + "</span></div>" +
         '<button class="addb" style="background:#e8f5e9;color:#2e7d32">➕</button>';
       row.querySelector(".addb").addEventListener("click", (ev) => {
         addCustomYt(res.id, res.title, res.ch, fmt, pickedTiers());
@@ -2158,7 +2165,7 @@ function renderFreshZone() {
     row.className = "pitem";
     row.innerHTML =
       '<div class="ph">🔎</div>' +
-      '<div class="nm">' + escapeHtml(kw.q) + ' <span style="color:#8a82a6">(' + kw.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
+      '<div class="nm">' + escapeHtml(kw.q) + ' <span style="color:#6b6486">(' + kw.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
       '<button class="del" title="Remove">✕</button>';
     row.querySelector(".del").addEventListener("click", () => { cfg.fresh.kws.splice(idx, 1); saveCfg(); renderFreshZone(); });
     list.appendChild(row);
@@ -2173,7 +2180,7 @@ function renderFreshZone() {
     row.className = "pitem";
     row.innerHTML =
       '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
-      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#8a82a6">' + escapeHtml(it.ch || "") + "</span></div>" +
+      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#6b6486">' + escapeHtml(it.ch || "") + "</span></div>" +
       '<button class="del" title="Remove forever">✕</button>';
     row.querySelector(".del").addEventListener("click", () => {
       blockFresh(it.id);
@@ -2215,21 +2222,33 @@ document.getElementById("ppFreshClear").addEventListener("click", () => {
 });
 document.getElementById("ppAdd").addEventListener("click", async () => {
   const input = document.getElementById("ppUrl");
+  const btn = document.getElementById("ppAdd");
   const id = parseYouTubeId(input.value);
   if (!id) { input.value = ""; input.placeholder = "Hmm, that's not a YouTube link"; return; }
   const fmt = (document.getElementById("tShort").checked || isShortsUrl(input.value)) ? "short" : "video";
-  addCustomYt(id, "New video", "Added by parent", fmt, pickedTiers());
-  input.value = "";
-  renderCustomList();
+  // verify the video actually exists BEFORE it can reach a child's catalog
+  btn.disabled = true; btn.textContent = "…";
+  let title = "New video", ch = "Added by parent", verdict = "unknown";
   try {
     const r = await fetch("https://noembed.com/embed?url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + id));
     const j = await r.json();
-    const item = cfg.custom.find(c => c.kind === "yt" && c.id === id);
-    if (item && j && j.title) { item.title = j.title; item.ch = j.author_name || item.ch; saveCfg(); renderCustomList(); }
-  } catch (e) {}
+    if (j && j.title) { verdict = "ok"; title = j.title; ch = j.author_name || ch; }
+    else verdict = "bad";
+  } catch (e) { verdict = "unknown"; } // lookup service unreachable: allow the add
+  btn.disabled = false; btn.textContent = "Add";
+  if (verdict === "bad") {
+    input.value = "";
+    input.placeholder = "Couldn't find that video — check the link";
+    return;
+  }
+  addCustomYt(id, title, ch, fmt, pickedTiers());
+  input.value = "";
+  renderCustomList();
 });
 document.getElementById("ppFileBtn").addEventListener("click", () => document.getElementById("ppFile").click());
 document.getElementById("ppFile").addEventListener("change", async (e) => {
+  // ask the browser to protect our storage from eviction once real files live here
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (err) {}
   for (const f of e.target.files) {
     const key = "v" + Date.now() + "-" + Math.floor(Math.random() * 1e6);
     try {
@@ -2258,7 +2277,22 @@ document.addEventListener("keydown", (e) => {
   const tag = (e.target && e.target.tagName) || "";
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
   if (locked()) { e.preventDefault(); return; }
-  if (curView !== "shorts" || panel.style.display === "flex" || gateWrap.style.display === "flex") return;
+  // Escape/Backspace + smart-TV back keys (461 = webOS, 10009 = Tizen) go back
+  const isBack = e.key === "Escape" || e.key === "Backspace" || e.keyCode === 461 || e.keyCode === 10009;
+  if (isBack) {
+    if (gateWrap.style.display === "flex") { e.preventDefault(); gateWrap.style.display = "none"; gateCb = null; return; }
+    if (panel.style.display === "flex") { e.preventDefault(); goBack(); return; }
+    if (curView === "shorts" || curView === "player") { e.preventDefault(); goBack(); }
+    return;
+  }
+  if (panel.style.display === "flex" || gateWrap.style.display === "flex") return;
+  if (curView === "player") {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); pvToggle(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); pvNext(); }
+    else if (e.key === "m" || e.key === "M") toggleSound();
+    return;
+  }
+  if (curView !== "shorts") return;
   if (e.key === "ArrowDown") { e.preventDefault(); nextReel(); }
   if (e.key === "ArrowUp") { e.preventDefault(); if (active > 0) feed.scrollTo({ top: (active - 1) * feed.clientHeight, behavior: "smooth" }); }
   if (e.key === " ") { e.preventDefault(); onTap(active); }
@@ -2319,6 +2353,8 @@ window.addEventListener("storage", (e) => {
     checkBedtime();
   } catch (err) {}
 });
+
+window.addEventListener("pagehide", () => { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} });
 
 /* ---------------- boot ---------------- */
 if (cfg.age === null) showView("age");
