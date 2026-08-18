@@ -28,7 +28,7 @@
   @keyframes floaty { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-26px) rotate(6deg); } }
   .stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
 
-  .app { position: relative; width: 100vw; height: 100dvh; background: #f4f1fb; overflow: hidden; }
+  .app { position: relative; width: 100vw; height: 100vh; height: 100dvh; background: #f4f1fb; overflow: hidden; }
 
   /* ---- device-adaptive sizing: phone → tablet → laptop → TV ---- */
   :root { --cardmin: 164px; }
@@ -126,14 +126,15 @@
      turns transparent to reveal it — video swaps are instant, no reboots. */
   #shortsPlayerWrap {
     position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: min(100%, calc(100dvh * 0.5625)); z-index: 1; background: #000; overflow: hidden;
+    width: min(100%, calc(100vh * 0.5625)); width: min(100%, calc(100dvh * 0.5625));
+    z-index: 1; background: #000; overflow: hidden;
   }
   #shortsPlayerWrap iframe {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
     height: 100%; width: auto; aspect-ratio: 9 / 16; min-width: 100%;
     border: 0; display: block; pointer-events: none; background: #000;
   }
-  .feed { position: relative; z-index: 2; height: 100%; width: min(100%, calc(100dvh * 0.5625)); overflow-y: scroll; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+  .feed { position: relative; z-index: 2; height: 100%; width: min(100%, calc(100vh * 0.5625)); width: min(100%, calc(100dvh * 0.5625)); overflow-y: scroll; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
   .feed::-webkit-scrollbar { display: none; }
   .reel { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; background: #000; overflow: hidden; }
   .reel.live { background: transparent; }
@@ -196,7 +197,7 @@
   .pv-top .t { color: #fff; font-weight: 800; font-size: 15px; flex: 1; min-width: 0;
                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pv-body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 0; }
-  .pv-media { position: relative; width: min(100%, calc((100dvh - 200px) * 1.7778)); aspect-ratio: 16/9; max-height: 100%; background: #000; }
+  .pv-media { position: relative; width: min(100%, calc((100vh - 200px) * 1.7778)); width: min(100%, calc((100dvh - 200px) * 1.7778)); aspect-ratio: 16/9; max-height: 100%; background: #000; }
   .pv-media iframe, .pv-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; background: #000; }
   .pv-tap { position: absolute; inset: 0; z-index: 5; }
   .pv-controls { flex: none; padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 14px; }
@@ -353,8 +354,14 @@
     <div id="shortsPlayerWrap"></div>
     <div class="feed" id="feed"></div>
     <button class="backBtn" id="shortsBack">←</button>
-    <div class="hint" id="soundHint">🔊 Tap the sound button to unmute</div>
+    <div id="shortsOffline" style="display:none; position:absolute; inset:0; z-index:12; background:linear-gradient(160deg,#2b1c57,#0e0a1f); color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:28px;">
+      <div style="font-size:72px">📡</div>
+      <h2 style="margin:0;font-size:26px">No internet right now</h2>
+      <p style="margin:0;opacity:.85;font-weight:600">Cartoons need the internet.<br>Your own videos and Classics still work!</p>
+      <button class="softbtn" id="shortsRetry">🔄 Try again</button>
+    </div>
   </div>
+  <div class="hint" id="soundHint">🔊 Tap the sound button to unmute</div>
 
   <!-- ============ FULL PLAYER ============ -->
   <div class="view" id="playerView">
@@ -858,21 +865,56 @@ const LS_KEY = "toonKids.v1";
 const isFileProto = location.protocol === "file:";
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
+function okId(id) { return /^[A-Za-z0-9_-]{11}$/.test(id || ""); }
+
+/* Settings loader hardened for the long haul:
+   - a corrupted store is BACKED UP (toonKids.v1.bak) before defaults ever
+     overwrite it, so PIN/API key/custom lists stay recoverable
+   - defaults deep-merge per nested field, so future deploys that add fields
+     never blank-screen devices holding an older config shape
+   - stored items are shape/ID-validated, and stale watch-history entries
+     are pruned so the config cannot grow forever */
 function loadCfg() {
-  let c = null;
-  try { c = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) {}
-  if (!c) c = { age: null, soundOn: true, timeLimitMin: 0, liked: {}, custom: [], watch: { date: todayStr(), secs: 0, bonus: 0 } };
-  if (!c.watch || c.watch.date !== todayStr()) c.watch = { date: todayStr(), secs: 0, bonus: 0 };
-  if (!c.liked) c.liked = {};
-  if (!c.custom) c.custom = [];
-  if (!c.eye) c.eye = { warm: 0, dim: 0, autoEve: true, breakMin: 20 };
-  if (!c.seen) c.seen = {};
-  if (c.pin === undefined) c.pin = null;
-  if (!c.resume) c.resume = {};
-  if (!c.bedtime) c.bedtime = { on: false, start: 21, end: 7 };
-  if (!c.fresh) c.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [] };
-  if (!c.fresh.blocked) c.fresh.blocked = [];
-  return c;
+  let raw = null, c = null;
+  try { raw = localStorage.getItem(LS_KEY); c = raw ? JSON.parse(raw) : null; } catch (e) {}
+  if (raw && (!c || typeof c !== "object")) {
+    try { localStorage.setItem(LS_KEY + ".bak", raw); } catch (e) {}
+  }
+  if (!c || typeof c !== "object") c = {};
+  const D = {
+    age: null, soundOn: true, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
+    liked: {}, custom: [], seen: {}, resume: {},
+    watch: { date: todayStr(), secs: 0, bonus: 0 },
+    eye: { warm: 0, dim: 0, autoEve: true, breakMin: 20 },
+    bedtime: { on: false, start: 21, end: 7 },
+    fresh: { on: true, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] }
+  };
+  const m = {};
+  Object.keys(D).forEach(k => {
+    const dv = D[k], cv = c[k];
+    if (dv && typeof dv === "object" && !Array.isArray(dv)) {
+      m[k] = Object.assign({}, dv, (cv && typeof cv === "object" && !Array.isArray(cv)) ? cv : {});
+    } else {
+      m[k] = cv !== undefined ? cv : dv;
+    }
+  });
+  if (c.apiKey) m.apiKey = c.apiKey;
+  ["items", "kws", "blocked"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
+  if (!Array.isArray(m.custom)) m.custom = [];
+  m.custom = m.custom.filter(it => it && Array.isArray(it.tiers) && (it.kind !== "yt" || okId(it.id)));
+  m.fresh.items = m.fresh.items.filter(it => it && Array.isArray(it.tiers) && okId(it.id));
+  m.fresh.blocked = m.fresh.blocked.filter(okId);
+  if (m.watch.date !== todayStr()) m.watch = { date: todayStr(), secs: 0, bonus: 0 };
+  // prune watch-history entries for content no longer in the app and >60 days old
+  const keep = new Set(CATALOG.concat(m.custom).concat(m.fresh.items).map(it => itemKey(it)));
+  const cutoff = Date.now() - 60 * 24 * 3600 * 1000;
+  [m.seen, m.resume].forEach(map => {
+    Object.keys(map).forEach(k => {
+      const entry = map[k];
+      if (!keep.has(k) && (!entry || !entry.t || entry.t < cutoff)) delete map[k];
+    });
+  });
+  return m;
 }
 
 /* Remember shorts the parent removed so auto-refresh never re-adds them. */
@@ -882,7 +924,20 @@ function blockFresh(id) {
   if (cfg.fresh.blocked.length > 500) cfg.fresh.blocked = cfg.fresh.blocked.slice(-500);
 }
 let cfg = loadCfg();
-function saveCfg() { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} }
+function saveCfg() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+  } catch (e) {
+    // storage full: shed the oldest watch-history and retry once so parental
+    // settings are never silently dropped
+    try {
+      const keys = Object.keys(cfg.seen);
+      keys.sort((a, b) => ((cfg.seen[a] && cfg.seen[a].t) || 0) - ((cfg.seen[b] && cfg.seen[b].t) || 0));
+      keys.slice(0, Math.ceil(keys.length / 2)).forEach(k => delete cfg.seen[k]);
+      localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    } catch (e2) {}
+  }
+}
 
 function ytFailMessage() {
   if (isFileProto) return "YouTube needs the app opened from a web link";
@@ -956,6 +1011,26 @@ function freshSort(items, dailyStable) {
 /* ---------------- views ---------------- */
 const views = { age: document.getElementById("ageView"), home: document.getElementById("homeView"),
                 shorts: document.getElementById("shortsView"), player: document.getElementById("playerView") };
+
+/* ---- history handling: the system back button/gesture must navigate the
+   app (shorts/player/panel → home) instead of exiting it ---- */
+let navDepth = 0;
+function pushNav(tag) { try { history.pushState({ tk: tag }, ""); navDepth++; } catch (e) {} }
+function goBack() {
+  if (navDepth > 0) { history.back(); return; }
+  if (typeof panel !== "undefined" && panel.style.display === "flex") { closeParentPanel(); return; }
+  if (curView !== "home" && curView !== "age") { showView("home"); renderHome(); }
+}
+window.addEventListener("popstate", () => {
+  navDepth = Math.max(0, navDepth - 1);
+  if (gateWrap.style.display === "flex") {
+    gateWrap.style.display = "none"; gateCb = null;
+    pushNav(curView); // keep the underlying view's history entry alive
+    return;
+  }
+  if (panel.style.display === "flex") { closeParentPanel(); return; }
+  if (curView === "shorts" || curView === "player") { showView("home"); renderHome(); }
+});
 let curView = null;
 function showView(name) {
   if (curView === "shorts" && name !== "shorts") teardownFeed();
@@ -1056,13 +1131,19 @@ document.getElementById("agePill").addEventListener("click", () => openGate(() =
 let apiReady = false, apiFailed = false;
 const apiWaiters = [];
 window.onYouTubeIframeAPIReady = function () { apiReady = true; apiWaiters.splice(0).forEach(f => f()); };
-(function loadYT() {
+function loadYT() {
   const s = document.createElement("script");
   s.src = "https://www.youtube.com/iframe_api";
   s.onerror = () => { apiFailed = true; };
   document.head.appendChild(s);
   setTimeout(() => { if (!apiReady) apiFailed = true; }, 8000);
-})();
+}
+loadYT();
+function retryYtApi() {
+  if (apiReady) { apiFailed = false; return; }
+  apiFailed = false;
+  loadYT();
+}
 function whenApi(fn) { if (apiReady) fn(); else apiWaiters.push(fn); }
 
 /* Prime YouTube's embed engine once at startup (tiny hidden player) so the
@@ -1102,13 +1183,22 @@ let sp = null, spReady = false, spVideoId = null;
 function openShorts(list, startIdx) {
   const src = list && list.length ? list : freshSort(shortItems(), false);
   entries = src.map(it => ({ ...it, dead: false }));
+  deadStreak = 0;
+  document.getElementById("shortsOffline").style.display = "none";
   buildFeed();
+  const wasShorts = curView === "shorts";
   showView("shorts");
+  if (!wasShorts) pushNav("shorts");
   const s = startIdx > 0 && startIdx < entries.length ? startIdx : 0;
   if (s > 0) feed.scrollTop = s * feed.clientHeight;
   if (entries.length) setActive(s, true);
 }
-document.getElementById("shortsBack").addEventListener("click", () => { showView("home"); renderHome(); });
+document.getElementById("shortsRetry").addEventListener("click", retryShorts);
+window.addEventListener("online", () => {
+  if (!apiReady) retryYtApi();
+  if (curView === "shorts" && document.getElementById("shortsOffline").style.display === "flex") retryShorts();
+});
+document.getElementById("shortsBack").addEventListener("click", goBack);
 
 function buildFeed() {
   teardownFeed();
@@ -1190,6 +1280,7 @@ function onSpState(ev) {
   if (ev.data === YT.PlayerState.ENDED) { if (!locked()) nextReel(); return; }
   if (ev.data === YT.PlayerState.PLAYING && locked()) { spPause(); return; }
   if (ev.data === YT.PlayerState.PLAYING && active !== null && reelEls[active]) {
+    deadStreak = 0;
     hideSpin(active);
     reelEls[active].classList.add("playing");
   }
@@ -1224,6 +1315,17 @@ function reelPlaying(i) {
   try { return i === active && sp && spReady && sp.getPlayerState() === YT.PlayerState.PLAYING; } catch (e) { return false; }
 }
 function hideSpin(i) { const s = reelEls[i] && reelEls[i].querySelector(".spin"); if (s) s.style.display = "none"; }
+let deadStreak = 0;
+function showShortsOffline() {
+  document.getElementById("shortsOffline").style.display = "flex";
+  spPause();
+}
+function retryShorts() {
+  document.getElementById("shortsOffline").style.display = "none";
+  deadStreak = 0;
+  if (!apiReady) retryYtApi();
+  openShorts(); // rebuild with dead flags cleared
+}
 function reelError(i, icon, msg) {
   const e = entries[i];
   if (!e || e.dead) return;
@@ -1233,7 +1335,13 @@ function reelError(i, icon, msg) {
   if (icon) oops.querySelector(".big").textContent = icon;
   if (msg) oops.querySelector(".oops-msg").textContent = msg;
   oops.style.display = "flex";
-  if (i === active) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 1400);
+  // circuit breaker: 3 consecutive failures = probably offline → one friendly
+  // screen with a retry, not an endless auto-scrolling error cascade
+  deadStreak++;
+  if (i === active) {
+    if (deadStreak >= 3) { if (curView === "shorts") showShortsOffline(); return; }
+    if (!locked()) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 1400);
+  }
 }
 function setActive(i, force) {
   if ((i === active && !force) || !entries[i]) return;
@@ -1245,7 +1353,12 @@ function setActive(i, force) {
   });
   const spn = reelEls[i].querySelector(".spin");
   if (spn && !entries[i].dead) spn.style.display = "";
-  if (entries[i].dead) { if (!paused) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900); return; }
+  if (entries[i].dead) {
+    deadStreak++;
+    if (deadStreak >= 3) { if (curView === "shorts") showShortsOffline(); return; }
+    if (!paused) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900);
+    return;
+  }
   if (!sp) { if (!paused) createShortsPlayer(entries[i].id); }
   else if (spReady) {
     spVideoId = entries[i].id;
@@ -1299,7 +1412,9 @@ const pvMedia = document.getElementById("pvMedia");
 
 function openPlayer(list, idx) {
   pvList = list; pvIdx = idx;
+  const wasPlayer = curView === "player";
   showView("player");
+  if (!wasPlayer) pushNav("player");
   loadPvItem();
 }
 function loadPvItem() {
@@ -1352,10 +1467,21 @@ function loadPvItem() {
             rec.p.playVideo();
             const rsy = cfg.resume[itemKey(it)];
             if (rsy && rsy.t > 10) { try { rec.p.seekTo(rsy.t, true); } catch (e) {} }
+            // iOS may refuse unmuted autoplay: fall back to muted playback
+            // (any tap auto-unmutes) instead of a frozen thumbnail
+            setTimeout(() => {
+              if (pv !== rec || pvPaused || curView !== "player" || locked()) return;
+              let st = -99;
+              try { st = rec.p.getPlayerState(); } catch (e) {}
+              if (st === -1) { try { rec.p.mute(); rec.p.playVideo(); showSoundHint(); } catch (e) {} }
+            }, 3500);
           },
           onStateChange: (ev) => {
             if (ev.data === YT.PlayerState.ENDED) { const cur = pvList[pvIdx]; if (cur) { delete cfg.resume[itemKey(cur)]; saveCfg(); } pvNext(); }
             if (ev.data === YT.PlayerState.PLAYING) {
+              if (locked()) { try { pv.p.pauseVideo(); } catch (e) {} return; }
+              pvPaused = false; // keep the ⏸/▶ button truthful
+              document.getElementById("pvToggle").textContent = "⏸";
               document.getElementById("pvSpin").style.display = "none";
               const pp = pvMedia.querySelector(".pvpre");
               if (pp) pp.remove();
@@ -1382,7 +1508,9 @@ function loadPvItem() {
       if (pp) pp.remove();
     };
     v.onended = () => { delete cfg.resume[itemKey(it)]; saveCfg(); pvNext(); };
-    v.onerror = () => pvFail();
+    v.onerror = () => pvFail(it.kind === "local"
+      ? "This video is no longer on this device — add it again from the Parent Zone"
+      : (navigator.onLine ? "This classic isn't loading right now — try again in a bit" : "Internet needed for this video"));
     v.onloadedmetadata = () => {
       const rsv = cfg.resume[itemKey(it)];
       if (rsv && rsv.t > 10 && v.duration > rsv.t + 30) v.currentTime = rsv.t;
@@ -1391,21 +1519,32 @@ function loadPvItem() {
       const pr = v.play();
       if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play().catch(() => {}); });
     };
+    const localGone = "This video is no longer on this device — add it again from the Parent Zone";
     if (it.kind === "mp4") { v.src = it.url; start(); }
-    else idbGet(it.localKey).then(b => { if (b) { v.src = URL.createObjectURL(b); start(); } else pvFail(); }).catch(() => pvFail());
+    else idbGet(it.localKey).then(b => {
+      if (b) { pv.blobUrl = URL.createObjectURL(b); v.src = pv.blobUrl; start(); }
+      else pvFail(localGone);
+    }).catch(() => pvFail(localGone));
   }
 }
-function pvFail() {
+function pvFail(msg) {
+  // release the failed player before wiping its DOM — otherwise its message
+  // listeners leak for the whole session
+  if (pv && pv.kind === "yt") { try { pv.p && pv.p.destroy(); } catch (e) {} }
+  if (pv && pv.kind === "vid" && pv.blobUrl) { try { URL.revokeObjectURL(pv.blobUrl); } catch (e) {} }
   document.getElementById("pvSpin").style.display = "none";
   pvMedia.innerHTML =
     '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;padding:20px;background:linear-gradient(160deg,#2b1c57,#0e0a1f)">' +
-    '<div style="font-size:56px">🙈</div><p style="margin:0;font-weight:700">' + escapeHtml(ytFailMessage()) + "</p></div>";
+    '<div style="font-size:56px">🙈</div><p style="margin:0;font-weight:700">' + escapeHtml(msg || ytFailMessage()) + "</p></div>";
   pv = null;
 }
 function teardownPlayer(keepView) {
   if (pv) {
     if (pv.kind === "yt") { try { pv.p && pv.p.destroy(); } catch (e) {} }
-    else { try { pv.v.pause(); pv.v.removeAttribute("src"); pv.v.load(); } catch (e) {} }
+    else {
+      try { pv.v.pause(); pv.v.removeAttribute("src"); pv.v.load(); } catch (e) {}
+      if (pv.blobUrl) { try { URL.revokeObjectURL(pv.blobUrl); } catch (e) {} }
+    }
   }
   pv = null;
   pvMedia.innerHTML = "";
@@ -1424,7 +1563,7 @@ function pvToggle() {
   else pvPaused ? pv.v.pause() : pv.v.play().catch(() => {});
 }
 function pvNext() { pvIdx = (pvIdx + 1) % pvList.length; loadPvItem(); }
-document.getElementById("pvBack").addEventListener("click", () => { showView("home"); renderHome(); });
+document.getElementById("pvBack").addEventListener("click", goBack);
 document.getElementById("pvToggle").addEventListener("click", pvToggle);
 document.getElementById("pvTap").addEventListener("click", pvToggle);
 document.getElementById("pvNext").addEventListener("click", pvNext);
@@ -1456,7 +1595,8 @@ function toggleSound() {
 function attemptAutoUnmute() {
   if (!cfg.soundOn) return;
   try { if (sp && spReady && sp.isMuted()) { sp.unMute(); sp.setVolume(100); soundHint.style.display = "none"; } } catch (e) {}
-  try { if (pv && pv.kind === "yt" && pv.ready && pv.p.isMuted()) { pv.p.unMute(); pv.p.setVolume(100); } } catch (e) {}
+  try { if (pv && pv.kind === "yt" && pv.ready && pv.p.isMuted()) { pv.p.unMute(); pv.p.setVolume(100); soundHint.style.display = "none"; } } catch (e) {}
+  try { if (pv && pv.kind === "vid" && pv.v && pv.v.muted) { pv.v.muted = false; soundHint.style.display = "none"; } } catch (e) {}
 }
 document.addEventListener("pointerdown", attemptAutoUnmute, true);
 document.addEventListener("touchstart", attemptAutoUnmute, true);
@@ -1678,8 +1818,10 @@ document.getElementById("gearBtn").addEventListener("click", () => openGate(() =
   searchMsg("");
   renderPanel();
   panel.style.display = "flex";
+  pushNav("panel");
 }));
-document.getElementById("ppClose").addEventListener("click", () => { panel.style.display = "none"; renderHome(); });
+function closeParentPanel() { panel.style.display = "none"; renderHome(); }
+document.getElementById("ppClose").addEventListener("click", goBack);
 
 function parseYouTubeId(str) {
   str = (str || "").trim();
@@ -1902,15 +2044,27 @@ document.getElementById("ppSearchBtn").addEventListener("click", doSearch);
 document.getElementById("ppQ").addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
 
 /* ---------------- automatic fresh shorts ---------------- */
+function apiErrorReason(j) {
+  if (!j || !j.error) return null;
+  const r = ((j.error.errors && j.error.errors[0] && j.error.errors[0].reason) || "") + " " + (j.error.message || "");
+  if (/quota/i.test(r)) return "quota";
+  if (/keyInvalid|API_KEY_INVALID|badRequest|forbidden|PERMISSION_DENIED/i.test(r)) return "key";
+  return "other";
+}
 async function fetchPlaylistIds(plid, key) {
   try {
     const r = await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=" + plid + "&key=" + key);
     const j = await r.json();
-    if (j.error) return [];
+    const err = apiErrorReason(j);
+    if (err === "quota" || err === "key") throw { fatal: err };
+    if (err) return []; // e.g. playlistNotFound for channels without a shorts playlist
     return (j.items || [])
       .map(i => ({ id: i.snippet && i.snippet.resourceId && i.snippet.resourceId.videoId, title: decodeEntities((i.snippet && i.snippet.title) || "") }))
-      .filter(x => x.id && x.title && x.title !== "Private video" && x.title !== "Deleted video");
-  } catch (e) { return []; }
+      .filter(x => okId(x.id) && x.title && x.title !== "Private video" && x.title !== "Deleted video");
+  } catch (e) {
+    if (e && e.fatal) throw e;
+    return [];
+  }
 }
 
 let freshRunning = false;
@@ -1920,49 +2074,64 @@ async function autoRefreshFresh(force) {
   if (!force && Date.now() - f.lastRun < 22 * 3600 * 1000) return 0;
   freshRunning = true;
   try {
-    f.lastRun = Date.now();
-    saveCfg();
     const key = encodeURIComponent(cfg.apiKey);
     const known = new Set(allItems().filter(i => i.kind === "yt").map(i => i.id));
     (cfg.fresh.blocked || []).forEach(id => known.add(id)); // parent-removed: never re-add
     const candidates = {};
-    // rotate through 8 trusted channels per run; "UUSH…" is a channel's
-    // shorts-only uploads playlist (fall back to all uploads "UU…")
-    const off = f.rot || 0;
-    for (let n = 0; n < 8; n++) {
-      const src = CHANNEL_SOURCES[(off + n) % CHANNEL_SOURCES.length];
-      let got = await fetchPlaylistIds("UUSH" + src.cid.slice(2), key);
-      if (!got.length) got = await fetchPlaylistIds("UU" + src.cid.slice(2), key);
-      got.forEach(x => { if (!known.has(x.id) && !candidates[x.id]) candidates[x.id] = { title: x.title, ch: src.ch, cat: src.cat, tiers: src.tiers }; });
-    }
-    f.rot = (off + 8) % CHANNEL_SOURCES.length;
-    // parent keywords: strict Safe Search, tagged to the keyword's age groups
-    for (const kw of f.kws) {
-      try {
+    const freshItems = [];
+    try {
+      // rotate through 8 trusted channels per run; "UUSH…" is a channel's
+      // shorts-only uploads playlist (fall back to all uploads "UU…")
+      const off = f.rot || 0;
+      for (let n = 0; n < 8; n++) {
+        const src = CHANNEL_SOURCES[(off + n) % CHANNEL_SOURCES.length];
+        let got = await fetchPlaylistIds("UUSH" + src.cid.slice(2), key);
+        if (!got.length) got = await fetchPlaylistIds("UU" + src.cid.slice(2), key);
+        got.forEach(x => { if (!known.has(x.id) && !candidates[x.id]) candidates[x.id] = { title: x.title, ch: src.ch, cat: src.cat, tiers: src.tiers }; });
+      }
+      f.rot = (off + 8) % CHANNEL_SOURCES.length;
+      // parent keywords: strict Safe Search, tagged to the keyword's age groups
+      for (const kw of f.kws) {
         const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&safeSearch=strict&maxResults=10&q=" + encodeURIComponent(kw.q + " shorts") + "&key=" + key);
         const j = await r.json();
+        const err = apiErrorReason(j);
+        if (err === "quota" || err === "key") throw { fatal: err };
         (j.items || []).forEach(i => {
           const id = i.id && i.id.videoId;
-          if (id && !known.has(id) && !candidates[id]) candidates[id] = { title: decodeEntities(i.snippet.title), ch: decodeEntities(i.snippet.channelTitle), cat: "cartoon", tiers: kw.tiers };
+          if (okId(id) && !known.has(id) && !candidates[id]) candidates[id] = { title: decodeEntities(i.snippet.title), ch: decodeEntities(i.snippet.channelTitle), cat: "cartoon", tiers: kw.tiers };
         });
-      } catch (e) {}
-    }
-    // keep only truly embeddable SHORTS (<= 3 min)
-    const ids = Object.keys(candidates);
-    const freshItems = [];
-    for (let i = 0; i < ids.length; i += 50) {
-      try {
+      }
+      // keep only truly embeddable SHORTS (<= 3 min)
+      const ids = Object.keys(candidates);
+      for (let i = 0; i < ids.length; i += 50) {
         const r = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status,contentDetails&id=" + ids.slice(i, i + 50).join(",") + "&key=" + key);
         const j = await r.json();
+        const err = apiErrorReason(j);
+        if (err === "quota" || err === "key") throw { fatal: err };
         (j.items || []).forEach(v => {
           const c = candidates[v.id];
           const secs = isoDurToSecs(v.contentDetails && v.contentDetails.duration);
-          if (c && v.status && v.status.embeddable && secs > 0 && secs <= 183) {
+          if (c && okId(v.id) && v.status && v.status.embeddable && secs > 0 && secs <= 183) {
             freshItems.push({ kind: "yt", id: v.id, title: c.title, ch: c.ch, cat: c.cat, fmt: "short", tiers: c.tiers.slice(), fresh: true });
           }
         });
-      } catch (e) {}
+      }
+    } catch (e) {
+      // fail HONESTLY: tell the parent what happened instead of "no new shorts"
+      if (e && e.fatal === "quota") {
+        f.lastError = "Daily free API limit reached — refresh will work again tomorrow.";
+        f.lastRun = Date.now(); // retrying today is pointless
+      } else if (e && e.fatal === "key") {
+        f.lastError = "The API key was rejected — check it in the search card above.";
+        // no lastRun stamp: retry next launch once the key is fixed
+      } else {
+        f.lastError = "Could not reach YouTube — check the internet.";
+      }
+      saveCfg();
+      return 0;
     }
+    f.lastError = null;
+    f.lastRun = Date.now();
     f.items = f.items.concat(freshItems);
     if (f.items.length > 120) f.items = f.items.slice(f.items.length - 120);
     saveCfg();
@@ -1978,6 +2147,7 @@ function renderFreshZone() {
   const st = document.getElementById("ppFreshStatus");
   if (!cfg.apiKey) st.textContent = "Needs your free API key (set it in the search card above).";
   else if (!cfg.fresh.on) st.textContent = "Automatic refresh is off.";
+  else if (cfg.fresh.lastError) st.textContent = "⚠️ " + cfg.fresh.lastError;
   else st.textContent = cfg.fresh.items.length + " fresh shorts in the pool" +
     (cfg.fresh.lastRun ? " • last refresh " + new Date(cfg.fresh.lastRun).toLocaleString() : " • not refreshed yet");
   const list = document.getElementById("ppKwList");
@@ -2032,7 +2202,9 @@ document.getElementById("ppFreshNow").addEventListener("click", async (e) => {
   const n = await autoRefreshFresh(true);
   btn.disabled = false; btn.textContent = "Refresh now";
   renderFreshZone();
-  document.getElementById("ppFreshStatus").textContent = (n > 0 ? "✓ Added " + n + " new shorts! " : "No new shorts found this time. ") + cfg.fresh.items.length + " in the pool.";
+  if (!cfg.fresh.lastError) {
+    document.getElementById("ppFreshStatus").textContent = (n > 0 ? "✓ Added " + n + " new shorts! " : "No new shorts found this time. ") + cfg.fresh.items.length + " in the pool.";
+  }
 });
 document.getElementById("ppFreshClear").addEventListener("click", () => {
   if (!confirm("Remove all automatically pulled shorts? They will not come back.")) return;
