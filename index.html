@@ -566,6 +566,10 @@
           <button class="pp-btn" id="ppKwAdd">Add</button>
         </div>
         <div class="plist" id="ppKwList" style="margin-top:8px"></div>
+        <details style="margin-top:10px">
+          <summary id="ppFreshCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">View pulled shorts (0)</summary>
+          <div class="plist" id="ppFreshItems" style="margin-top:8px"></div>
+        </details>
         <div class="pp-row" style="margin-top:10px">
           <button class="pp-btn soft" id="ppFreshNow" style="flex:1">Refresh now</button>
           <button class="pp-btn warn" id="ppFreshClear">Clear pool</button>
@@ -867,7 +871,15 @@ function loadCfg() {
   if (!c.resume) c.resume = {};
   if (!c.bedtime) c.bedtime = { on: false, start: 21, end: 7 };
   if (!c.fresh) c.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [] };
+  if (!c.fresh.blocked) c.fresh.blocked = [];
   return c;
+}
+
+/* Remember shorts the parent removed so auto-refresh never re-adds them. */
+function blockFresh(id) {
+  if (!id || cfg.fresh.blocked.includes(id)) return;
+  cfg.fresh.blocked.push(id);
+  if (cfg.fresh.blocked.length > 500) cfg.fresh.blocked = cfg.fresh.blocked.slice(-500);
 }
 let cfg = loadCfg();
 function saveCfg() { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} }
@@ -876,6 +888,14 @@ function ytFailMessage() {
   if (isFileProto) return "YouTube needs the app opened from a web link";
   if (!navigator.onLine) return "Internet needed for this cartoon";
   return "YouTube isn't responding — check the internet";
+}
+
+/* True while any parental lock overlay (screen-time break, bedtime, blink
+   break) is showing. NOTHING may start or resume playback while locked. */
+function locked() {
+  return document.getElementById("breakScreen").style.display === "flex" ||
+         document.getElementById("bedScreen").style.display === "flex" ||
+         document.getElementById("eyeBreak").style.display === "flex";
 }
 
 /* ---------------- IndexedDB (local videos) ---------------- */
@@ -1167,7 +1187,8 @@ function createShortsPlayer(videoId) {
   });
 }
 function onSpState(ev) {
-  if (ev.data === YT.PlayerState.ENDED) { nextReel(); return; }
+  if (ev.data === YT.PlayerState.ENDED) { if (!locked()) nextReel(); return; }
+  if (ev.data === YT.PlayerState.PLAYING && locked()) { spPause(); return; }
   if (ev.data === YT.PlayerState.PLAYING && active !== null && reelEls[active]) {
     hideSpin(active);
     reelEls[active].classList.add("playing");
@@ -1192,7 +1213,12 @@ function applyShortsSound() {
 function spPlay() { if (sp && spReady) { try { sp.playVideo(); } catch (e) {} } }
 function spPause() { if (sp && spReady) { try { sp.pauseVideo(); } catch (e) {} } }
 
-function playReel(i) { if (i === active) { applyShortsSound(); spPlay(); } }
+function playReel(i) {
+  if (i !== active || locked()) return;
+  if (!sp) { if (entries[i] && !entries[i].dead) createShortsPlayer(entries[i].id); return; }
+  applyShortsSound();
+  spPlay();
+}
 function pauseReel(i) { spPause(); }
 function reelPlaying(i) {
   try { return i === active && sp && spReady && sp.getPlayerState() === YT.PlayerState.PLAYING; } catch (e) { return false; }
@@ -1211,20 +1237,21 @@ function reelError(i, icon, msg) {
 }
 function setActive(i, force) {
   if ((i === active && !force) || !entries[i]) return;
-  active = i; paused = false;
+  active = i;
+  paused = locked(); // never auto-play behind a lock screen
   reelEls.forEach((el, k) => {
     el.classList.toggle("live", k === i);
     el.classList.remove("playing");
   });
   const spn = reelEls[i].querySelector(".spin");
   if (spn && !entries[i].dead) spn.style.display = "";
-  if (entries[i].dead) { setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900); return; }
-  if (!sp) createShortsPlayer(entries[i].id);
+  if (entries[i].dead) { if (!paused) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900); return; }
+  if (!sp) { if (!paused) createShortsPlayer(entries[i].id); }
   else if (spReady) {
     spVideoId = entries[i].id;
-    try { sp.loadVideoById(entries[i].id); } catch (e) {}
+    try { paused ? sp.cueVideoById(entries[i].id) : sp.loadVideoById(entries[i].id); } catch (e) {}
     applyShortsSound();
-    spAutoplayFallback();
+    if (!paused) spAutoplayFallback();
   }
   // if the player is still booting, onReady's catch-up handles it
 }
@@ -1236,7 +1263,7 @@ function nextReel() {
   feed.scrollTo({ top: n * feed.clientHeight, behavior: n > active ? "smooth" : "auto" });
 }
 function onTap(i) {
-  if (i !== active) return;
+  if (i !== active || locked()) return;
   paused = !paused;
   const f = reelEls[i].querySelector(".flash");
   f.textContent = paused ? "⏸️" : "▶️";
@@ -1315,6 +1342,13 @@ function loadPvItem() {
             rec.ready = true;
             document.getElementById("pvSpin").style.display = "none";
             try { cfg.soundOn ? (rec.p.unMute(), rec.p.setVolume(100)) : rec.p.mute(); } catch (e) {}
+            // honor pauses and lock screens that arrived while the player booted
+            if (pvPaused || locked()) {
+              if (locked()) pvPaused = true;
+              document.getElementById("pvToggle").textContent = "▶";
+              try { rec.p.pauseVideo(); } catch (e) {}
+              return;
+            }
             rec.p.playVideo();
             const rsy = cfg.resume[itemKey(it)];
             if (rsy && rsy.t > 10) { try { rec.p.seekTo(rsy.t, true); } catch (e) {} }
@@ -1453,6 +1487,12 @@ setInterval(() => {
 let expKey = null, expSecs = 0;
 setInterval(() => {
   if (document.visibilityState !== "visible") return;
+  // roll the daily counters over at midnight even if the app never reloads
+  if (cfg.watch.date !== todayStr()) {
+    cfg.watch = { date: todayStr(), secs: 0, bonus: 0 };
+    saveCfg();
+    if (breakScreen.style.display === "flex") breakScreen.style.display = "none";
+  }
   const inShorts = curView === "shorts" && active !== null && !paused && reelPlaying(active);
   const inPlayer = curView === "player" && !pvPaused && pvPlaying();
   const watching = inShorts || inPlayer;
@@ -1508,6 +1548,9 @@ function startEyeBreak() {
     if (left <= 0) {
       clearInterval(t);
       ov.style.display = "none";
+      // bedtime or the daily limit may have engaged during the countdown —
+      // never resume behind another lock screen
+      if (locked()) return;
       if (wasShorts && curView === "shorts") { paused = false; playReel(active); }
       if (wasPlayer && curView === "player" && pvPaused) pvToggle();
     }
@@ -1527,11 +1570,11 @@ function inBedtime() {
 function checkBedtime() {
   const bs = document.getElementById("bedScreen");
   if (inBedtime()) {
-    if (bs.style.display !== "flex") {
-      bs.style.display = "flex";
-      if (curView === "shorts" && active !== null) { paused = true; pauseReel(active); }
-      if (curView === "player" && pv && !pvPaused) pvToggle();
-    }
+    bs.style.display = "flex";
+    // re-assert the pause on EVERY tick, not just the show transition —
+    // playback must never continue behind the lock
+    if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
+    if (curView === "player" && pv && !pvPaused) pvToggle();
   } else if (bs.style.display === "flex") {
     bs.style.display = "none";
   }
@@ -1547,11 +1590,11 @@ document.getElementById("bedUnlockBtn").addEventListener("click", () => {
 /* ---------------- break ---------------- */
 const breakScreen = document.getElementById("breakScreen");
 function showBreak() {
-  if (breakScreen.style.display === "flex") return;
+  const already = breakScreen.style.display === "flex";
   breakScreen.style.display = "flex";
-  if (curView === "shorts" && active !== null) { paused = true; pauseReel(active); }
+  if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
   if (curView === "player" && pv && !pvPaused) pvToggle();
-  saveCfg();
+  if (!already) saveCfg();
 }
 document.getElementById("unlockBtn").addEventListener("click", () => {
   openGate(() => {
@@ -1566,17 +1609,29 @@ const gateWrap = document.getElementById("gateWrap"), gateModal = document.getEl
       gateQ = document.getElementById("gateQ"), gateA = document.getElementById("gateA");
 let gateAnswer = 0, gateCb = null;
 let gateForgotMode = false;
+function gateLockRemaining() {
+  const until = cfg.gateLockUntil || 0;
+  return until > Date.now() ? Math.ceil((until - Date.now()) / 1000) : 0;
+}
 function newGateQuestion() {
   const forgotBtn = document.getElementById("gateForgotBtn");
+  const rem = gateLockRemaining();
+  if (rem > 0) {
+    gateQ.textContent = "Too many tries — wait " + rem + "s";
+    gateA.type = "text"; gateA.placeholder = "";
+    forgotBtn.style.display = "none";
+    gateA.value = "";
+    return;
+  }
   if (cfg.pin && !gateForgotMode) {
     gateQ.textContent = "Enter your PIN";
     gateA.type = "password"; gateA.maxLength = 4; gateA.placeholder = "••••";
     forgotBtn.style.display = "block";
   } else {
-    // forgot-PIN uses harder maths, and solving it clears the PIN
+    // forgot-PIN needs genuinely hard maths (use a calculator!) and clears the PIN
     const hard = gateForgotMode;
     const a = hard ? 23 + Math.floor(Math.random() * 17) : 3 + Math.floor(Math.random() * 7);
-    const b = hard ? 6 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 8);
+    const b = hard ? 12 + Math.floor(Math.random() * 8) : 2 + Math.floor(Math.random() * 8);
     gateAnswer = a * b;
     gateQ.textContent = a + " × " + b + " = ?";
     gateA.type = "text"; gateA.maxLength = 6; gateA.placeholder = "?";
@@ -1588,13 +1643,27 @@ function openGate(cb) { gateCb = cb; gateForgotMode = false; newGateQuestion(); 
 document.getElementById("gateCancel").addEventListener("click", () => { gateWrap.style.display = "none"; gateCb = null; });
 document.getElementById("gateForgotBtn").addEventListener("click", () => { gateForgotMode = true; newGateQuestion(); });
 function tryGate() {
+  if (gateLockRemaining() > 0) {
+    gateModal.classList.remove("shake"); void gateModal.offsetWidth; gateModal.classList.add("shake");
+    newGateQuestion();
+    return;
+  }
   const ok = (cfg.pin && !gateForgotMode) ? gateA.value === cfg.pin : parseInt(gateA.value, 10) === gateAnswer;
   if (ok) {
-    if (gateForgotMode && cfg.pin) { cfg.pin = null; saveCfg(); }
+    cfg.gateFails = 0;
+    if (gateForgotMode && cfg.pin) { cfg.pin = null; }
+    saveCfg();
     gateWrap.style.display = "none";
     const cb = gateCb; gateCb = null;
     if (cb) cb();
-  } else { gateModal.classList.remove("shake"); void gateModal.offsetWidth; gateModal.classList.add("shake"); newGateQuestion(); }
+  } else {
+    // 3 wrong answers → 60s lockout (persisted, so a reload doesn't reset it)
+    cfg.gateFails = (cfg.gateFails || 0) + 1;
+    if (cfg.gateFails >= 3) { cfg.gateLockUntil = Date.now() + 60 * 1000; cfg.gateFails = 0; }
+    saveCfg();
+    gateModal.classList.remove("shake"); void gateModal.offsetWidth; gateModal.classList.add("shake");
+    newGateQuestion();
+  }
 }
 document.getElementById("gateOk").addEventListener("click", tryGate);
 gateA.addEventListener("keydown", (e) => { if (e.key === "Enter") tryGate(); });
@@ -1855,6 +1924,7 @@ async function autoRefreshFresh(force) {
     saveCfg();
     const key = encodeURIComponent(cfg.apiKey);
     const known = new Set(allItems().filter(i => i.kind === "yt").map(i => i.id));
+    (cfg.fresh.blocked || []).forEach(id => known.add(id)); // parent-removed: never re-add
     const candidates = {};
     // rotate through 8 trusted channels per run; "UUSH…" is a channel's
     // shorts-only uploads playlist (fall back to all uploads "UU…")
@@ -1923,6 +1993,26 @@ function renderFreshZone() {
     row.querySelector(".del").addEventListener("click", () => { cfg.fresh.kws.splice(idx, 1); saveCfg(); renderFreshZone(); });
     list.appendChild(row);
   });
+  // individually removable list of every auto-pulled short (removal blocks re-adding)
+  document.getElementById("ppFreshCount").textContent = "View pulled shorts (" + cfg.fresh.items.length + ")";
+  const fl = document.getElementById("ppFreshItems");
+  fl.innerHTML = "";
+  if (!cfg.fresh.items.length) fl.innerHTML = '<p class="pp-note">Nothing pulled yet.</p>';
+  cfg.fresh.items.forEach((it, idx) => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML =
+      '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
+      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#8a82a6">' + escapeHtml(it.ch || "") + "</span></div>" +
+      '<button class="del" title="Remove forever">✕</button>';
+    row.querySelector(".del").addEventListener("click", () => {
+      blockFresh(it.id);
+      cfg.fresh.items.splice(idx, 1);
+      saveCfg();
+      renderFreshZone();
+    });
+    fl.appendChild(row);
+  });
 }
 document.getElementById("ppFreshOn").addEventListener("change", (e) => { cfg.fresh.on = e.target.checked; saveCfg(); renderFreshZone(); });
 document.getElementById("ppKwAdd").addEventListener("click", () => {
@@ -1945,7 +2035,8 @@ document.getElementById("ppFreshNow").addEventListener("click", async (e) => {
   document.getElementById("ppFreshStatus").textContent = (n > 0 ? "✓ Added " + n + " new shorts! " : "No new shorts found this time. ") + cfg.fresh.items.length + " in the pool.";
 });
 document.getElementById("ppFreshClear").addEventListener("click", () => {
-  if (!confirm("Remove all automatically pulled shorts?")) return;
+  if (!confirm("Remove all automatically pulled shorts? They will not come back.")) return;
+  cfg.fresh.items.forEach(it => blockFresh(it.id));
   cfg.fresh.items = [];
   saveCfg();
   renderFreshZone();
@@ -1992,6 +2083,9 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 document.addEventListener("keydown", (e) => {
+  const tag = (e.target && e.target.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (locked()) { e.preventDefault(); return; }
   if (curView !== "shorts" || panel.style.display === "flex" || gateWrap.style.display === "flex") return;
   if (e.key === "ArrowDown") { e.preventDefault(); nextReel(); }
   if (e.key === "ArrowUp") { e.preventDefault(); if (active > 0) feed.scrollTo({ top: (active - 1) * feed.clientHeight, behavior: "smooth" }); }
@@ -2033,6 +2127,25 @@ checkForUpdate(true);
 setInterval(() => checkForUpdate(false), 30 * 60 * 1000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") checkForUpdate(false);
+});
+
+/* ---------------- cross-tab settings sync ----------------
+   A second open copy (browser tab + installed app) must never clobber the
+   parent's settings: adopt any change another tab writes, keeping the larger
+   of the two watch-time counters. */
+window.addEventListener("storage", (e) => {
+  if (e.key !== LS_KEY || !e.newValue) return;
+  try {
+    const inc = JSON.parse(e.newValue);
+    if (!inc || typeof inc !== "object") return;
+    const mySecs = cfg.watch && inc.watch && cfg.watch.date === inc.watch.date ? cfg.watch.secs : 0;
+    cfg = inc;
+    if (!cfg.fresh) cfg.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [], blocked: [] };
+    if (!cfg.fresh.blocked) cfg.fresh.blocked = [];
+    if (cfg.watch && cfg.watch.secs < mySecs) cfg.watch.secs = mySecs;
+    applyEye();
+    checkBedtime();
+  } catch (err) {}
 });
 
 /* ---------------- boot ---------------- */
