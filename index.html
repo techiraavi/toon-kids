@@ -2502,10 +2502,14 @@ if ("serviceWorker" in navigator && !isFileProto) {
   try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (e) {}
 }
 checkForUpdate(true);
-setInterval(() => checkForUpdate(false), 30 * 60 * 1000);
+setInterval(() => checkForUpdate(false), 15 * 60 * 1000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") checkForUpdate(false);
 });
+// iOS standalone apps often RESUME instead of reloading — catch every
+// comeback path so stale versions never linger on installed apps
+window.addEventListener("focus", () => checkForUpdate(false));
+window.addEventListener("pageshow", (e) => { if (e.persisted) checkForUpdate(false); });
 
 /* ---------------- Google account sync (user's own Drive appDataFolder) ---------------- */
 let gsToken = null, gsTokenExp = 0;
