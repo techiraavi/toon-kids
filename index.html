@@ -555,6 +555,25 @@
       </div>
 
       <div class="pp-card">
+        <h4>🔄 Fresh shorts (automatic)</h4>
+        <div class="pp-row" style="margin-bottom:8px">
+          <label class="switch"><input type="checkbox" id="ppFreshOn"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">Pull new shorts daily from this app's trusted channels</span>
+        </div>
+        <p class="pp-note" id="ppFreshStatus" style="margin-top:0"></p>
+        <div class="pp-row" style="margin-top:10px">
+          <input class="pp-input" id="ppKwInput" type="text" placeholder="Your own keyword… e.g. dinosaur rhymes">
+          <button class="pp-btn" id="ppKwAdd">Add</button>
+        </div>
+        <div class="plist" id="ppKwList" style="margin-top:8px"></div>
+        <div class="pp-row" style="margin-top:10px">
+          <button class="pp-btn soft" id="ppFreshNow" style="flex:1">Refresh now</button>
+          <button class="pp-btn warn" id="ppFreshClear">Clear pool</button>
+        </div>
+        <p class="pp-note">Channel pulls come only from the official channels already vetted in this app, filtered to the right age groups. Keyword pulls use YouTube strict Safe Search for the age groups ticked above — spot-check them in the Shorts feed. Requires your API key.</p>
+      </div>
+
+      <div class="pp-card">
         <h4>➕ Add a YouTube video or Short by link</h4>
         <div class="pp-row">
           <input class="pp-input" id="ppUrl" type="text" placeholder="Paste YouTube link…">
@@ -792,6 +811,43 @@ const BUNDLES = [
     { id:"BpB-Ixdzw2A", title:"Celebrate Chuggington!", ch:"Chuggington", fmt:"video" } ] }
 ];
 
+/* Trusted sources for automatic fresh-shorts pulls: the official channels
+   already vetted in this app, mapped to age tiers and categories. */
+const CHANNEL_SOURCES = [
+  { cid:"UCcdwLMPsaU2ezNSJU1nFoBQ", ch:"Pinkfong", cat:"song", tiers:["little"] },
+  { cid:"UCbCmjCuTUZos6Inko4u57UQ", ch:"Cocomelon", cat:"song", tiers:["little"] },
+  { cid:"UCLsooMJoIpl_7ux2jvdPB-Q", ch:"Super Simple Songs", cat:"song", tiers:["little"] },
+  { cid:"UCBnZ16ahKA2DZ_T5W0FPUXg", ch:"ChuChu TV", cat:"song", tiers:["little"] },
+  { cid:"UC6zhI71atP7YLoZyIyCIGNw", ch:"Dave and Ava", cat:"song", tiers:["little"] },
+  { cid:"UC4NALVCmcmL5ntpV0thoH6w", ch:"LooLoo Kids", cat:"song", tiers:["little"] },
+  { cid:"UCKAqou7V9FAWXpZd9xtOg3Q", ch:"Little Baby Bum", cat:"song", tiers:["little"] },
+  { cid:"UC-cY4X2sLECUhishGNiyofQ", ch:"Bebefinn", cat:"song", tiers:["little"] },
+  { cid:"UCtf9cFBJkHVAf2qMqF01xYg", ch:"Hey Bear Sensory", cat:"song", tiers:["little"] },
+  { cid:"UCJkWoS4RsldA1coEIot5yDA", ch:"Mother Goose Club", cat:"song", tiers:["little"] },
+  { cid:"UCQD_yZCS2BGO_BXtYrXFg1Q", ch:"Badanamu", cat:"learn", tiers:["little"] },
+  { cid:"UCtBOJ9bEAoMOY9keGK6p2hQ", ch:"Baby Einstein", cat:"learn", tiers:["little"] },
+  { cid:"UCAOtE1V7Ots4DjM8JLlrYgg", ch:"Peppa Pig", cat:"cartoon", tiers:["big"] },
+  { cid:"UCVzLLZkDuFGAE2BGdBuBNBg", ch:"Bluey", cat:"cartoon", tiers:["big"] },
+  { cid:"UCdknlZNiH-2VWrvjXkx9dJA", ch:"Pocoyo", cat:"cartoon", tiers:["big"] },
+  { cid:"UCu59yAFE8fM0sVNTipR4edw", ch:"Masha and The Bear", cat:"cartoon", tiers:["big"] },
+  { cid:"UCtlth0w7_mYqpHPViMhQ99Q", ch:"Oddbods", cat:"cartoon", tiers:["big","super"] },
+  { cid:"UCSVSJ1OCSv5ClFgKFTHIDew", ch:"PAW Patrol", cat:"cartoon", tiers:["big"] },
+  { cid:"UCMAGJ9Hhe_IjsiuYHrns8ag", ch:"Simon Super Rabbit", cat:"cartoon", tiers:["big"] },
+  { cid:"UCDr6pfWKK1r3KRTozmFprow", ch:"Bing", cat:"cartoon", tiers:["big"] },
+  { cid:"UCu7IDy0y-ZA0qaG51wrQY6w", ch:"Curious George", cat:"cartoon", tiers:["big"] },
+  { cid:"UC5Ti4_DVp7LW34PjEwB13Xg", ch:"Morphle", cat:"cartoon", tiers:["big"] },
+  { cid:"UC2UhuvjTIrR0Ck2KrkvRcuA", ch:"Ben and Holly", cat:"cartoon", tiers:["big"] },
+  { cid:"UCmst562fALOY2cKb4IFgqEg", ch:"Boomerang UK", cat:"cartoon", tiers:["big","super"] },
+  { cid:"UC9trsD1jCTXXtN3xIOIU8gg", ch:"WB Kids", cat:"cartoon", tiers:["super"] },
+  { cid:"UCm3hAp1m1xlAz0ve_EKAo4g", ch:"Talking Tom", cat:"cartoon", tiers:["super"] },
+  { cid:"UCkAGrHCLFmlK3H2kd6isipg", ch:"Mr Bean", cat:"cartoon", tiers:["super"] },
+  { cid:"UCXVCgDuD_QCkI7gTKU7-tpg", ch:"Nat Geo Kids", cat:"learn", tiers:["big","super"] },
+  { cid:"UCyu8StPfZWapR6rfW_JgqcA", ch:"DC Kids", cat:"cartoon", tiers:["super"] },
+  { cid:"UCFctpiB_Hnlk3ejWfHqSm6Q", ch:"Pokémon Official", cat:"cartoon", tiers:["super"] },
+  { cid:"UCs-i-OgJaRat1M0lCqviF2w", ch:"Green Gold Kids", cat:"cartoon", tiers:["big","super"] },
+  { cid:"UCxlJ45KjG4XVcQ_hd8j227A", ch:"Peekaboo Kidz", cat:"learn", tiers:["super"] }
+];
+
 const TIER_OF_AGE = a => (a <= 4 ? "little" : a <= 7 ? "big" : "super");
 const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", song:"🎵 Songs", learn:"🧠 Learning", classic:"🍿 Classics", my:"📁 My Videos" };
 const LS_KEY = "toonKids.v1";
@@ -810,6 +866,7 @@ function loadCfg() {
   if (c.pin === undefined) c.pin = null;
   if (!c.resume) c.resume = {};
   if (!c.bedtime) c.bedtime = { on: false, start: 21, end: 7 };
+  if (!c.fresh) c.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [] };
   return c;
 }
 let cfg = loadCfg();
@@ -835,7 +892,7 @@ async function idbGet(k) { const d = await idbOpen(); return new Promise((res, r
 async function idbDel(k) { const d = await idbOpen(); return new Promise((res) => { const t = d.transaction("videos","readwrite"); t.objectStore("videos").delete(k); t.oncomplete=res; t.onerror=res; }); }
 
 /* ---------------- content selection ---------------- */
-function allItems() { return CATALOG.concat(cfg.custom); }
+function allItems() { return CATALOG.concat(cfg.custom).concat(cfg.fresh.items); }
 function tier() { return TIER_OF_AGE(cfg.age || 4); }
 function itemsForAge() { return allItems().filter(it => (it.tiers || []).includes(tier())); }
 function gridItems(cat) {
@@ -1587,6 +1644,7 @@ function renderPanel() {
   document.getElementById("ppBedEnd").value = String(cfg.bedtime.end);
   renderBundles();
   renderKeyZone();
+  renderFreshZone();
   renderCustomList();
 }
 
@@ -1773,6 +1831,125 @@ async function doSearch() {
 }
 document.getElementById("ppSearchBtn").addEventListener("click", doSearch);
 document.getElementById("ppQ").addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+
+/* ---------------- automatic fresh shorts ---------------- */
+async function fetchPlaylistIds(plid, key) {
+  try {
+    const r = await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=" + plid + "&key=" + key);
+    const j = await r.json();
+    if (j.error) return [];
+    return (j.items || [])
+      .map(i => ({ id: i.snippet && i.snippet.resourceId && i.snippet.resourceId.videoId, title: decodeEntities((i.snippet && i.snippet.title) || "") }))
+      .filter(x => x.id && x.title && x.title !== "Private video" && x.title !== "Deleted video");
+  } catch (e) { return []; }
+}
+
+let freshRunning = false;
+async function autoRefreshFresh(force) {
+  const f = cfg.fresh;
+  if (freshRunning || !cfg.apiKey || !f.on || isFileProto) return 0;
+  if (!force && Date.now() - f.lastRun < 22 * 3600 * 1000) return 0;
+  freshRunning = true;
+  try {
+    f.lastRun = Date.now();
+    saveCfg();
+    const key = encodeURIComponent(cfg.apiKey);
+    const known = new Set(allItems().filter(i => i.kind === "yt").map(i => i.id));
+    const candidates = {};
+    // rotate through 8 trusted channels per run; "UUSH…" is a channel's
+    // shorts-only uploads playlist (fall back to all uploads "UU…")
+    const off = f.rot || 0;
+    for (let n = 0; n < 8; n++) {
+      const src = CHANNEL_SOURCES[(off + n) % CHANNEL_SOURCES.length];
+      let got = await fetchPlaylistIds("UUSH" + src.cid.slice(2), key);
+      if (!got.length) got = await fetchPlaylistIds("UU" + src.cid.slice(2), key);
+      got.forEach(x => { if (!known.has(x.id) && !candidates[x.id]) candidates[x.id] = { title: x.title, ch: src.ch, cat: src.cat, tiers: src.tiers }; });
+    }
+    f.rot = (off + 8) % CHANNEL_SOURCES.length;
+    // parent keywords: strict Safe Search, tagged to the keyword's age groups
+    for (const kw of f.kws) {
+      try {
+        const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&safeSearch=strict&maxResults=10&q=" + encodeURIComponent(kw.q + " shorts") + "&key=" + key);
+        const j = await r.json();
+        (j.items || []).forEach(i => {
+          const id = i.id && i.id.videoId;
+          if (id && !known.has(id) && !candidates[id]) candidates[id] = { title: decodeEntities(i.snippet.title), ch: decodeEntities(i.snippet.channelTitle), cat: "cartoon", tiers: kw.tiers };
+        });
+      } catch (e) {}
+    }
+    // keep only truly embeddable SHORTS (<= 3 min)
+    const ids = Object.keys(candidates);
+    const freshItems = [];
+    for (let i = 0; i < ids.length; i += 50) {
+      try {
+        const r = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status,contentDetails&id=" + ids.slice(i, i + 50).join(",") + "&key=" + key);
+        const j = await r.json();
+        (j.items || []).forEach(v => {
+          const c = candidates[v.id];
+          const secs = isoDurToSecs(v.contentDetails && v.contentDetails.duration);
+          if (c && v.status && v.status.embeddable && secs > 0 && secs <= 183) {
+            freshItems.push({ kind: "yt", id: v.id, title: c.title, ch: c.ch, cat: c.cat, fmt: "short", tiers: c.tiers.slice(), fresh: true });
+          }
+        });
+      } catch (e) {}
+    }
+    f.items = f.items.concat(freshItems);
+    if (f.items.length > 120) f.items = f.items.slice(f.items.length - 120);
+    saveCfg();
+    return freshItems.length;
+  } finally {
+    freshRunning = false;
+  }
+}
+setTimeout(() => autoRefreshFresh(false), 6000);
+
+function renderFreshZone() {
+  document.getElementById("ppFreshOn").checked = !!cfg.fresh.on;
+  const st = document.getElementById("ppFreshStatus");
+  if (!cfg.apiKey) st.textContent = "Needs your free API key (set it in the search card above).";
+  else if (!cfg.fresh.on) st.textContent = "Automatic refresh is off.";
+  else st.textContent = cfg.fresh.items.length + " fresh shorts in the pool" +
+    (cfg.fresh.lastRun ? " • last refresh " + new Date(cfg.fresh.lastRun).toLocaleString() : " • not refreshed yet");
+  const list = document.getElementById("ppKwList");
+  list.innerHTML = "";
+  if (!cfg.fresh.kws.length) list.innerHTML = '<p class="pp-note">No keywords yet — channel pulls still run.</p>';
+  cfg.fresh.kws.forEach((kw, idx) => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML =
+      '<div class="ph">🔎</div>' +
+      '<div class="nm">' + escapeHtml(kw.q) + ' <span style="color:#8a82a6">(' + kw.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
+      '<button class="del" title="Remove">✕</button>';
+    row.querySelector(".del").addEventListener("click", () => { cfg.fresh.kws.splice(idx, 1); saveCfg(); renderFreshZone(); });
+    list.appendChild(row);
+  });
+}
+document.getElementById("ppFreshOn").addEventListener("change", (e) => { cfg.fresh.on = e.target.checked; saveCfg(); renderFreshZone(); });
+document.getElementById("ppKwAdd").addEventListener("click", () => {
+  const inp = document.getElementById("ppKwInput");
+  const q = inp.value.trim();
+  if (q.length < 2) return;
+  cfg.fresh.kws.push({ q: q, tiers: pickedTiers() });
+  saveCfg();
+  inp.value = "";
+  renderFreshZone();
+});
+document.getElementById("ppKwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("ppKwAdd").click(); });
+document.getElementById("ppFreshNow").addEventListener("click", async (e) => {
+  const btn = e.target;
+  if (!cfg.apiKey) { document.getElementById("ppFreshStatus").textContent = "Needs your free API key (set it in the search card above)."; return; }
+  btn.disabled = true; btn.textContent = "Refreshing…";
+  const n = await autoRefreshFresh(true);
+  btn.disabled = false; btn.textContent = "Refresh now";
+  renderFreshZone();
+  document.getElementById("ppFreshStatus").textContent = (n > 0 ? "✓ Added " + n + " new shorts! " : "No new shorts found this time. ") + cfg.fresh.items.length + " in the pool.";
+});
+document.getElementById("ppFreshClear").addEventListener("click", () => {
+  if (!confirm("Remove all automatically pulled shorts?")) return;
+  cfg.fresh.items = [];
+  saveCfg();
+  renderFreshZone();
+});
 document.getElementById("ppAdd").addEventListener("click", async () => {
   const input = document.getElementById("ppUrl");
   const id = parseYouTubeId(input.value);
