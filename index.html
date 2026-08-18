@@ -72,9 +72,10 @@
   /* ---------- floating LIQUID GLASS navigation capsule ---------- */
   #bottomNav {
     position: absolute; left: 50%; transform: translateX(-50%);
-    bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 15;
-    display: none; align-items: center; gap: 4px; padding: 6px;
+    bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 15;
+    display: none; align-items: center; gap: 4px; padding: 5px;
     border-radius: 999px;
+    transition: transform .3s ease, opacity .3s ease;
     background: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.26));
     backdrop-filter: blur(22px) saturate(1.7);
     -webkit-backdrop-filter: blur(22px) saturate(1.7);
@@ -84,6 +85,8 @@
                 inset 0 -1px 1px rgba(120,90,200,.08);
   }
   #bottomNav.show { display: flex; }
+  /* auto-hide: slides off-screen while scrolling shelves or watching a short */
+  #bottomNav.navHidden { transform: translate(-50%, 160%); opacity: 0; pointer-events: none; }
   #bottomNav.dark {
     background: linear-gradient(135deg, rgba(70,45,130,.4), rgba(15,10,40,.44));
     border-color: rgba(255,255,255,.22);
@@ -92,13 +95,13 @@
   }
   .navBtn {
     border: none; background: none; cursor: pointer; font-family: inherit;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    color: #4f4370; font-size: 10px; font-weight: 800;
-    padding: 7px 16px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    color: #4f4370; font-size: 0; font-weight: 800; /* icon-only: labels live in aria */
+    padding: 8px 16px; border-radius: 999px;
     transition: background .25s, color .25s, box-shadow .25s;
   }
   #bottomNav.dark .navBtn { color: rgba(255,255,255,.82); }
-  .navBtn .ico { font-size: 22px; line-height: 1; transition: transform .2s; }
+  .navBtn .ico { font-size: 24px; line-height: 1; transition: transform .2s; }
   .navBtn.active {
     color: #5426ad;
     background: linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.55));
@@ -112,13 +115,13 @@
   .navBtn.active .ico { transform: scale(1.15); }
   .navBtn:active .ico { transform: scale(.88); }
   @media (min-width: 700px) {
-    .navBtn { padding: 9px 24px; font-size: 11px; gap: 2px; }
-    .navBtn .ico { font-size: 24px; }
+    .navBtn { padding: 10px 22px; }
+    .navBtn .ico { font-size: 26px; }
   }
   @media (min-width: 1900px) {
-    #bottomNav { bottom: calc(24px + env(safe-area-inset-bottom)); padding: 8px; gap: 6px; }
-    .navBtn { padding: 12px 32px; font-size: 15px; }
-    .navBtn .ico { font-size: 32px; }
+    #bottomNav { bottom: calc(16px + env(safe-area-inset-bottom)); padding: 7px; gap: 6px; }
+    .navBtn { padding: 14px 30px; }
+    .navBtn .ico { font-size: 34px; }
   }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cardmin), 1fr)); gap: 12px; max-width: 1460px; margin: 0 auto; }
   #fileWarn { max-width: 1460px; margin-left: auto; margin-right: auto; }
@@ -1142,6 +1145,7 @@ function showView(name) {
   views[name].classList.add("on");
   curView = name;
   updateNav();
+  if (typeof navSetHidden === "function") navSetHidden(false);
   if (name === "home" || name === "age") setTimeout(() => maybeApplyUpdate(), 400);
 }
 
@@ -1167,6 +1171,30 @@ document.getElementById("navFav").addEventListener("click", () => {
 document.getElementById("navShorts").addEventListener("click", () => {
   if (curView !== "shorts") openShorts();
 });
+
+/* auto-hide: the capsule slides away while the child scrolls or watches,
+   and glides back on scroll-up, pause, tap, or idle */
+let navHideTimer = null, lastGridTop = 0;
+function navSetHidden(h) { document.getElementById("bottomNav").classList.toggle("navHidden", h); }
+function navPeek(autoHideMs) {
+  navSetHidden(false);
+  clearTimeout(navHideTimer);
+  if (autoHideMs) {
+    navHideTimer = setTimeout(() => {
+      if (curView === "shorts" && !paused && reelPlaying(active)) navSetHidden(true);
+    }, autoHideMs);
+  }
+}
+document.getElementById("grid").addEventListener("scroll", (e) => {
+  if (curView !== "home") return;
+  const t = e.target.scrollTop;
+  if (t > lastGridTop + 6 && t > 40) navSetHidden(true);
+  else if (t < lastGridTop - 6 || t <= 40) navSetHidden(false);
+  lastGridTop = t;
+  clearTimeout(navHideTimer);
+  navHideTimer = setTimeout(() => navSetHidden(false), 900);
+}, { passive: true });
+document.getElementById("shortsView").addEventListener("pointerdown", () => navPeek(2500), { passive: true });
 
 /* ---------------- age picker ---------------- */
 const ageGrid = document.getElementById("ageGrid");
@@ -1459,7 +1487,9 @@ function onSpState(ev) {
     deadStreak = 0;
     hideSpin(active);
     reelEls[active].classList.add("playing");
+    navPeek(2000); // capsule bows out once playback is rolling
   }
+  if (ev.data === YT.PlayerState.PAUSED) navSetHidden(false);
 }
 /* only mute as a true last resort: video still UNSTARTED after 3.5s means the
    browser refused autoplay with sound; any tap then auto-restores the sound */
