@@ -122,9 +122,23 @@
   /* ================= SHORTS FEED ================= */
   /* on wide screens the feed becomes a centered portrait column, like desktop Shorts */
   #shortsView { background: #05030f; flex-direction: row; justify-content: center; }
-  .feed { height: 100%; width: min(100%, calc(100dvh * 0.5625)); overflow-y: scroll; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+  /* ONE persistent player sits behind the scrolling reels; the active reel
+     turns transparent to reveal it — video swaps are instant, no reboots. */
+  #shortsPlayerWrap {
+    position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: min(100%, calc(100dvh * 0.5625)); z-index: 1; background: #000; overflow: hidden;
+  }
+  #shortsPlayerWrap iframe {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    height: 100%; width: auto; aspect-ratio: 9 / 16; min-width: 100%;
+    border: 0; display: block; pointer-events: none; background: #000;
+  }
+  .feed { position: relative; z-index: 2; height: 100%; width: min(100%, calc(100dvh * 0.5625)); overflow-y: scroll; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
   .feed::-webkit-scrollbar { display: none; }
   .reel { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; background: #000; overflow: hidden; }
+  .reel.live { background: transparent; }
+  .reel > .pre { transition: opacity .35s; }
+  .reel.playing > .pre { opacity: 0; }
   .media { position: absolute; inset: 0; background: #000; overflow: hidden; }
   .media iframe {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -336,6 +350,7 @@
 
   <!-- ============ SHORTS ============ -->
   <div class="view" id="shortsView">
+    <div id="shortsPlayerWrap"></div>
     <div class="feed" id="feed"></div>
     <button class="backBtn" id="shortsBack">←</button>
     <div class="hint" id="soundHint">🔊 Tap the sound button to unmute</div>
@@ -890,7 +905,7 @@ function whenApi(fn) { if (apiReady) fn(); else apiWaiters.push(fn); }
    first real player starts much faster — its scripts land in browser cache. */
 let primed = false;
 function primeEmbed() {
-  if (primed || Object.keys(players).length || pv) { primed = true; return; }
+  if (primed || sp || pv) { primed = true; return; }
   primed = true;
   const d = document.createElement("div");
   d.style.cssText = "position:absolute;left:-99px;top:-99px;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none";
@@ -913,8 +928,12 @@ whenApi(() => setTimeout(primeEmbed, 700));
    SHORTS FEED (swipe reels)
    ===================================================================== */
 const feed = document.getElementById("feed");
-let entries = [], reelEls = [], players = {}, active = null, paused = false;
+let entries = [], reelEls = [], active = null, paused = false;
 let io = null;
+/* ONE persistent player for all shorts: created on the first tap (so the
+   browser grants it sound), then videos swap via loadVideoById — no reboots,
+   and the sound permission sticks for every following short. */
+let sp = null, spReady = false, spVideoId = null;
 
 function openShorts(list, startIdx) {
   const src = list && list.length ? list : freshSort(shortItems(), false);
@@ -922,8 +941,8 @@ function openShorts(list, startIdx) {
   buildFeed();
   showView("shorts");
   const s = startIdx > 0 && startIdx < entries.length ? startIdx : 0;
-  if (s > 0) { feed.scrollTop = s * feed.clientHeight; setActive(s); }
-  if (entries.length) setTimeout(() => playReel(active === null ? s : active), 100);
+  if (s > 0) feed.scrollTop = s * feed.clientHeight;
+  if (entries.length) setActive(s, true);
 }
 document.getElementById("shortsBack").addEventListener("click", () => { showView("home"); renderHome(); });
 
@@ -941,7 +960,6 @@ function buildFeed() {
     sec.dataset.i = i;
     const liked = !!cfg.liked[itemKey(e)];
     sec.innerHTML =
-      '<div class="media"><div id="hold-' + i + '"></div></div>' +
       (e.kind === "yt"
         ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + e.id + '/hqdefault.jpg\'">'
         : "") +
@@ -964,95 +982,82 @@ function buildFeed() {
   });
   active = null;
   feed.scrollTop = 0;
-  if (entries.length) setActive(0);
 }
 
 function teardownFeed() {
-  Object.keys(players).forEach(k => destroyPlayer(+k));
+  try { sp && sp.destroy(); } catch (e) {}
+  sp = null; spReady = false; spVideoId = null;
+  const w = document.getElementById("shortsPlayerWrap");
+  if (w) w.innerHTML = "";
   if (io) { io.disconnect(); io = null; }
   active = null; paused = false;
 }
 
-function ensurePlayer(i) {
-  const e = entries[i];
-  if (!e || players[i] || e.dead) return;
-  if (apiFailed) { reelError(i, "🎈", ytFailMessage()); return; }
-  const rec = { kind: "yt", ready: false, p: null };
-  players[i] = rec;
+function createShortsPlayer(videoId) {
+  if (apiFailed) { if (active !== null) reelError(active, "🎈", ytFailMessage()); return; }
+  document.getElementById("shortsPlayerWrap").innerHTML = '<div id="sp-hold"></div>';
+  spReady = false;
+  spVideoId = videoId;
   whenApi(() => {
-    if (players[i] !== rec) return;
-    rec.p = new YT.Player("hold-" + i, {
-      width: "100%", height: "100%", videoId: e.id,
-      playerVars: { autoplay: 0, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
+    if (curView !== "shorts" || sp) return;
+    sp = new YT.Player("sp-hold", {
+      width: "100%", height: "100%", videoId: videoId,
+      playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
       events: {
         onReady: () => {
-          rec.ready = true; hideSpin(i); applySoundReel(i);
-          if (i === active && !paused && curView === "shorts") rec.p.playVideo();
-          else if (i === active + 1) warmUp(i);
+          spReady = true;
+          applyShortsSound();
+          // if the child swiped on while the player was booting, catch up
+          const want = active !== null && entries[active] && !entries[active].dead ? entries[active].id : null;
+          if (want && want !== spVideoId) { spVideoId = want; try { sp.loadVideoById(want); } catch (e) {} }
+          if (paused) spPause();
         },
-        onStateChange: (ev) => {
-          if (ev.data === YT.PlayerState.ENDED && i === active) nextReel();
-          if (ev.data === YT.PlayerState.PLAYING) {
-            hideSpin(i); hidePre(i);
-            if (i === active) {
-              if (active + 1 < entries.length) { ensurePlayer(active + 1); warmUp(active + 1); }
-              if (active + 2 < entries.length) ensurePlayer(active + 2);
-            }
-          }
-        },
-        onError: () => reelError(i)
+        onStateChange: onSpState,
+        onError: () => { if (active !== null) reelError(active); }
       }
     });
-    setTimeout(() => { if (players[i] === rec && !rec.ready && !entries[i].dead) reelError(i, "📡", ytFailMessage()); }, 10000);
+    setTimeout(() => {
+      if (sp && !spReady && active !== null && entries[active] && !entries[active].dead) reelError(active, "📡", ytFailMessage());
+    }, 12000);
+    spAutoplayFallback();
   });
 }
-function destroyPlayer(i) {
-  const rec = players[i];
-  if (!rec) return;
-  try { rec.p && rec.p.destroy(); } catch (e) {}
-  const media = reelEls[i] && reelEls[i].querySelector(".media");
-  if (media) media.innerHTML = '<div id="hold-' + i + '"></div>';
-  delete players[i];
+function onSpState(ev) {
+  if (ev.data === YT.PlayerState.ENDED) { nextReel(); return; }
+  if (ev.data === YT.PlayerState.PLAYING && active !== null && reelEls[active]) {
+    hideSpin(active);
+    reelEls[active].classList.add("playing");
+  }
 }
-/* Pre-buffer an upcoming reel: play it muted for a moment, then pause at 0.
-   When the child swipes to it, several seconds are already downloaded. */
-function warmUp(i) {
-  const rec = players[i], e = entries[i];
-  if (!rec || !rec.ready || !e || e.dead || i === active || rec.warmed) return;
-  rec.warmed = true;
-  try {
-    rec.p.mute();
-    rec.p.playVideo();
-    setTimeout(() => {
-      if (players[i] === rec && i !== active) { try { rec.p.pauseVideo(); rec.p.seekTo(0, true); } catch (e2) {} }
-    }, 1500);
-  } catch (e2) {}
-}
-function hidePre(i) { const p = reelEls[i] && reelEls[i].querySelector(".pre"); if (p) p.remove(); }
-
-function playReel(i) {
-  const rec = players[i];
-  if (!rec) { ensurePlayer(i); return; }
-  if (!rec.ready) return;
-  applySoundReel(i);
-  rec.p.playVideo();
+/* only mute as a true last resort: video still UNSTARTED after 3.5s means the
+   browser refused autoplay with sound; any tap then auto-restores the sound */
+function spAutoplayFallback() {
   setTimeout(() => {
-    if (i !== active || paused || !players[i] || curView !== "shorts") return;
-    const st = rec.p.getPlayerState();
-    if (st !== YT.PlayerState.PLAYING && st !== YT.PlayerState.BUFFERING) {
-      try { rec.p.mute(); rec.p.playVideo(); showSoundHint(); } catch (e) {}
+    if (curView !== "shorts" || paused || !sp || !spReady) return;
+    let st = -99;
+    try { st = sp.getPlayerState(); } catch (e) {}
+    if (st === -1) {
+      try { sp.mute(); sp.playVideo(); showSoundHint(); } catch (e) {}
     }
-  }, 1200);
+  }, 3500);
 }
-function pauseReel(i) { const r = players[i]; if (r) { try { r.ready && r.p.pauseVideo(); } catch (e) {} } }
-function reelPlaying(i) { const r = players[i]; try { return !!r && r.ready && r.p.getPlayerState() === YT.PlayerState.PLAYING; } catch (e) { return false; } }
-function applySoundReel(i) { const r = players[i]; if (!r || !r.ready) return; try { cfg.soundOn ? (r.p.unMute(), r.p.setVolume(100)) : r.p.mute(); } catch (e) {} }
+function applyShortsSound() {
+  if (!sp || !spReady) return;
+  try { cfg.soundOn ? (sp.unMute(), sp.setVolume(100)) : sp.mute(); } catch (e) {}
+}
+function spPlay() { if (sp && spReady) { try { sp.playVideo(); } catch (e) {} } }
+function spPause() { if (sp && spReady) { try { sp.pauseVideo(); } catch (e) {} } }
+
+function playReel(i) { if (i === active) { applyShortsSound(); spPlay(); } }
+function pauseReel(i) { spPause(); }
+function reelPlaying(i) {
+  try { return i === active && sp && spReady && sp.getPlayerState() === YT.PlayerState.PLAYING; } catch (e) { return false; }
+}
 function hideSpin(i) { const s = reelEls[i] && reelEls[i].querySelector(".spin"); if (s) s.style.display = "none"; }
 function reelError(i, icon, msg) {
   const e = entries[i];
   if (!e || e.dead) return;
   e.dead = true;
-  destroyPlayer(i);
   hideSpin(i);
   const oops = reelEls[i].querySelector(".oops");
   if (icon) oops.querySelector(".big").textContent = icon;
@@ -1060,15 +1065,24 @@ function reelError(i, icon, msg) {
   oops.style.display = "flex";
   if (i === active) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 1400);
 }
-function setActive(i) {
-  if (i === active || !entries[i]) return;
-  const prev = active;
+function setActive(i, force) {
+  if ((i === active && !force) || !entries[i]) return;
   active = i; paused = false;
-  if (prev !== null) pauseReel(prev);
-  for (let k = i - 1; k <= i + 1; k++) if (k >= 0 && k < entries.length) ensurePlayer(k);
-  Object.keys(players).forEach(k => { if (Math.abs(+k - i) > 3) destroyPlayer(+k); });
+  reelEls.forEach((el, k) => {
+    el.classList.toggle("live", k === i);
+    el.classList.remove("playing");
+  });
+  const spn = reelEls[i].querySelector(".spin");
+  if (spn && !entries[i].dead) spn.style.display = "";
   if (entries[i].dead) { setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900); return; }
-  if (curView === "shorts") playReel(i);
+  if (!sp) createShortsPlayer(entries[i].id);
+  else if (spReady) {
+    spVideoId = entries[i].id;
+    try { sp.loadVideoById(entries[i].id); } catch (e) {}
+    applyShortsSound();
+    spAutoplayFallback();
+  }
+  // if the player is still booting, onReady's catch-up handles it
 }
 function nextReel() {
   if (!entries.length) return;
@@ -1118,7 +1132,6 @@ function openPlayer(list, idx) {
   loadPvItem();
 }
 function loadPvItem() {
-  teardownPlayer(true);
   const it = pvList[pvIdx];
   if (!it) { showView("home"); renderHome(); return; }
   document.getElementById("pvTitle").textContent = it.title;
@@ -1128,6 +1141,21 @@ function loadPvItem() {
   document.getElementById("pvSpin").style.display = "block";
   pvPaused = false;
 
+  // fast path: reuse the live YouTube player — video swaps beat full reboots
+  if (it.kind === "yt" && pv && pv.kind === "yt" && pv.ready) {
+    const old = pvMedia.querySelector(".pvpre");
+    if (old) old.remove();
+    pvMedia.insertAdjacentHTML("afterbegin",
+      '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onerror="this.remove()">');
+    const rsf = cfg.resume[itemKey(it)];
+    try {
+      pv.p.loadVideoById(rsf && rsf.t > 10 ? { videoId: it.id, startSeconds: rsf.t } : it.id);
+      cfg.soundOn ? (pv.p.unMute(), pv.p.setVolume(100)) : pv.p.mute();
+    } catch (e) { pvFail(); }
+    return;
+  }
+
+  teardownPlayer(true);
   if (it.kind === "yt") {
     if (apiFailed) { pvFail(); return; }
     pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onerror="this.remove()"><div id="pv-hold"></div>';
@@ -1148,7 +1176,7 @@ function loadPvItem() {
             if (rsy && rsy.t > 10) { try { rec.p.seekTo(rsy.t, true); } catch (e) {} }
           },
           onStateChange: (ev) => {
-            if (ev.data === YT.PlayerState.ENDED) { delete cfg.resume[itemKey(it)]; saveCfg(); pvNext(); }
+            if (ev.data === YT.PlayerState.ENDED) { const cur = pvList[pvIdx]; if (cur) { delete cfg.resume[itemKey(cur)]; saveCfg(); } pvNext(); }
             if (ev.data === YT.PlayerState.PLAYING) {
               document.getElementById("pvSpin").style.display = "none";
               const pp = pvMedia.querySelector(".pvpre");
@@ -1239,18 +1267,27 @@ function showSoundHint() { soundHint.style.display = "block"; clearTimeout(hintT
 function toggleSound() {
   cfg.soundOn = !cfg.soundOn;
   saveCfg();
-  Object.keys(players).forEach(k => applySoundReel(+k));
+  applyShortsSound();
   if (pv) { if (pv.kind === "yt") { try { cfg.soundOn ? (pv.p.unMute(), pv.p.setVolume(100)) : pv.p.mute(); } catch (e) {} } else pv.v.muted = !cfg.soundOn; }
   document.querySelectorAll(".btn-sound").forEach(b => b.textContent = cfg.soundOn ? "🔊" : "🔇");
   if (cfg.soundOn) soundHint.style.display = "none";
 }
 
+/* Any tap or swipe is a user gesture — use it to instantly restore sound
+   whenever the browser forced a muted start. No hunting for the volume button. */
+function attemptAutoUnmute() {
+  if (!cfg.soundOn) return;
+  try { if (sp && spReady && sp.isMuted()) { sp.unMute(); sp.setVolume(100); soundHint.style.display = "none"; } } catch (e) {}
+  try { if (pv && pv.kind === "yt" && pv.ready && pv.p.isMuted()) { pv.p.unMute(); pv.p.setVolume(100); } } catch (e) {}
+}
+document.addEventListener("pointerdown", attemptAutoUnmute, true);
+document.addEventListener("touchstart", attemptAutoUnmute, true);
+
 /* ---------------- progress + watch time ---------------- */
 setInterval(() => {
-  if (curView === "shorts" && active !== null && players[active]) {
-    const r = players[active];
+  if (curView === "shorts" && active !== null && sp && spReady) {
     let t = 0, d = 0;
-    try { if (r.ready) { t = r.p.getCurrentTime(); d = r.p.getDuration(); } } catch (e) {}
+    try { t = sp.getCurrentTime(); d = sp.getDuration(); } catch (e) {}
     const bar = reelEls[active] && reelEls[active].querySelector(".progress i");
     if (bar) bar.style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
   }
