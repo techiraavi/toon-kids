@@ -12,6 +12,8 @@
 <link rel="preconnect" href="https://www.youtube.com">
 <link rel="preconnect" href="https://i.ytimg.com">
 <link rel="preconnect" href="https://www.google.com">
+<link rel="preconnect" href="https://yt3.ggpht.com">
+<link rel="preconnect" href="https://jnn-pa.googleapis.com">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-180.png">
@@ -1139,8 +1141,10 @@ window.addEventListener("popstate", () => {
 });
 let curView = null;
 function showView(name) {
-  if (curView === "shorts" && name !== "shorts") teardownFeed();
-  if (curView === "player" && name !== "player") teardownPlayer();
+  if (curView === "shorts" && name !== "shorts") { spPause(); teardownFeedDom(); scheduleSpIdle(); }
+  if (curView === "player" && name !== "player") pvSoftExit();
+  if (name === "shorts") clearTimeout(spIdleTimer);
+  if (name === "player") clearTimeout(pvIdleTimer);
   Object.values(views).forEach(v => v.classList.remove("on"));
   views[name].classList.add("on");
   curView = name;
@@ -1336,28 +1340,17 @@ function retryYtApi() {
 }
 function whenApi(fn) { if (apiReady) fn(); else apiWaiters.push(fn); }
 
-/* Prime YouTube's embed engine once at startup (tiny hidden player) so the
-   first real player starts much faster — its scripts land in browser cache. */
-let primed = false;
-function primeEmbed() {
-  if (primed || sp || pv) { primed = true; return; }
-  primed = true;
-  const d = document.createElement("div");
-  d.style.cssText = "position:absolute;left:-99px;top:-99px;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none";
-  d.innerHTML = '<div id="prime-hold"></div>';
-  document.body.appendChild(d);
-  let pp = null;
-  const cleanup = () => { try { pp && pp.destroy(); } catch (e) {} d.remove(); };
-  try {
-    pp = new YT.Player("prime-hold", {
-      width: 2, height: 2, videoId: "NuoOtCSjG5Y",
-      playerVars: { autoplay: 0, mute: 1 },
-      events: { onReady: () => setTimeout(cleanup, 400) }
-    });
-    setTimeout(cleanup, 15000);
-  } catch (e) { cleanup(); }
+/* Boot the REAL shorts player at startup (hidden behind the home view) with
+   the first short already cued: warms YouTube's engine AND makes the first
+   Shorts tap start nearly instantly, with play issued inside the gesture. */
+function initShortsPlayer() {
+  if (sp || curView === "shorts" || apiFailed) return;
+  const first = freshSort(shortItems(), false)[0];
+  if (!first) return;
+  spVideoId = first.id;
+  createShortsPlayer(first.id, true);
 }
-whenApi(() => setTimeout(primeEmbed, 700));
+whenApi(() => setTimeout(initShortsPlayer, 1200));
 
 /* =====================================================================
    SHORTS FEED (swipe reels)
@@ -1420,9 +1413,7 @@ function makeReel(i) {
 }
 let feedBuildToken = 0;
 function buildFeed(minSync) {
-  teardownFeed();
-  feed.innerHTML = "";
-  reelEls = [];
+  teardownFeedDom();
   io = new IntersectionObserver((ents) => {
     ents.forEach(en => { if (en.isIntersecting && en.intersectionRatio >= 0.6) setActive(+en.target.dataset.i); });
   }, { root: feed, threshold: [0.6] });
@@ -1441,33 +1432,63 @@ function buildFeed(minSync) {
   feed.scrollTop = 0;
 }
 
-function teardownFeed() {
+/* DOM-only teardown: the player itself survives navigation so returning to
+   Shorts is a fast video swap instead of a full engine reboot */
+function teardownFeedDom() {
   feedBuildToken++; // cancel any in-flight chunked feed build
+  if (io) { io.disconnect(); io = null; }
+  feed.innerHTML = "";
+  reelEls = [];
+  active = null; paused = false;
+}
+function teardownFeed() {
+  teardownFeedDom();
   try { sp && sp.destroy(); } catch (e) {}
   sp = null; spReady = false; spVideoId = null;
   const w = document.getElementById("shortsPlayerWrap");
   if (w) w.innerHTML = "";
-  if (io) { io.disconnect(); io = null; }
-  active = null; paused = false;
+}
+let spIdleTimer = null, pvIdleTimer = null;
+function scheduleSpIdle(ms) {
+  clearTimeout(spIdleTimer);
+  spIdleTimer = setTimeout(() => {
+    if (curView !== "shorts" && sp) {
+      try { sp.destroy(); } catch (e) {}
+      sp = null; spReady = false; spVideoId = null;
+      const w = document.getElementById("shortsPlayerWrap");
+      if (w) w.innerHTML = "";
+    }
+  }, ms || 5 * 60 * 1000);
+}
+function pvSoftExit(ms) {
+  if (pv) {
+    pvPaused = true;
+    if (pv.kind === "yt") { try { pv.ready && pv.p.pauseVideo(); } catch (e) {} }
+    else { try { pv.v.pause(); } catch (e) {} }
+  }
+  clearTimeout(pvIdleTimer);
+  pvIdleTimer = setTimeout(() => { if (curView !== "player") teardownPlayer(); }, ms || 5 * 60 * 1000);
 }
 
-function createShortsPlayer(videoId) {
+function createShortsPlayer(videoId, cueOnly) {
   if (apiFailed) { if (active !== null) reelError(active, "🎈", ytFailMessage()); return; }
   document.getElementById("shortsPlayerWrap").innerHTML = '<div id="sp-hold"></div>';
   spReady = false;
   spVideoId = videoId;
   whenApi(() => {
-    if (curView !== "shorts" || sp) return;
+    if (sp || (!cueOnly && curView !== "shorts")) return;
     sp = new YT.Player("sp-hold", {
       width: "100%", height: "100%", videoId: videoId,
-      playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
+      playerVars: { autoplay: cueOnly ? 0 : 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
       events: {
         onReady: () => {
           spReady = true;
           applyShortsSound();
+          if (curView !== "shorts") return; // boot-cued player waits quietly
           // if the child swiped on while the player was booting, catch up
           const want = active !== null && entries[active] && !entries[active].dead ? entries[active].id : null;
           if (want && want !== spVideoId) { spVideoId = want; try { sp.loadVideoById(want); } catch (e) {} }
+          else if (want && cueOnly) { try { sp.playVideo(); } catch (e) {} }
           if (paused) spPause();
         },
         onStateChange: onSpState,
@@ -1475,9 +1496,9 @@ function createShortsPlayer(videoId) {
       }
     });
     setTimeout(() => {
-      if (sp && !spReady && active !== null && entries[active] && !entries[active].dead) reelError(active, "📡", ytFailMessage());
+      if (sp && !spReady && curView === "shorts" && active !== null && entries[active] && !entries[active].dead) reelError(active, "📡", ytFailMessage());
     }, 12000);
-    spAutoplayFallback();
+    if (!cueOnly) spAutoplayFallback();
   });
 }
 function onSpState(ev) {
@@ -1529,6 +1550,7 @@ function showShortsOffline() {
 function retryShorts() {
   document.getElementById("shortsOffline").style.display = "none";
   deadStreak = 0;
+  teardownFeed(); // full reset including the player — it may be wedged
   if (!apiReady) retryYtApi();
   openShorts(); // rebuild with dead flags cleared
 }
