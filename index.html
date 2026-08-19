@@ -50,6 +50,8 @@
     display: flex; align-items: center; gap: 10px; flex: none;
   }
   .hd .logo { font-size: 24px; }
+  .hd .logoimg { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.18); background: #fff; }
+  @media (min-width: 1900px) { .hd .logoimg { width: 54px; height: 54px; border-radius: 14px; } }
   .hd h1 { margin: 0; font-size: 21px; flex: 1; letter-spacing: .5px; }
   .agePill {
     border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
@@ -393,7 +395,7 @@
 
   <!-- ============ AGE PICKER ============ -->
   <div class="view" id="ageView">
-    <div class="mascots">🐷🦈🐻🐭🐧</div>
+    <img src="icon-180.png" alt="Toon Kids" style="width:132px;height:132px;border-radius:28px;box-shadow:0 10px 30px rgba(0,0,0,.35);background:#fff;">
     <h2>How old is your child?</h2>
     <p>We'll show only videos made for that age</p>
     <div class="ageGrid" id="ageGrid"></div>
@@ -402,7 +404,7 @@
   <!-- ============ HOME ============ -->
   <div class="view" id="homeView">
     <div class="hd">
-      <span class="logo">🎈</span>
+      <img class="logoimg" src="icon-180.png" alt="Toon Kids logo">
       <h1>Toon Kids</h1>
       <button class="agePill" id="agePill" aria-label="Change child's age">Age 4</button>
       <button class="gearBtn" id="gearBtn" aria-label="Parent settings">⚙️</button>

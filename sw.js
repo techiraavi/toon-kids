@@ -1,7 +1,7 @@
 /* Toon Kids service worker — network-first so every deploy reaches users
    immediately when online; cached shell keeps the app opening offline. */
-const CACHE = "toonkids-shell-v1";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-512.png"];
+const CACHE = "toonkids-shell-v2"; // bumped so the new logo icons replace cached ones
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
