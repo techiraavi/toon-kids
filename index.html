@@ -990,6 +990,7 @@ function loadCfg() {
     watch: { date: todayStr(), secs: 0, bonus: 0 },
     eye: { warm: 0, dim: 0, autoEve: true, breakMin: 20 },
     bedtime: { on: false, start: 21, end: 7 },
+    bedOverrideUntil: 0, removedCustom: [],
     fresh: { on: true, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] },
     gClientId: null, gEmail: null, gLastSync: 0
   };
@@ -1005,6 +1006,8 @@ function loadCfg() {
   if (c.apiKey) m.apiKey = c.apiKey;
   ["items", "kws", "blocked"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
   if (!Array.isArray(m.custom)) m.custom = [];
+  if (!Array.isArray(m.removedCustom)) m.removedCustom = [];
+  m.removedCustom = m.removedCustom.filter(okId).slice(-200);
   m.custom = m.custom.filter(it => it && Array.isArray(it.tiers) && (it.kind !== "yt" || okId(it.id)));
   m.fresh.items = m.fresh.items.filter(it => it && Array.isArray(it.tiers) && okId(it.id));
   m.fresh.blocked = m.fresh.blocked.filter(okId);
@@ -1012,12 +1015,19 @@ function loadCfg() {
   // prune watch-history entries for content no longer in the app and >60 days old
   const keep = new Set(CATALOG.concat(m.custom).concat(m.fresh.items).map(it => itemKey(it)));
   const cutoff = Date.now() - 60 * 24 * 3600 * 1000;
-  [m.seen, m.resume].forEach(map => {
-    Object.keys(map).forEach(k => {
-      const entry = map[k];
-      if (!keep.has(k) && (!entry || !entry.t || entry.t < cutoff)) delete map[k];
-    });
+  Object.keys(m.seen).forEach(k => {
+    const entry = m.seen[k];
+    if (!keep.has(k) && (!entry || !entry.t || entry.t < cutoff)) delete m.seen[k];
   });
+  // resume: entry.t is a playback POSITION, entry.at is the wall-clock stamp
+  Object.keys(m.resume).forEach(k => {
+    const entry = m.resume[k];
+    if (!entry || !keep.has(k)) { delete m.resume[k]; return; }
+    if (!entry.at) entry.at = Date.now(); // migrate pre-timestamp records
+    else if (entry.at < Date.now() - 30 * 24 * 3600 * 1000) delete m.resume[k];
+  });
+  // drop hearts for content that no longer exists anywhere
+  Object.keys(m.liked).forEach(k => { if (!keep.has(k)) delete m.liked[k]; });
   return m;
 }
 
@@ -1118,15 +1128,29 @@ const views = { age: document.getElementById("ageView"), home: document.getEleme
 
 /* ---- history handling: the system back button/gesture must navigate the
    app (shorts/player/panel → home) instead of exiting it ---- */
-let navDepth = 0;
-function pushNav(tag) { try { history.pushState({ tk: tag }, ""); navDepth++; } catch (e) {} }
+let navDepth = 0, backInFlight = false;
+function pushNav(tag) { try { history.pushState({ tk: tag, d: navDepth + 1 }, ""); navDepth++; } catch (e) {} }
 function goBack() {
-  if (navDepth > 0) { history.back(); return; }
+  // one traversal at a time: a rapid double-back must NEVER step past the
+  // app's base history entry and escape onto the open web
+  if (backInFlight) return;
+  if (navDepth > 0) {
+    backInFlight = true;
+    setTimeout(() => { backInFlight = false; }, 1200);
+    history.back();
+    return;
+  }
   if (typeof panel !== "undefined" && panel.style.display === "flex") { closeParentPanel(); return; }
-  if (curView !== "home" && curView !== "age") { showView("home"); renderHome(); }
+  if (curView !== "home" && curView !== "age") {
+    if (pendingTabCat) { curCat = pendingTabCat; pendingTabCat = null; }
+    showView("home");
+    renderHome();
+  }
 }
-window.addEventListener("popstate", () => {
-  navDepth = Math.max(0, navDepth - 1);
+window.addEventListener("popstate", (e) => {
+  backInFlight = false;
+  // derive depth from the entry itself so forward swipes can't corrupt it
+  navDepth = (e.state && e.state.d) || 0;
   if (gateWrap.style.display === "flex") {
     gateWrap.style.display = "none"; gateCb = null;
     pushNav(curView); // keep the underlying view's history entry alive
@@ -1273,6 +1297,20 @@ function makeShelf(title, items, kind) {
 function renderHome() {
   document.getElementById("agePill").textContent = "Age " + cfg.age;
   const grid = document.getElementById("grid");
+  // remember where the child was: rebuilds must not throw them back to the top
+  const prevTop = grid.scrollTop;
+  const prevRows = {};
+  grid.querySelectorAll(".shelf").forEach(s => {
+    const h = s.querySelector("h3"), r = s.querySelector(".shelf-row");
+    if (h && r && r.scrollLeft) prevRows[h.textContent] = r.scrollLeft;
+  });
+  const restoreScroll = () => {
+    grid.querySelectorAll(".shelf").forEach(s => {
+      const h = s.querySelector("h3"), r = s.querySelector(".shelf-row");
+      if (h && r && prevRows[h.textContent]) r.scrollLeft = prevRows[h.textContent];
+    });
+    grid.scrollTop = prevTop;
+  };
   grid.innerHTML = "";
   const warn = document.createElement("div");
   warn.id = "fileWarn";
@@ -1294,20 +1332,24 @@ function renderHome() {
       items.forEach(it => cards.appendChild(makeCard(it, items)));
       grid.appendChild(cards);
     }
+    restoreScroll();
     updateNav();
     return;
   }
 
   // Home tab: YouTube-Kids-style shelves
   const all = freshSort(gridItems("all"), true);
-  const resumeItems = all.filter(it => cfg.resume[itemKey(it)]);
+  // most recently watched FIRST — that's the one they want to continue
+  const resumeItems = all.filter(it => cfg.resume[itemKey(it)])
+    .sort((a, b) => ((cfg.resume[itemKey(b)].at || 0) - (cfg.resume[itemKey(a)].at || 0)))
+    .slice(0, 10);
   if (resumeItems.length) grid.appendChild(makeShelf("▶ Continue watching", resumeItems, "video"));
   const newItems = all.filter(it => seenCount(it) === 0).slice(0, 12);
   if (newItems.length) grid.appendChild(makeShelf("✨ New for you", newItems, "video"));
   const shortsShelf = freshSort(shortItems(), true).slice(0, 12);
   if (shortsShelf.length) grid.appendChild(makeShelf("⚡ Shorts", shortsShelf, "shorts"));
   [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["classic", "🍿 Classics"], ["my", "📁 My Videos"]].forEach(([c, label]) => {
-    const its = freshSort(gridItems(c), true);
+    const its = freshSort(gridItems(c), true).slice(0, 30);
     if (its.length) grid.appendChild(makeShelf(label, its, "video"));
   });
   if (!grid.querySelector(".shelf")) {
@@ -1316,6 +1358,7 @@ function renderHome() {
     e.textContent = "Nothing here yet!";
     grid.appendChild(e);
   }
+  restoreScroll();
   updateNav();
 }
 
@@ -1478,17 +1521,26 @@ function createShortsPlayer(videoId, cueOnly) {
   whenApi(() => {
     if (sp || (!cueOnly && curView !== "shorts")) return;
     sp = new YT.Player("sp-hold", {
-      width: "100%", height: "100%", videoId: videoId,
+      width: "100%", height: "100%", videoId: spVideoId, /* current, not closed-over: queued calls stay in sync */
       playerVars: { autoplay: cueOnly ? 0 : 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
       events: {
         onReady: () => {
           spReady = true;
           applyShortsSound();
-          if (curView !== "shorts") return; // boot-cued player waits quietly
-          // if the child swiped on while the player was booting, catch up
+          if (curView !== "shorts") {
+            // the child may have left mid-boot: an autoplay-created iframe would
+            // otherwise keep playing invisibly behind other views — silence it
+            try { sp.pauseVideo(); } catch (e) {}
+            return;
+          }
+          // if the child swiped on while the player was booting, catch up —
+          // compare against the player's ACTUAL video, not our bookkeeping
+          let actualId = null;
+          try { actualId = (sp.getVideoData() || {}).video_id; } catch (e) {}
+          const current = actualId || spVideoId;
           const want = active !== null && entries[active] && !entries[active].dead ? entries[active].id : null;
-          if (want && want !== spVideoId) { spVideoId = want; try { sp.loadVideoById(want); } catch (e) {} }
-          else if (want && cueOnly) { try { sp.playVideo(); } catch (e) {} }
+          if (want && want !== current) { spVideoId = want; try { sp.loadVideoById(want); } catch (e) {} spAutoplayFallback(); }
+          else if (want && cueOnly) { try { sp.playVideo(); } catch (e) {} spAutoplayFallback(); }
           if (paused) spPause();
         },
         onStateChange: onSpState,
@@ -1501,21 +1553,30 @@ function createShortsPlayer(videoId, cueOnly) {
     if (!cueOnly) spAutoplayFallback();
   });
 }
+let spLastState = null;
 function onSpState(ev) {
+  const prevState = spLastState;
+  spLastState = ev.data;
   if (ev.data === YT.PlayerState.ENDED) { if (!locked()) nextReel(); return; }
   if (ev.data === YT.PlayerState.PLAYING && locked()) { spPause(); return; }
   if (ev.data === YT.PlayerState.PLAYING && active !== null && reelEls[active]) {
     deadStreak = 0;
     hideSpin(active);
     reelEls[active].classList.add("playing");
-    navPeek(2000); // capsule bows out once playback is rolling
+    // don't strobe the capsule on buffering recoveries — only real transitions
+    if (prevState !== YT.PlayerState.BUFFERING) navPeek(2000);
   }
   if (ev.data === YT.PlayerState.PAUSED) navSetHidden(false);
 }
 /* only mute as a true last resort: video still UNSTARTED after 3.5s means the
    browser refused autoplay with sound; any tap then auto-restores the sound */
+let spFallbackSeq = 0;
 function spAutoplayFallback() {
+  // identity-guarded: a timer armed for one reel must never mute a later one
+  const seq = ++spFallbackSeq;
+  const vid = spVideoId;
   setTimeout(() => {
+    if (seq !== spFallbackSeq || vid !== spVideoId) return;
     if (curView !== "shorts" || paused || !sp || !spReady) return;
     let st = -99;
     try { st = sp.getPlayerState(); } catch (e) {}
@@ -1847,7 +1908,7 @@ setInterval(() => {
     if (cw && cw.fmt !== "short" && d > 60 && t > 10) {
       const rk = itemKey(cw);
       if (t > d - 30) { if (cfg.resume[rk]) { delete cfg.resume[rk]; saveCfg(); } }
-      else if (!cfg.resume[rk] || Math.abs(cfg.resume[rk].t - t) > 10) { cfg.resume[rk] = { t: Math.floor(t), d: Math.floor(d) }; saveCfg(); }
+      else if (!cfg.resume[rk] || Math.abs(cfg.resume[rk].t - t) > 10) { cfg.resume[rk] = { t: Math.floor(t), d: Math.floor(d), at: Date.now() }; saveCfg(); }
     }
   }
 }, 400);
@@ -1905,6 +1966,7 @@ function startEyeBreak() {
   const wasPlayer = curView === "player" && !!pv;
   if (wasShorts) { paused = true; pauseReel(active); }
   if (wasPlayer && !pvPaused) pvToggle();
+  spPause();
   const ov = document.getElementById("eyeBreak");
   ov.style.display = "flex";
   // timestamp-based so background-tab timer throttling can't stall the break
@@ -1926,10 +1988,10 @@ function startEyeBreak() {
 }
 
 /* ---------------- bedtime lock ---------------- */
-let bedOverrideUntil = 0;
 function inBedtime() {
   if (!cfg.bedtime.on) return false;
-  if (Date.now() < bedOverrideUntil) return false;
+  // the 15-min unlock is persisted so an app update/reload can't re-lock early
+  if (Date.now() < (cfg.bedOverrideUntil || 0)) return false;
   const h = new Date().getHours();
   const s = cfg.bedtime.start, e = cfg.bedtime.end;
   if (s === e) return false;
@@ -1940,9 +2002,11 @@ function checkBedtime() {
   if (inBedtime()) {
     bs.style.display = "flex";
     // re-assert the pause on EVERY tick, not just the show transition —
-    // playback must never continue behind the lock
+    // playback must never continue behind the lock. spPause runs regardless
+    // of view so even a stray background player can't keep making sound.
     if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
     if (curView === "player" && pv && !pvPaused) pvToggle();
+    spPause();
   } else if (bs.style.display === "flex") {
     bs.style.display = "none";
   }
@@ -1950,7 +2014,8 @@ function checkBedtime() {
 setInterval(checkBedtime, 30000);
 document.getElementById("bedUnlockBtn").addEventListener("click", () => {
   openGate(() => {
-    bedOverrideUntil = Date.now() + 15 * 60 * 1000;
+    cfg.bedOverrideUntil = Date.now() + 15 * 60 * 1000;
+    saveCfg();
     checkBedtime();
   });
 });
@@ -1962,6 +2027,7 @@ function showBreak() {
   breakScreen.style.display = "flex";
   if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
   if (curView === "player" && pv && !pvPaused) pvToggle();
+  spPause(); // no surviving background player may play behind the lock
   if (!already) saveCfg();
 }
 document.getElementById("unlockBtn").addEventListener("click", () => {
@@ -2103,6 +2169,12 @@ function renderCustomList() {
     row.querySelector(".del").addEventListener("click", () => {
       const rm = cfg.custom.splice(idx, 1)[0];
       if (rm && rm.kind === "local") idbDel(rm.localKey);
+      if (rm && rm.kind === "yt") {
+        // tombstone so a later Google-sync restore can't resurrect it
+        cfg.removedCustom = (cfg.removedCustom || []).filter(x => x !== rm.id);
+        cfg.removedCustom.push(rm.id);
+        if (cfg.removedCustom.length > 200) cfg.removedCustom = cfg.removedCustom.slice(-200);
+      }
       saveCfg(); renderCustomList();
     });
     list.appendChild(row);
@@ -2152,6 +2224,8 @@ function pickedTiers() {
 /* Add a yt item to the parent's list; merges age tiers if it already exists. */
 function addCustomYt(id, title, ch, fmt, tiers) {
   if (!okId(id)) return false;
+  // an explicit add clears any old deletion tombstone
+  cfg.removedCustom = (cfg.removedCustom || []).filter(x => x !== id);
   const existing = cfg.custom.find(c => c.kind === "yt" && c.id === id);
   if (existing) {
     tiers.forEach(t => { if (!existing.tiers.includes(t)) existing.tiers.push(t); });
@@ -2364,7 +2438,14 @@ async function autoRefreshFresh(force) {
     f.lastError = null;
     f.lastRun = Date.now();
     f.items = f.items.concat(freshItems);
-    if (f.items.length > 120) f.items = f.items.slice(f.items.length - 120);
+    if (f.items.length > 120) {
+      // rotate out oldest UNLOVED items only — a hearted short must never
+      // silently vanish from the child's Favorites
+      const loved = f.items.filter(it => cfg.liked[itemKey(it)]);
+      const rest = f.items.filter(it => !cfg.liked[itemKey(it)]);
+      const room = Math.max(0, 120 - loved.length);
+      f.items = rest.slice(Math.max(0, rest.length - room)).concat(loved);
+    }
     saveCfg();
     return freshItems.length;
   } finally {
@@ -2495,6 +2576,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") {
     if (curView === "shorts" && active !== null) { paused = true; pauseReel(active); }
     if (curView === "player" && pv && !pvPaused) pvToggle();
+    spPause(); // background players included
   }
 });
 document.addEventListener("keydown", (e) => {
@@ -2543,12 +2625,24 @@ async function checkForUpdate(initial) {
   if (e !== appEtag) pendingUpdate = true;
   maybeApplyUpdate();
 }
+function updateBlocked() {
+  return curView === "shorts" || curView === "player" ||
+         panel.style.display === "flex" || gateWrap.style.display === "flex" || locked();
+}
 function maybeApplyUpdate() {
   if (!pendingUpdate) return;
-  if (curView === "shorts" || curView === "player") return; // wait until they're back home
+  if (updateBlocked()) return; // never reload mid-video, over the panel/gate, or behind a lock
   pendingUpdate = false;
   document.getElementById("updToast").style.display = "block";
-  setTimeout(() => location.reload(), 1500);
+  setTimeout(() => {
+    if (updateBlocked()) {
+      // something started during the toast — defer to a calmer moment
+      pendingUpdate = true;
+      document.getElementById("updToast").style.display = "none";
+      return;
+    }
+    location.reload();
+  }, 1500);
 }
 if ("serviceWorker" in navigator && !isFileProto) {
   try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (e) {}
@@ -2608,33 +2702,73 @@ function gsSyncPayload() {
     freshOn: cfg.fresh.on,
     kws: cfg.fresh.kws,
     blocked: cfg.fresh.blocked,
+    removedCustom: cfg.removedCustom || [],
     custom: cfg.custom.filter(it => it.kind === "yt")
   };
 }
+function intIn(v, lo, hi, dflt) {
+  v = Number(v);
+  return Number.isFinite(v) && v >= lo && v <= hi ? Math.round(v) : dflt;
+}
 function gsApplyPayload(p) {
-  if (!p || typeof p !== "object") return false;
-  if (p.apiKey) cfg.apiKey = p.apiKey;
-  if (p.pin !== undefined) cfg.pin = p.pin;
-  if (typeof p.timeLimitMin === "number") cfg.timeLimitMin = p.timeLimitMin;
-  if (p.bedtime && typeof p.bedtime === "object") Object.assign(cfg.bedtime, p.bedtime);
-  if (p.eye && typeof p.eye === "object") Object.assign(cfg.eye, p.eye);
+  // strict validation: a corrupt or newer-version file must never silently
+  // weaken the parental locks — refuse rather than guess
+  if (!p || typeof p !== "object" || p.v !== 1) return false;
+  if (p.apiKey && typeof p.apiKey === "string") cfg.apiKey = p.apiKey;
+  // PIN: format-validated, and a PIN-less payload never clears a local PIN
+  if (typeof p.pin === "string" && /^\d{4}$/.test(p.pin)) cfg.pin = p.pin;
+  cfg.timeLimitMin = intIn(p.timeLimitMin, 0, 600, cfg.timeLimitMin);
+  if (p.bedtime && typeof p.bedtime === "object") {
+    cfg.bedtime = {
+      on: !!p.bedtime.on,
+      start: intIn(p.bedtime.start, 0, 23, cfg.bedtime.start),
+      end: intIn(p.bedtime.end, 0, 23, cfg.bedtime.end)
+    };
+  }
+  if (p.eye && typeof p.eye === "object") {
+    cfg.eye = {
+      warm: intIn(p.eye.warm, 0, 3, cfg.eye.warm),
+      dim: intIn(p.eye.dim, 0, 3, cfg.eye.dim),
+      autoEve: !!p.eye.autoEve,
+      breakMin: intIn(p.eye.breakMin, 0, 60, cfg.eye.breakMin)
+    };
+  }
   if (typeof p.freshOn === "boolean") cfg.fresh.on = p.freshOn;
-  if (Array.isArray(p.kws)) cfg.fresh.kws = p.kws.filter(k => k && k.q && Array.isArray(k.tiers));
-  if (Array.isArray(p.blocked)) cfg.fresh.blocked = p.blocked.filter(okId).slice(-500);
+  if (Array.isArray(p.kws)) cfg.fresh.kws = p.kws.filter(k => k && typeof k.q === "string" && Array.isArray(k.tiers)).slice(0, 30);
+  // MERGE blocklists and tombstones — a restore must never resurrect content
+  // the parent removed on any device
+  if (Array.isArray(p.blocked)) {
+    cfg.fresh.blocked = Array.from(new Set(cfg.fresh.blocked.concat(p.blocked.filter(okId)))).slice(-500);
+  }
+  if (Array.isArray(p.removedCustom)) {
+    cfg.removedCustom = Array.from(new Set((cfg.removedCustom || []).concat(p.removedCustom.filter(okId)))).slice(-200);
+  }
+  const gone = new Set(cfg.removedCustom || []);
+  cfg.custom = cfg.custom.filter(it => it.kind !== "yt" || !gone.has(it.id));
   if (Array.isArray(p.custom)) {
-    p.custom.filter(it => it && it.kind === "yt" && okId(it.id) && Array.isArray(it.tiers)).forEach(it => {
-      addCustomYt(it.id, it.title || "Video", it.ch || "Synced", it.fmt === "short" ? "short" : "video", it.tiers);
-    });
+    p.custom
+      .filter(it => it && it.kind === "yt" && okId(it.id) && Array.isArray(it.tiers) && !gone.has(it.id) && !cfg.fresh.blocked.includes(it.id))
+      .forEach(it => addCustomYt(it.id, it.title || "Video", it.ch || "Synced", it.fmt === "short" ? "short" : "video", it.tiers));
   }
   saveCfg();
   applyEye();
   checkBedtime();
+  if (curView === "home") renderHome();
   return true;
 }
+function gsHttpGuard(r) {
+  if (r.ok) return;
+  if (r.status === 401 || r.status === 403) {
+    gsToken = null; gsTokenExp = 0;
+    throw new Error("Google session expired — tap Sign in with Google again");
+  }
+  throw new Error("Google Drive isn't reachable right now — try again");
+}
 async function gsFindFile(token) {
-  const r = await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)&q=" + encodeURIComponent("name='toonkids.json'"), { headers: { Authorization: "Bearer " + token } });
+  const r = await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&orderBy=modifiedTime%20desc&fields=files(id,name)&q=" + encodeURIComponent("name='toonkids.json'"), { headers: { Authorization: "Bearer " + token } });
+  gsHttpGuard(r);
   const j = await r.json();
-  if (j.error) throw new Error(j.error.message || "Google Drive error");
+  if (j.error) throw new Error("Google Drive error");
   return (j.files && j.files[0] && j.files[0].id) || null;
 }
 async function gsPushSettings() {
@@ -2649,7 +2783,19 @@ async function gsPushSettings() {
     const mp = "--" + boundary + "\r\nContent-Type: application/json\r\n\r\n" + JSON.stringify({ name: "toonkids.json", parents: ["appDataFolder"] }) + "\r\n--" + boundary + "\r\nContent-Type: application/json\r\n\r\n" + body + "\r\n--" + boundary + "--";
     r = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "multipart/related; boundary=" + boundary }, body: mp });
   }
-  if (!r.ok) throw new Error("Saving to Google Drive failed");
+  gsHttpGuard(r);
+  if (!id) {
+    // two devices doing their first Save can race and create duplicate files;
+    // converge everyone on the newest and delete the rest
+    try {
+      const lr = await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&orderBy=modifiedTime%20desc&fields=files(id)&q=" + encodeURIComponent("name='toonkids.json'"), { headers: { Authorization: "Bearer " + token } });
+      const lj = await lr.json();
+      const files = (lj.files || []).map(f => f.id);
+      files.slice(1).forEach(fid => {
+        fetch("https://www.googleapis.com/drive/v3/files/" + fid, { method: "DELETE", headers: { Authorization: "Bearer " + token } }).catch(() => {});
+      });
+    } catch (e) {}
+  }
   cfg.gLastSync = Date.now();
   saveCfg();
 }
@@ -2658,9 +2804,13 @@ async function gsPullSettings() {
   const id = await gsFindFile(token);
   if (!id) throw new Error("No saved settings in this Google account yet — use Save first");
   const r = await fetch("https://www.googleapis.com/drive/v3/files/" + id + "?alt=media", { headers: { Authorization: "Bearer " + token } });
-  if (!r.ok) throw new Error("Loading from Google Drive failed");
-  const ok = gsApplyPayload(await r.json());
-  if (ok) { cfg.gLastSync = Date.now(); saveCfg(); }
+  gsHttpGuard(r);
+  let payload = null;
+  try { payload = await r.json(); } catch (e) {}
+  const ok = gsApplyPayload(payload);
+  if (!ok) throw new Error("The saved settings file looks invalid or from a newer app — nothing was changed");
+  cfg.gLastSync = Date.now();
+  saveCfg();
   return ok;
 }
 async function gsWhoAmI(token) {
@@ -2702,8 +2852,11 @@ document.getElementById("gsSignIn").addEventListener("click", async () => {
     const token = await gsGetToken();
     cfg.gEmail = (await gsWhoAmI(token)) || cfg.gEmail || "your account";
     saveCfg();
-    // fresh device with no local setup? restore automatically
-    if (!cfg.apiKey && !cfg.pin) {
+    // auto-restore ONLY on a genuinely unconfigured device — a parent's
+    // freshly built local settings must never be silently overwritten
+    const locallyConfigured = !!(cfg.apiKey || cfg.pin || cfg.timeLimitMin > 0 || cfg.bedtime.on ||
+      cfg.custom.length || cfg.fresh.kws.length || cfg.fresh.blocked.length);
+    if (!locallyConfigured) {
       try {
         await gsPullSettings();
         renderPanel();
@@ -2723,6 +2876,7 @@ document.getElementById("gsPush").addEventListener("click", async () => {
   } catch (e) { gsStatus("⚠️ " + e.message); }
 });
 document.getElementById("gsPull").addEventListener("click", async () => {
+  if (!confirm("Replace this device's parent settings with the ones saved in your Google account?")) return;
   try {
     gsStatus("Restoring from your Google account…");
     await gsPullSettings();
@@ -2751,9 +2905,21 @@ window.addEventListener("storage", (e) => {
     cfg = inc;
     if (!cfg.fresh) cfg.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [], blocked: [] };
     if (!cfg.fresh.blocked) cfg.fresh.blocked = [];
+    if (!Array.isArray(cfg.removedCustom)) cfg.removedCustom = [];
     if (cfg.watch && cfg.watch.secs < mySecs) cfg.watch.secs = mySecs;
     applyEye();
     checkBedtime();
+    // reflect the other copy's changes IMMEDIATELY: removed/blocked content
+    // must stop being reachable in this session, not just after a re-render
+    if (curView === "home" || curView === "age") renderHome();
+    else if (curView === "shorts") {
+      const blockedSet = new Set(cfg.fresh.blocked || []);
+      const allowed = new Set(shortItems().filter(it => !blockedSet.has(it.id)).map(it => it.id));
+      let killed = false;
+      entries.forEach(en => { if (en.kind === "yt" && !allowed.has(en.id)) { en.dead = true; killed = true; } });
+      if (killed && active !== null && entries[active] && entries[active].dead) { spPause(); nextReel(); }
+    }
+    updateNav();
   } catch (err) {}
 });
 
