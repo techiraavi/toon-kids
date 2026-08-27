@@ -14,6 +14,12 @@
 <link rel="preconnect" href="https://www.google.com">
 <link rel="preconnect" href="https://yt3.ggpht.com">
 <link rel="preconnect" href="https://jnn-pa.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- non-blocking font load: a plain stylesheet link would hold first paint
+     (splash included) hostage to fonts.googleapis.com on degraded networks -->
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-180.png">
@@ -31,33 +37,79 @@
   .app { position: relative; width: 100vw; height: 100vh; height: 100dvh; background: #f4f1fb; overflow: hidden; }
 
   /* ---- device-adaptive sizing: phone → tablet → laptop → TV ---- */
-  :root { --cardmin: 164px; }
+  :root { --cardmin: 164px;
+          --spring: cubic-bezier(.34,1.56,.64,1); --swift: cubic-bezier(.22,1,.36,1);
+          --t-tap: .16s; --t-nav: .3s;
+          --brand: #7b3fe4; --brand-2: #9d4ce0; --brand-deep: #5426ad;
+          --sun: #ffd54a; --ink: #26203d; --muted: #6b6486; --paper: #f4f1fb; }
+  /* per-age-tier accent skins: warm for 2–4, purple for 5–7, cool for 8–10
+     (values pre-darkened so white text stays readable on every accent) */
+  #app[data-tier="little"] { --brand: #d9480f; --brand-2: #f76707; --brand-deep: #a63603; }
+  #app[data-tier="super"]  { --brand: #1971c2; --brand-2: #339af0; --brand-deep: #0b4884; }
   @media (min-width: 700px)  { :root { --cardmin: 200px; } }
   @media (min-width: 1200px) { :root { --cardmin: 230px; } }
   @media (min-width: 1900px) { :root { --cardmin: 300px; } }
 
   /* keyboard / TV-remote focus visibility */
-  button:focus-visible { outline: 4px solid #ffd54a; outline-offset: 2px; }
+  button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 4px solid #ffd54a; outline-offset: 2px; }
+  /* :has() kept in separate rules: one unsupported selector would kill the whole list above */
+  .switch:has(input:focus-visible) { outline: 4px solid #ffd54a; outline-offset: 2px; border-radius: 999px; }
+  .tierChecks label:has(input:focus-visible) { outline: 4px solid #ffd54a; outline-offset: 2px; }
+  /* little fingers: no image callouts, drags, or accidental long-press menus */
+  img { -webkit-touch-callout: none; -webkit-user-drag: none; }
+  .thumb img, .sthumb img { pointer-events: none; }
 
   .view { position: absolute; inset: 0; display: none; flex-direction: column; }
-  .view.on { display: flex; }
+  .view.on { display: flex; animation: viewIn .25s ease-out; }
+  /* opacity-only for shorts: the persistent player iframe and the synchronous
+     feed.scrollTop in openShorts must never sit on a transforming ancestor */
+  #shortsView.on { animation: viewFade .25s ease-out; }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(8px) scale(.99); } }
+  @keyframes viewFade { from { opacity: 0; } }
+  .grid.swap { animation: gridSwap .2s ease-out; }
+  @keyframes gridSwap { from { opacity: .35; transform: translateY(8px); } }
+
+  /* branded splash: static HTML+CSS, paints before the script parses */
+  #splash { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 18px;
+            background: linear-gradient(160deg, #7b3fe4, #4f2ba8 55%, #2c1b5e); transition: opacity .4s; }
+  /* logo pops in first, sized by the device's screen (phone → tablet → TV) */
+  #splash img { width: clamp(96px, 26vmin, 220px); height: clamp(96px, 26vmin, 220px);
+                border-radius: clamp(22px, 6vmin, 48px); background: #fff;
+                box-shadow: 0 10px 30px rgba(0,0,0,.35);
+                animation: splashPop .7s var(--spring) both; }
+  #splash .wordmark { color: #fff; font-size: clamp(22px, 6vmin, 44px); font-weight: 800; letter-spacing: .5px;
+                      text-shadow: 0 2px 8px rgba(0,0,0,.3); animation: splashUp .5s ease-out .25s both; }
+  #splash .ssp { width: 34px; height: 34px; border-radius: 50%; border: 4px solid rgba(255,255,255,.25);
+                 border-top-color: #ffd54a; animation: spin 1s linear infinite; }
+  #splash.done { opacity: 0; pointer-events: none; }
+  @keyframes splashPop { 0% { transform: scale(0) rotate(-12deg); opacity: 0; }
+    60% { transform: scale(1.08) rotate(2deg); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+  @keyframes splashUp { from { opacity: 0; transform: translateY(14px); } }
 
   /* ================= HOME ================= */
   #homeView { background: #f4f1fb; }
   .hd {
-    background: linear-gradient(90deg, #7b3fe4, #9d4ce0); color: #fff;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: #fff;
     padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
     display: flex; align-items: center; gap: 10px; flex: none;
+    border-radius: 0 0 22px 22px; box-shadow: 0 4px 16px rgba(30,20,60,.22);
+    position: relative; z-index: 2;
   }
   .hd .logo { font-size: 24px; }
-  .hd .logoimg { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.18); background: #fff; }
+  .hd .logoimg { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.18); background: #fff;
+                 border: 2px solid #fff; transform: rotate(-3deg); }
   @media (min-width: 1900px) { .hd .logoimg { width: 54px; height: 54px; border-radius: 14px; } }
   .hd h1 { margin: 0; font-size: 21px; flex: 1; letter-spacing: .5px; }
   .agePill {
     border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
     background: #ffd54a; color: #4b2b00; padding: 8px 14px; border-radius: 999px; box-shadow: 0 3px 0 #c8a100;
+    display: flex; align-items: center; gap: 6px;
   }
-  .gearBtn { border: none; cursor: pointer; width: 38px; height: 38px; border-radius: 50%;
+  .agePill .avi { font-size: 19px; line-height: 1; }
+  /* the yellow pill would melt into the little tier's amber header */
+  #app[data-tier="little"] .agePill { background: #fff; color: #a63603; box-shadow: 0 3px 0 rgba(0,0,0,.18); }
+  .gearBtn { border: none; cursor: pointer; width: 44px; height: 44px; border-radius: 50%;
              background: rgba(255,255,255,.2); color: #fff; font-size: 18px; }
 
   .chips { display: none; } /* replaced by home shelves + bottom nav */
@@ -70,7 +122,9 @@
   }
   .chip-btn.sel { background: #7b3fe4; color: #fff; }
 
-  .grid { flex: 1; overflow-y: auto; padding: 12px 14px calc(88px + env(safe-area-inset-bottom)); }
+  .grid { flex: 1; overflow-y: auto; overscroll-behavior-y: contain; padding: 12px 14px calc(88px + env(safe-area-inset-bottom));
+          background: radial-gradient(420px 300px at 88% -60px, rgba(255,213,74,.18), transparent 70%),
+                      radial-gradient(360px 280px at -8% 24%, rgba(123,63,228,.08), transparent 70%); }
 
   /* ---------- bottom navigation (YouTube-app style) ---------- */
   /* ---------- floating LIQUID GLASS navigation capsule ---------- */
@@ -79,7 +133,7 @@
     bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 15;
     display: none; align-items: center; gap: 4px; padding: 5px;
     border-radius: 999px;
-    transition: transform .3s ease, opacity .3s ease;
+    transition: transform var(--t-nav) var(--swift), opacity var(--t-nav) var(--swift);
     background: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.26));
     backdrop-filter: blur(22px) saturate(1.7);
     -webkit-backdrop-filter: blur(22px) saturate(1.7);
@@ -88,7 +142,8 @@
                 inset 0 1px 1px rgba(255,255,255,.75),
                 inset 0 -1px 1px rgba(120,90,200,.08);
   }
-  #bottomNav.show { display: flex; }
+  #bottomNav.show { display: flex; animation: navIn .35s var(--spring); }
+  @keyframes navIn { from { transform: translate(-50%, 160%); opacity: 0; } }
   /* auto-hide: slides off-screen while scrolling shelves or watching a short */
   #bottomNav.navHidden { transform: translate(-50%, 160%); opacity: 0; pointer-events: none; }
   #bottomNav.dark {
@@ -101,31 +156,37 @@
     border: none; background: none; cursor: pointer; font-family: inherit;
     display: flex; align-items: center; justify-content: center;
     color: #4f4370; font-size: 0; font-weight: 800; /* icon-only: labels live in aria */
-    padding: 8px 16px; border-radius: 999px;
-    transition: background .25s, color .25s, box-shadow .25s;
+    padding: 8px 16px; border-radius: 999px; min-height: 48px; min-width: 64px;
+    position: relative; z-index: 1;
+    transition: color .25s;
   }
   #bottomNav.dark .navBtn { color: rgba(255,255,255,.82); }
-  .navBtn .ico { font-size: 24px; line-height: 1; transition: transform .2s; }
-  .navBtn.active {
-    color: #5426ad;
+  .navBtn .ico { width: 26px; height: 26px; display: block; transition: transform .2s; }
+  /* active state = color + icon scale; the sliding #navPill carries the glass */
+  .navBtn.active { color: var(--brand-deep); }
+  #bottomNav.dark .navBtn.active { color: #ffd54a; }
+  .navBtn.active .ico { transform: scale(1.15); }
+  .navBtn:active .ico { transform: scale(.88); }
+  #navPill {
+    position: absolute; left: 0; top: 5px; bottom: 5px; width: 0; border-radius: 999px;
     background: linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.55));
     box-shadow: 0 2px 10px rgba(80,40,170,.18), inset 0 1px 1px rgba(255,255,255,.9);
+    transition: transform var(--t-nav) var(--spring), width var(--t-nav) var(--swift), opacity .2s;
+    opacity: 0; pointer-events: none;
   }
-  #bottomNav.dark .navBtn.active {
-    color: #ffd54a;
+  #bottomNav.dark #navPill {
     background: linear-gradient(135deg, rgba(255,255,255,.3), rgba(255,255,255,.12));
     box-shadow: 0 2px 10px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.4);
   }
-  .navBtn.active .ico { transform: scale(1.15); }
-  .navBtn:active .ico { transform: scale(.88); }
   @media (min-width: 700px) {
     .navBtn { padding: 10px 22px; }
-    .navBtn .ico { font-size: 26px; }
+    .navBtn .ico { width: 28px; height: 28px; }
   }
   @media (min-width: 1900px) {
     #bottomNav { bottom: calc(16px + env(safe-area-inset-bottom)); padding: 7px; gap: 6px; }
     .navBtn { padding: 14px 30px; }
-    .navBtn .ico { font-size: 34px; }
+    .navBtn .ico { width: 38px; height: 38px; }
+    #navPill { top: 7px; bottom: 7px; }
   }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cardmin), 1fr)); gap: 12px; max-width: 1460px; margin: 0 auto; }
   #fileWarn { max-width: 1460px; margin-left: auto; margin-right: auto; }
@@ -164,7 +225,10 @@
   .thumb .pl { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.55); color: #fff;
                border-radius: 999px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
   .thumb .newb { position: absolute; left: 8px; top: 8px; background: #ffd54a; color: #4b2b00;
-                 font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+                 font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.25);
+                 animation: newbPop .4s var(--spring) backwards; }
+  .newb.still { animation: none; } /* fresh installs: only the first few pop */
+  @keyframes newbPop { from { transform: scale(0); } }
   .card .t { font-size: 13px; font-weight: 800; color: #26203d; padding: 8px 10px 2px; line-height: 1.25;
              display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .card .c { font-size: 11px; font-weight: 700; color: #6b6486; padding: 0 10px 10px; }
@@ -184,12 +248,17 @@
   #ageView p { margin: 0 0 18px; opacity: .85; font-weight: 600; font-size: 14px; }
   .ageGrid { display: grid; grid-template-columns: repeat(3, 78px); gap: 12px; justify-content: center; }
   .ageBtn {
-    border: none; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 800; color: #4b2b00;
-    background: linear-gradient(180deg, #ffe082, #ffb300); width: 78px; height: 66px; border-radius: 20px;
-    box-shadow: 0 5px 0 #c88700;
+    border: none; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 800; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,.25);
+    background: linear-gradient(180deg, hsl(var(--h), 85%, var(--l1, 45%)), hsl(var(--h), 80%, var(--l2, 38%)));
+    width: 78px; height: 84px; border-radius: 20px;
+    box-shadow: 0 5px 0 hsl(var(--h), 75%, var(--l3, 28%));
+    animation: agePop .4s var(--spring) backwards;
   }
-  .ageBtn:active { transform: translateY(4px); box-shadow: 0 1px 0 #c88700; }
+  .ageBtn:active { transform: translateY(4px); box-shadow: 0 1px 0 hsl(var(--h), 75%, var(--l3, 28%)); }
+  .ageBtn .em { display: block; font-size: 22px; line-height: 1.15; }
   .ageBtn small { display: block; font-size: 10px; font-weight: 800; }
+  @keyframes agePop { from { transform: scale(0); opacity: 0; } }
 
   /* ================= SHORTS FEED ================= */
   /* on wide screens the feed becomes a centered portrait column, like desktop Shorts */
@@ -224,33 +293,56 @@
     position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 12px; z-index: 10;
     border: none; cursor: pointer; width: 42px; height: 42px; border-radius: 50%;
     background: rgba(255,255,255,.18); color: #fff; font-size: 19px; backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
   }
+  .backBtn svg, .pv-top button svg { width: 22px; height: 22px; display: block; }
   /* instant thumbnail placeholders while players spin up */
   .reel > .pre, .pvpre {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; z-index: 2; filter: brightness(.85); pointer-events: none;
   }
+  /* spinner waits 450ms before fading in: near-instant swaps never flash it
+     (display toggles restart the animation, so the delay re-arms each time) */
   .spin { position: absolute; top: 50%; left: 50%; z-index: 3; width: 54px; height: 54px; margin: -27px 0 0 -27px;
-          border-radius: 50%; border: 6px solid rgba(255,255,255,.15); border-top-color: #ffd54a; animation: spin 1s linear infinite; }
+          border-radius: 50%; border: 6px solid rgba(255,255,255,.15); border-top-color: #ffd54a;
+          opacity: 0; animation: spin 1s linear infinite, spinFade .2s ease .45s forwards; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spinFade { to { opacity: 1; } }
   .oops { position: absolute; inset: 0; z-index: 6; display: none; flex-direction: column; align-items: center; justify-content: center;
           gap: 10px; background: linear-gradient(160deg, #2b1c57, #0e0a1f); color: #fff; text-align: center; padding: 24px; }
   .oops .big { font-size: 64px; }
   .oops p { margin: 0; font-size: 17px; font-weight: 700; opacity: .9; }
   .rail { position: absolute; right: 10px; bottom: calc(150px + env(safe-area-inset-bottom)); z-index: 8;
           display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  /* bottom scrim supplies the contrast; no per-reel backdrop blurs (old iPads
+     were compositing ~180 of them across a 60-reel feed) */
+  .reel .scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; z-index: 6; pointer-events: none;
+                 background: linear-gradient(180deg, transparent, rgba(0,0,0,.45) 55%, rgba(0,0,0,.78)); }
   .rbtn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-          background: rgba(255,255,255,.16); backdrop-filter: blur(6px); font-size: 26px; line-height: 1;
+          background: rgba(255,255,255,.16); font-size: 26px; line-height: 1;
           display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.35);
           transition: transform .12s; color: #fff; }
   .rbtn:active { transform: scale(.86); }
+  .rbtn.btn-like.on { background: rgba(255,82,82,.32); }
+  .rbtn.pop, .pv-top button.pop { animation: heartPop .5s var(--spring); }
+  @keyframes heartPop { 40% { transform: scale(1.4); } 65% { transform: scale(.85); } }
   .meta { position: absolute; left: 12px; right: 84px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 8; }
-  .chip { background: rgba(0,0,0,.45); backdrop-filter: blur(6px); color: #fff; font-weight: 700; font-size: 15px;
-          padding: 8px 14px; border-radius: 999px; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-          white-space: nowrap; display: inline-block; }
+  .chip { color: #fff; font-weight: 800; font-size: 17px; line-height: 1.3; max-width: 100%;
+          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+          text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+  .chip-ch { color: rgba(255,255,255,.95); font-weight: 700; font-size: 13px; margin-top: 3px;
+             text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .bigheart { position: absolute; z-index: 9; font-size: 96px; pointer-events: none;
+              transform: translate(-50%,-50%); animation: heartRise .8s ease-out forwards;
+              filter: drop-shadow(0 4px 10px rgba(0,0,0,.4)); }
+  @keyframes heartRise { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.4); }
+    25% { opacity: 1; transform: translate(-50%,-50%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%,-90%) scale(1); } }
   .progress { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom); height: 6px;
               background: rgba(255,255,255,.18); z-index: 8; }
-  .progress i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #ffd54a, #ff8a65); border-radius: 0 4px 4px 0; }
+  .progress i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #ffd54a, #ff8a65); border-radius: 3px; }
+  /* glide between the 400ms progress ticks (active surfaces only) */
+  .reel.live .progress i, .pv-controls .bar i { transition: width .4s linear; }
   .flash { position: absolute; top: 50%; left: 50%; z-index: 9; transform: translate(-50%,-50%) scale(.6);
            font-size: 84px; opacity: 0; pointer-events: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
   .flash.show { animation: flashpop .7s ease forwards; }
@@ -265,11 +357,13 @@
   #playerView { background: #0e0a1f; }
   .pv-top { display: flex; align-items: center; gap: 10px; padding: calc(12px + env(safe-area-inset-top)) 12px 10px; flex: none; }
   .pv-top button { border: none; cursor: pointer; width: 42px; height: 42px; border-radius: 50%; flex: none;
-                   background: rgba(255,255,255,.15); color: #fff; font-size: 19px; }
+                   background: rgba(255,255,255,.15); color: #fff; font-size: 19px;
+                   display: flex; align-items: center; justify-content: center; }
   .pv-top .t { color: #fff; font-weight: 800; font-size: 15px; flex: 1; min-width: 0;
                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pv-body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 0; }
-  .pv-media { position: relative; width: min(100%, calc((100vh - 200px) * 1.7778)); width: min(100%, calc((100dvh - 200px) * 1.7778)); aspect-ratio: 16/9; max-height: 100%; background: #000; }
+  .pv-body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 0; padding: 0 12px; }
+  .pv-media { position: relative; width: min(100%, calc((100vh - 200px) * 1.7778)); width: min(100%, calc((100dvh - 200px) * 1.7778)); aspect-ratio: 16/9; max-height: 100%; background: #000;
+              border-radius: 18px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,.45); }
   .pv-media iframe, .pv-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; background: #000; }
   .pv-tap { position: absolute; inset: 0; z-index: 5; }
   .pv-controls { flex: none; padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 14px; }
@@ -293,26 +387,40 @@
   .modal-wrap { position: absolute; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center;
                 background: rgba(8,5,20,.7); backdrop-filter: blur(4px); padding: 20px; }
   .modal { background: #fff; color: #26203d; border-radius: 24px; padding: 22px; width: 100%; max-width: 340px;
-           text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+           text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+           max-height: calc(100% - 24px); overflow-y: auto; }
+  .gate-pad { display: grid; grid-template-columns: repeat(3, 64px); gap: 10px; justify-content: center; margin-top: 14px; }
+  .gate-key { width: 64px; height: 56px; border: none; border-radius: 16px; background: #efecf9;
+              font-family: inherit; font-size: 22px; font-weight: 800; color: #26203d; cursor: pointer;
+              transition: transform var(--t-tap) var(--spring), background .15s; }
+  .gate-key:active { transform: scale(.9); background: #ddd6f0; }
   .modal h3 { margin: 0 0 6px; font-size: 20px; }
   .modal .sub { margin: 0 0 14px; font-size: 14px; color: #6b6486; font-weight: 600; }
   .gate-q { font-size: 30px; font-weight: 800; margin: 8px 0 14px; }
   .gate-input { width: 130px; font-family: inherit; font-size: 26px; font-weight: 800; text-align: center;
                 padding: 10px; border-radius: 14px; border: 3px solid #d8d2ee; outline: none; }
-  .gate-input:focus { border-color: #7b3fe4; }
+  .gate-input:focus { border-color: var(--brand); }
   .mrow { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
   .mbtn { border: none; cursor: pointer; font-family: inherit; font-size: 16px; font-weight: 800; padding: 12px 22px; border-radius: 999px; }
-  .mbtn.primary { background: #7b3fe4; color: #fff; box-shadow: 0 5px 0 #5426ad; }
+  .mbtn.primary { background: var(--brand); color: #fff; box-shadow: 0 5px 0 var(--brand-deep); }
   .mbtn.ghost { background: #efecf9; color: #4f4370; }
+  /* entrance-only animations (closes are synchronous display:none inside the
+     history logic). Placed BEFORE .shake so a wrong-PIN shake still wins. */
+  .modal-wrap { animation: wrapFade .25s ease-out; }
+  .modal { animation: modalIn .25s var(--spring); }
+  @keyframes wrapFade { from { opacity: 0; } }
+  @keyframes modalIn { from { opacity: 0; transform: scale(.92); } }
+  #parentPanel { animation: panelUp .3s ease-out; }
+  @keyframes panelUp { from { opacity: 0; transform: translateY(24px); } }
   .shake { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
 
   #parentPanel { position: absolute; inset: 0; z-index: 75; display: none; flex-direction: column; background: #f4f1fb; color: #26203d; }
   .pp-head { display: flex; align-items: center; justify-content: space-between;
-             padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: #7b3fe4; color: #fff; }
+             padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: var(--brand); color: #fff; }
   .pp-head h2 { margin: 0; font-size: 20px; }
-  .pp-close { border: none; background: rgba(255,255,255,.2); color: #fff; font-size: 18px; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; }
-  .pp-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(40px + env(safe-area-inset-bottom)); }
+  .pp-close { border: none; background: rgba(255,255,255,.2); color: #fff; font-size: 18px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; }
+  .pp-body { flex: 1; overflow-y: auto; overscroll-behavior-y: contain; padding: 16px 16px calc(40px + env(safe-area-inset-bottom)); }
   .pp-card { background: #fff; border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 3px 12px rgba(60,40,120,.08); }
   .pp-card h4 { margin: 0 0 10px; font-size: 15px; color: #4f4370; }
   .pp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -320,7 +428,7 @@
                           border-radius: 12px; border: 2px solid #ddd6f0; background: #fff; outline: none; }
   .pp-input { flex: 1; min-width: 0; }
   .pp-input:focus, .pp-select:focus { border-color: #7b3fe4; }
-  .pp-btn { border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; background: #7b3fe4;
+  .pp-btn { border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; background: var(--brand);
             color: #fff; padding: 10px 16px; border-radius: 12px; white-space: nowrap; }
   .pp-btn.warn { background: #e5544b; }
   .pp-btn.soft { background: #efecf9; color: #4f4370; }
@@ -329,11 +437,22 @@
   .pitem img, .pitem .ph { width: 64px; height: 40px; border-radius: 8px; object-fit: cover; background: #ddd6f0; flex: none;
                            display: flex; align-items: center; justify-content: center; font-size: 20px; }
   .pitem .nm { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pitem button { border: none; cursor: pointer; background: #fdecea; color: #c62828; width: 32px; height: 32px; border-radius: 10px; font-size: 14px; flex: none; }
+  .pitem button { border: none; cursor: pointer; background: #fdecea; color: #c62828; width: 40px; height: 40px; border-radius: 10px; font-size: 16px; flex: none; }
   .pp-note { font-size: 12px; color: #6b6486; margin: 8px 0 0; font-weight: 600; }
-  .tierChecks { display: flex; gap: 8px; margin-top: 8px; }
-  .tierChecks label { font-size: 12px; font-weight: 800; color: #4f4370; background: #efecf9; border-radius: 10px;
-                      padding: 8px 10px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+  .tierChecks { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .tierChecks label { font-size: 14px; font-weight: 800; color: #4f4370; background: #efecf9; border-radius: 10px;
+                      padding: 10px 16px; min-height: 44px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+  .tierChecks input { accent-color: var(--brand); }
+  .tierChecks label:has(input:checked) { background: var(--brand); color: #fff; }
+
+  /* iOS-style safety toggles (the .switch markup previously had no CSS at all) */
+  .switch { position: relative; display: inline-flex; width: 52px; height: 32px; flex: none; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: #d8d2ee; transition: background .2s; pointer-events: none; }
+  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+                        background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .2s var(--swift); }
+  .switch input:checked + span { background: var(--brand); }
+  .switch input:checked + span::after { transform: translateX(20px); }
 
   /* ---- eye comfort overlays (tint every view, never block touches) ---- */
   #warmOv, #dimOv { position: absolute; inset: 0; z-index: 95; pointer-events: none; opacity: 0; transition: opacity 1.2s; }
@@ -368,6 +487,82 @@
   #eyeBreak p { margin: 0; opacity: .85; font-weight: 600; }
   #eyeCount { font-size: 54px; font-weight: 800; color: #ffd54a; }
 
+  /* ---- category tile rail: pre-readers jump by picture, not by reading ---- */
+  .catRail { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
+             padding: 2px 2px 14px; max-width: 1460px; margin: 0 auto; }
+  .catRail::-webkit-scrollbar { display: none; }
+  .catTile { flex: 0 0 auto; border: none; cursor: pointer; font-family: inherit; font-weight: 800;
+             font-size: 12px; color: #3d3355; background: var(--cbg, #efecf9); border-radius: 18px;
+             padding: 10px 16px; min-width: 78px; display: flex; flex-direction: column;
+             align-items: center; gap: 4px; transition: transform var(--t-tap) var(--spring); }
+  .catTile .em { font-size: 28px; line-height: 1; }
+  .catTile:active { transform: scale(.92); }
+  .shelf { scroll-margin-top: 8px; }
+  @media (min-width: 1900px) {
+    .catTile { font-size: 16px; padding: 14px 22px; border-radius: 24px; }
+    .catTile .em { font-size: 38px; }
+  }
+  /* rows bleed to the physical screen edge on phones (next card peeks in) */
+  @media (max-width: 699px) {
+    .shelf-row, .catRail { margin: 0 -14px; padding-left: 14px; padding-right: 14px; scroll-padding-left: 14px; }
+  }
+
+  /* ---- type scale for tablet/laptop (base rules stop at phone sizes;
+          the 1900px TV block later in the file still wins on TV) ---- */
+  @media (min-width: 700px) {
+    .card .t { font-size: 15px; } .card .c { font-size: 12.5px; }
+    .shelf h3 { font-size: 20px; } .sshort .t { font-size: 13px; }
+  }
+  @media (min-width: 1200px) {
+    .card .t { font-size: 16px; } .card .c { font-size: 13px; }
+    .shelf h3 { font-size: 22px; } .sshort .t { font-size: 14px; }
+    .hd h1 { font-size: 26px; }
+  }
+
+  /* ---- pre-reader mode (ages 2–4): bigger art, one big title line, no
+          channel caption a toddler can't read ---- */
+  #homeView.t-little { --shelfcard: 210px; }
+  #homeView.t-little .card .c { display: none; }
+  #homeView.t-little .card .t { font-size: 15px; -webkit-line-clamp: 1; padding: 9px 10px 11px; }
+  #homeView.t-little .sshort { flex: 0 0 132px; width: 132px; }
+  #homeView.t-little .sshort .sthumb { width: 132px; height: 224px; }
+  @media (min-width: 1200px) {
+    #homeView.t-little { --shelfcard: 250px; }
+    #homeView.t-little .card .t { font-size: 17px; }
+    #homeView.t-little .sshort { flex-basis: 150px; width: 150px; }
+    #homeView.t-little .sshort .sthumb { width: 150px; height: 255px; }
+  }
+  @media (min-width: 1900px) {
+    #homeView.t-little { --shelfcard: 330px; }
+    #homeView.t-little .card .t { font-size: 22px; }
+    #homeView.t-little .sshort { flex-basis: 190px; width: 190px; }
+    #homeView.t-little .sshort .sthumb { width: 190px; height: 323px; }
+  }
+
+  /* ---- motion pass: springy presses everywhere + hover lifts on laptops ---- */
+  .card, .sshort .sthumb, .ageBtn, .agePill, .gearBtn, .backBtn, .pv-top button, .pv-btn,
+  .mbtn, .softbtn, .pp-btn, .pp-close, .rbtn, .pitem button {
+    transition: transform var(--t-tap) var(--spring), box-shadow var(--t-tap) var(--swift);
+  }
+  .agePill:active, .gearBtn:active, .backBtn:active, .pv-top button:active, .softbtn:active,
+  .pp-btn:active, .pp-close:active, .mbtn.ghost:active, .pitem button:active { transform: scale(.93); }
+  .pv-btn:not(.main):active { transform: scale(.9); }
+  .mbtn.primary:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--brand-deep); }
+  .pv-btn.main:active { transform: translateY(3px); box-shadow: 0 2px 0 #c88700; }
+  @media (hover: hover) and (pointer: fine) {
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(60,40,120,.16); }
+    .card:hover:active { transform: scale(.97); }
+    .sshort:hover .sthumb { transform: scale(1.03); }
+    .sshort:hover:active .sthumb { transform: scale(.96); }
+    .navBtn:not(.active):hover .ico { transform: scale(1.1); }
+    .navBtn:hover:active .ico { transform: scale(.88); }
+  }
+
+  /* thumbnails fade in instead of hard-popping over their placeholders
+     (.reel > .pre deliberately excluded: its opacity swap is the player reveal) */
+  .thumb img, .sshort .sthumb img, .pvpre { opacity: 0; transition: opacity .3s; }
+  .thumb img.ld, .sshort .sthumb img.ld, .pvpre.ld { opacity: 1; }
+
   /* ---- TV / very large screens: 10-foot UI ---- */
   @media (min-width: 1900px) {
     .hd { padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: 20px; }
@@ -376,6 +571,10 @@
     .gearBtn { width: 56px; height: 56px; font-size: 27px; }
     .chip-btn { font-size: 21px; padding: 15px 26px; }
     .card .t { font-size: 19px; } .card .c { font-size: 15px; }
+    /* re-assert 10-foot sizes: the 1200px type-scale block sits later in
+       source than the early TV rules, so they must be re-declared here */
+    .shelf h3 { font-size: 24px; } .sshort .t { font-size: 15px; }
+    .backBtn svg, .pv-top button svg { width: 28px; height: 28px; }
     .ageGrid { grid-template-columns: repeat(3, 116px); gap: 18px; }
     .ageBtn { width: 116px; height: 96px; font-size: 36px; border-radius: 28px; }
     #ageView h2 { font-size: 40px; } #ageView p { font-size: 20px; }
@@ -383,8 +582,18 @@
     .pv-top button { width: 56px; height: 56px; font-size: 25px; }
     .pv-btn { width: 72px; height: 72px; font-size: 30px; }
     .pv-btn.main { width: 92px; height: 92px; font-size: 38px; }
-    .chip { font-size: 20px; padding: 11px 18px; }
+    .chip { font-size: 20px; }
     .rbtn { width: 72px; height: 72px; font-size: 33px; }
+  }
+
+  /* ---- reduced motion: MUST stay the last rules in this stylesheet so the
+     blanket kill out-cascades every equal-specificity animation above ---- */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+      animation-delay: 0s !important; transition-duration: .01ms !important;
+    }
+    .spin, #splash .ssp { animation: none; opacity: .6; }
   }
 </style>
 </head>
@@ -393,9 +602,17 @@
 <div class="stage">
 <div class="app" id="app">
 
+  <!-- splash paints before the script parses; removed at the end of boot -->
+  <div id="splash"><img src="icon-180.png" alt=""><div class="wordmark">Toon Kids</div><div class="ssp"></div></div>
+  <script>/* independent watchdog: if the main script ever fails to boot, the
+     splash must not become an infinite spinner on a kid's iPad */
+  setTimeout(function () { var s = document.getElementById("splash");
+    if (s && !s._going) { s.classList.add("done"); setTimeout(function () { s.remove(); }, 450); } }, 7000);</script>
+
   <!-- ============ AGE PICKER ============ -->
   <div class="view" id="ageView">
     <img src="icon-180.png" alt="Toon Kids" style="width:132px;height:132px;border-radius:28px;box-shadow:0 10px 30px rgba(0,0,0,.35);background:#fff;">
+    <div class="mascots">🐣 🦁 🚀</div>
     <h2>How old is your child?</h2>
     <p>We'll show only videos made for that age</p>
     <div class="ageGrid" id="ageGrid"></div>
@@ -417,7 +634,7 @@
   <div class="view" id="shortsView">
     <div id="shortsPlayerWrap"></div>
     <div class="feed" id="feed"></div>
-    <button class="backBtn" id="shortsBack" aria-label="Back to home">←</button>
+    <button class="backBtn" id="shortsBack" aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5 7.5 12l7 7"/></svg></button>
     <div id="shortsOffline" style="display:none; position:absolute; inset:0; z-index:12; background:linear-gradient(160deg,#2b1c57,#0e0a1f); color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:28px;">
       <div style="font-size:72px">📡</div>
       <h2 style="margin:0;font-size:26px">No internet right now</h2>
@@ -430,7 +647,7 @@
   <!-- ============ FULL PLAYER ============ -->
   <div class="view" id="playerView">
     <div class="pv-top">
-      <button id="pvBack" aria-label="Back to home">←</button>
+      <button id="pvBack" aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5 7.5 12l7 7"/></svg></button>
       <div class="t" id="pvTitle">Cartoon</div>
       <button id="pvLike" aria-label="Like this video">🤍</button>
       <button id="pvSound" aria-label="Sound on or off">🔊</button>
@@ -449,9 +666,10 @@
 
   <!-- ============ BOTTOM NAVIGATION ============ -->
   <nav id="bottomNav">
-    <button class="navBtn" id="navHome" aria-label="Home"><span class="ico">🏠</span>Home</button>
-    <button class="navBtn" id="navShorts" aria-label="Shorts"><span class="ico">⚡</span>Shorts</button>
-    <button class="navBtn" id="navFav" aria-label="Favorites"><span class="ico">❤️</span>Favorites</button>
+    <span id="navPill"></span>
+    <button class="navBtn" id="navHome" aria-label="Home"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8 2.4 11h2.8v9.5h5.3V14h3v6.5h5.3V11h2.8L12 2.8z"/></svg>Home</button>
+    <button class="navBtn" id="navShorts" aria-label="Shorts"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2 5.6 13.4h4.8L9.2 22l9.2-11.9h-5L13.2 2z"/></svg>Shorts</button>
+    <button class="navBtn" id="navFav" aria-label="Favorites"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.2S4.3 16.1 2.6 11.7C1.2 8.2 3.3 4.8 6.7 4.8c2 0 3.6 1.1 4.4 2.8h1.8c.8-1.7 2.4-2.8 4.4-2.8 3.4 0 5.5 3.4 4.1 6.9-1.7 4.4-9.4 9.5-9.4 9.5z"/></svg>Favorites</button>
   </nav>
 
   <!-- ============ EYE COMFORT ============ -->
@@ -489,6 +707,7 @@
       <p class="sub">Solve this to continue</p>
       <div class="gate-q" id="gateQ">7 × 4 = ?</div>
       <input class="gate-input" id="gateA" type="text" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="gate-pad" id="gatePad"></div>
       <div class="mrow">
         <button class="mbtn ghost" id="gateCancel">Cancel</button>
         <button class="mbtn primary" id="gateOk">Unlock</button>
@@ -574,7 +793,7 @@
       <div class="pp-card">
         <h4>😴 Bedtime lock</h4>
         <div class="pp-row" style="margin-bottom:8px">
-          <label class="switch"><input type="checkbox" id="ppBedOn"><span></span></label>
+          <label class="switch"><input type="checkbox" id="ppBedOn" aria-label="Bedtime lock"><span></span></label>
           <span style="font-size:13px;font-weight:700;color:#6b6486">Lock the app during sleep hours</span>
         </div>
         <div class="pp-row">
@@ -610,7 +829,7 @@
           </select>
         </div>
         <div class="pp-row">
-          <label class="switch"><input type="checkbox" id="ppAutoEve"><span></span></label>
+          <label class="switch"><input type="checkbox" id="ppAutoEve" aria-label="Automatic evening eye comfort"><span></span></label>
           <span style="font-size:13px;font-weight:700;color:#6b6486">Auto evening mode (7 PM – 6 AM: warm + dim)</span>
         </div>
         <p class="pp-note">Blink breaks follow the doctors' 20-20-20 rule: pause every 20 minutes and look far away for 20 seconds. Note: apps cannot change the device's hardware brightness — please also lower it in the device settings.</p>
@@ -669,7 +888,7 @@
       <div class="pp-card">
         <h4>🔄 Fresh shorts (automatic)</h4>
         <div class="pp-row" style="margin-bottom:8px">
-          <label class="switch"><input type="checkbox" id="ppFreshOn"><span></span></label>
+          <label class="switch"><input type="checkbox" id="ppFreshOn" aria-label="Automatically fetch fresh shorts"><span></span></label>
           <span style="font-size:13px;font-weight:700;color:#6b6486">Pull new shorts daily from this app's trusted channels</span>
         </div>
         <p class="pp-note" id="ppFreshStatus" style="margin-top:0"></p>
@@ -729,6 +948,10 @@
    Catalog: official channels only, every id validated via oEmbed.
    Tiers: little = 2–4, big = 5–7, super = 8–10.
    ===================================================================== */
+
+/* CSS can't reach explicit JS scroll options or DOM-spawned effects —
+   every scripted animation checks this too */
+const RM = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 const CATALOG = [
   /* ---- SONGS & RHYMES (2–4) : full videos ---- */
@@ -1294,6 +1517,14 @@ window.addEventListener("popstate", (e) => {
   }
 });
 let curView = null;
+/* OS status bar follows the current screen (and the tier accent on home/age) */
+const themeMeta = document.querySelector('meta[name="theme-color"]');
+function syncThemeColor() {
+  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4" };
+  let c = VIEW_THEME[curView];
+  if (!c) { try { c = getComputedStyle(document.getElementById("app")).getPropertyValue("--brand").trim(); } catch (e) {} }
+  if (themeMeta) themeMeta.setAttribute("content", c || "#7b3fe4");
+}
 function showView(name) {
   if (curView === "shorts" && name !== "shorts") { spPause(); teardownFeedDom(); scheduleSpIdle(); }
   if (curView === "player" && name !== "player") pvSoftExit();
@@ -1303,12 +1534,23 @@ function showView(name) {
   views[name].classList.add("on");
   curView = name;
   updateNav();
+  syncThemeColor();
   if (typeof navSetHidden === "function") navSetHidden(false);
   if (name === "home" || name === "age") setTimeout(() => maybeApplyUpdate(), 400);
 }
 
 /* ---------------- bottom navigation (YouTube-app style) ---------------- */
 let pendingTabCat = null;
+function positionNavPill() {
+  const nav = document.getElementById("bottomNav");
+  const a = nav.querySelector(".navBtn.active"), p = document.getElementById("navPill");
+  if (!p) return;
+  if (a && nav.classList.contains("show") && a.offsetWidth) {
+    p.style.width = a.offsetWidth + "px";
+    p.style.transform = "translateX(" + a.offsetLeft + "px)";
+    p.style.opacity = 1;
+  } else p.style.opacity = 0;
+}
 function updateNav() {
   const nav = document.getElementById("bottomNav");
   nav.classList.toggle("show", curView === "home" || curView === "shorts");
@@ -1317,14 +1559,23 @@ function updateNav() {
   document.getElementById("navHome").classList.toggle("active", tab === "home");
   document.getElementById("navShorts").classList.toggle("active", tab === "shorts");
   document.getElementById("navFav").classList.toggle("active", tab === "fav");
+  // rAF: offsetLeft reads 0 in the same frame the capsule flips display:none→flex
+  positionNavPill();
+  requestAnimationFrame(positionNavPill);
+}
+window.addEventListener("resize", positionNavPill);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(positionNavPill);
+function gridSwapFx() {
+  const g = document.getElementById("grid");
+  g.classList.remove("swap"); void g.offsetWidth; g.classList.add("swap");
 }
 document.getElementById("navHome").addEventListener("click", () => {
   if (curView === "shorts") { pendingTabCat = "all"; goBack(); return; }
-  curCat = "all"; renderHome(); updateNav();
+  curCat = "all"; renderHome(); updateNav(); gridSwapFx();
 });
 document.getElementById("navFav").addEventListener("click", () => {
   if (curView === "shorts") { pendingTabCat = "fav"; goBack(); return; }
-  curCat = "fav"; renderHome(); updateNav();
+  curCat = "fav"; renderHome(); updateNav(); gridSwapFx();
 });
 document.getElementById("navShorts").addEventListener("click", () => {
   if (curView !== "shorts") openShorts();
@@ -1355,11 +1606,21 @@ document.getElementById("grid").addEventListener("scroll", (e) => {
 document.getElementById("shortsView").addEventListener("pointerdown", () => navPeek(2500), { passive: true });
 
 /* ---------------- age picker ---------------- */
+const AGE_HUES = [16, 32, 48, 95, 150, 185, 215, 260, 300];
+const AGE_EMO = { 2: "🐣", 3: "🐥", 4: "🐰", 5: "🦊", 6: "🐼", 7: "🦁", 8: "🐯", 9: "🦖", 10: "🚀" };
+const TIER_AVATAR = { little: "🐥", big: "🦊", super: "🦖" };
 const ageGrid = document.getElementById("ageGrid");
 for (let a = 2; a <= 10; a++) {
   const b = document.createElement("button");
   b.className = "ageBtn";
-  b.innerHTML = a + "<small>years</small>";
+  b.style.setProperty("--h", AGE_HUES[a - 2]);
+  // yellow→cyan hues are too luminous for white text at the default
+  // lightness — darken those tiles (ages 4-7) to keep the labels readable
+  if (a >= 4 && a <= 7) {
+    b.style.setProperty("--l1", "34%"); b.style.setProperty("--l2", "28%"); b.style.setProperty("--l3", "19%");
+  }
+  b.style.animationDelay = ((a - 2) * 45) + "ms";
+  b.innerHTML = '<span class="em">' + AGE_EMO[a] + "</span>" + a + "<small>years</small>";
   b.addEventListener("click", () => { cfg.age = a; saveCfg(); renderHome(); showView("home"); });
   ageGrid.appendChild(b);
 }
@@ -1368,6 +1629,9 @@ for (let a = 2; a <= 10; a++) { const o = document.createElement("option"); o.va
 
 /* ---------------- home ---------------- */
 let curCat = "all";
+/* a fresh install has hundreds of unseen items; springing every badge at once
+   is a layer-churn burst on old iPads — only the first dozen animate */
+let newbBudget = 0;
 function makeCard(it, ctxItems) {
   const card = document.createElement("button");
   card.className = "card";
@@ -1376,8 +1640,8 @@ function makeCard(it, ctxItems) {
   const resStrip = rs && rs.d ? '<i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i>' : "";
   card.innerHTML =
     '<div class="thumb">' + (it.kind === "local" ? "🎞️" : "🎬") +
-      (th ? '<img loading="lazy" src="' + th + '" alt="" onerror="this.remove()">' : "") +
-      (seenCount(it) === 0 ? '<div class="newb">✨ New</div>' : "") +
+      (th ? '<img loading="lazy" src="' + th + '" alt="" onload="this.classList.add(\'ld\')" onerror="this.remove()">' : "") +
+      (seenCount(it) === 0 ? '<div class="newb' + (newbBudget-- > 0 ? "" : " still") + '">✨ New</div>' : "") +
       resStrip +
       '<div class="pl">▶</div></div>' +
     '<div class="t">' + escapeHtml(it.title) + "</div>" +
@@ -1394,9 +1658,10 @@ function makeCard(it, ctxItems) {
   return card;
 }
 
-function makeShelf(title, items, kind) {
+function makeShelf(title, items, kind, cat) {
   const sec = document.createElement("section");
   sec.className = "shelf";
+  if (cat) sec.dataset.cat = cat;
   const h = document.createElement("h3");
   h.textContent = title;
   sec.appendChild(h);
@@ -1409,7 +1674,7 @@ function makeShelf(title, items, kind) {
       b.className = "sshort";
       b.setAttribute("aria-label", it.title);
       b.innerHTML =
-        '<div class="sthumb"><img loading="lazy" src="https://i.ytimg.com/vi/' + it.id + '/oardefault.jpg" alt="" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg\'"></div>' +
+        '<div class="sthumb"><img loading="lazy" src="https://i.ytimg.com/vi/' + it.id + '/oardefault.jpg" alt="" onload="this.classList.add(\'ld\')" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg\'"></div>' +
         '<div class="t">' + escapeHtml(it.title) + "</div>";
       b.addEventListener("click", () => {
         const idx = full.findIndex(x => x.id === it.id);
@@ -1424,8 +1689,15 @@ function makeShelf(title, items, kind) {
   return sec;
 }
 
+const SHELF_CATS = [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["telugu", "🌸 Telugu Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]];
+const CAT_COLORS = { song: "#ffe3ef", cartoon: "#e3f2fd", learn: "#e8f5e9", telugu: "#fff3e0", story: "#ede7f6", move: "#e0f7fa", craft: "#fce4ec", classic: "#fff8e1", calm: "#e8eaf6", my: "#f1f8e9" };
 function renderHome() {
-  document.getElementById("agePill").textContent = "Age " + cfg.age;
+  document.getElementById("app").dataset.tier = tier();
+  document.getElementById("homeView").classList.toggle("t-little", tier() === "little");
+  document.getElementById("agePill").innerHTML =
+    '<span class="avi">' + (TIER_AVATAR[tier()] || "🙂") + "</span><span>" + cfg.age + "</span>";
+  syncThemeColor();
+  newbBudget = 12;
   const grid = document.getElementById("grid");
   // remember where the child was: rebuilds must not throw them back to the top
   const prevTop = grid.scrollTop;
@@ -1467,7 +1739,24 @@ function renderHome() {
     return;
   }
 
-  // Home tab: YouTube-Kids-style shelves
+  // Home tab: category tile rail, then YouTube-Kids-style shelves
+  const rail = document.createElement("div");
+  rail.className = "catRail";
+  SHELF_CATS.forEach(([c, label]) => {
+    if (!gridItems(c).length) return;
+    const sp = label.indexOf(" ");
+    const t = document.createElement("button");
+    t.className = "catTile";
+    t.setAttribute("aria-label", label.slice(sp + 1));
+    t.style.setProperty("--cbg", CAT_COLORS[c] || "#efecf9");
+    t.innerHTML = '<span class="em">' + label.slice(0, sp) + "</span><span>" + escapeHtml(label.slice(sp + 1)) + "</span>";
+    t.addEventListener("click", () => {
+      const sh = grid.querySelector('.shelf[data-cat="' + c + '"]');
+      if (sh) sh.scrollIntoView({ behavior: RM.matches ? "auto" : "smooth", block: "start" });
+    });
+    rail.appendChild(t);
+  });
+  if (rail.children.length) grid.appendChild(rail);
   const all = freshSort(gridItems("all"), true);
   // most recently watched FIRST — that's the one they want to continue
   const resumeItems = all.filter(it => cfg.resume[itemKey(it)])
@@ -1478,9 +1767,9 @@ function renderHome() {
   if (newItems.length) grid.appendChild(makeShelf("✨ New for you", newItems, "video"));
   const shortsShelf = freshSort(shortItems(), true).slice(0, 12);
   if (shortsShelf.length) grid.appendChild(makeShelf("⚡ Shorts", shortsShelf, "shorts"));
-  [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["telugu", "🌸 Telugu Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]].forEach(([c, label]) => {
+  SHELF_CATS.forEach(([c, label]) => {
     const its = freshSort(gridItems(c), true).slice(0, 30);
-    if (its.length) grid.appendChild(makeShelf(label, its, "video"));
+    if (its.length) grid.appendChild(makeShelf(label, its, "video", c));
   });
   if (!grid.querySelector(".shelf")) {
     const e = document.createElement("div");
@@ -1570,16 +1859,32 @@ function makeReel(i) {
     '<div class="spin"></div>' +
     '<div class="oops"><div class="big">🙈</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
     '<div class="tapzone"></div>' +
+    '<div class="scrim"></div>' +
     '<div class="rail">' +
       '<button class="rbtn btn-sound" aria-label="Sound on or off">' + (cfg.soundOn ? "🔊" : "🔇") + "</button>" +
-      '<button class="rbtn btn-like" aria-label="Like">' + (liked ? "❤️" : "🤍") + "</button>" +
+      '<button class="rbtn btn-like' + (liked ? " on" : "") + '" aria-label="Like">' + (liked ? "❤️" : "🤍") + "</button>" +
     "</div>" +
-    '<div class="meta"><span class="chip">' + escapeHtml(e.title || "Cartoon") + "</span></div>" +
+    '<div class="meta"><div class="chip">' + escapeHtml(e.title || "Cartoon") + "</div>" +
+      (e.ch ? '<div class="chip-ch">' + escapeHtml(e.ch) + "</div>" : "") + "</div>" +
     '<div class="progress"><i></i></div>' +
     '<div class="flash">⏸️</div>';
   feed.appendChild(sec);
   reelEls.push(sec);
-  sec.querySelector(".tapzone").addEventListener("click", () => onTap(i));
+  // double-tap = like with a big heart (Instagram semantics: never unlikes).
+  // Little tier keeps single-tap only — toddler mashing must not flood Favorites.
+  let lastTap = 0;
+  sec.querySelector(".tapzone").addEventListener("click", (ev) => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      lastTap = 0;
+      onTap(i); // second toggle undoes the first tap's pause
+      // same guards onTap enforces: never heart an outgoing or dead reel
+      if (i === active && !entries[i].dead && tier() !== "little" && !locked()) {
+        if (!cfg.liked[itemKey(entries[i])]) toggleLike(i);
+        if (!RM.matches) spawnBigHeart(sec, ev);
+      }
+    } else { lastTap = now; onTap(i); }
+  });
   sec.querySelector(".btn-sound").addEventListener("click", (ev) => { ev.stopPropagation(); toggleSound(); });
   sec.querySelector(".btn-like").addEventListener("click", (ev) => { ev.stopPropagation(); toggleLike(i); });
   if (io) io.observe(sec);
@@ -1769,9 +2074,16 @@ function setActive(i, force) {
   reelEls.forEach((el, k) => {
     el.classList.toggle("live", k === i);
     el.classList.remove("playing");
+    // off-screen spinners would sit fully opaque over their thumbnails
+    if (k !== i) { const os = el.querySelector(".spin"); if (os) os.style.display = "none"; }
   });
   const spn = reelEls[i].querySelector(".spin");
-  if (spn && !entries[i].dead) spn.style.display = "";
+  // force a display toggle so the 450ms fade-in delay re-arms on FIRST
+  // visits too, not only after hideSpin has run once
+  if (spn && !entries[i].dead) { spn.style.display = "none"; void spn.offsetWidth; spn.style.display = ""; }
+  // reset the bar with the glide transition off, so it never rewinds visibly
+  const pbar = reelEls[i].querySelector(".progress i");
+  if (pbar) { pbar.style.transition = "none"; pbar.style.width = "0%"; void pbar.offsetWidth; pbar.style.transition = ""; }
   if (entries[i].dead) {
     deadStreak++;
     if (deadStreak >= 3) { if (curView === "shorts") showShortsOffline(); return; }
@@ -1792,7 +2104,7 @@ function nextReel() {
   let n = active;
   for (let s = 1; s <= entries.length; s++) { const c = (active + s) % entries.length; if (!entries[c].dead) { n = c; break; } }
   if (n === active) return;
-  feed.scrollTo({ top: n * feed.clientHeight, behavior: n > active ? "smooth" : "auto" });
+  feed.scrollTo({ top: n * feed.clientHeight, behavior: n > active && !RM.matches ? "smooth" : "auto" });
 }
 function onTap(i) {
   if (i !== active || locked()) return;
@@ -1802,25 +2114,41 @@ function onTap(i) {
   f.classList.remove("show"); void f.offsetWidth; f.classList.add("show");
   paused ? pauseReel(i) : playReel(i);
 }
+function burstAt(btn) {
+  if (RM.matches) return;
+  for (let n = 0; n < 6; n++) {
+    const h = document.createElement("div");
+    h.className = "burst";
+    h.textContent = ["❤️","💛","🧡","💜","⭐","💖"][n];
+    const r = btn.getBoundingClientRect(), a = document.getElementById("app").getBoundingClientRect();
+    h.style.left = (r.left - a.left + (Math.random() * 40 - 25)) + "px";
+    h.style.top = (r.top - a.top - 10 - Math.random() * 20) + "px";
+    h.style.animationDelay = (n * 60) + "ms";
+    document.getElementById("app").appendChild(h);
+    setTimeout(() => h.remove(), 1400);
+  }
+}
+function heartPopFx(btn) {
+  btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");
+}
+function spawnBigHeart(reelEl, ev) {
+  const r = reelEl.getBoundingClientRect();
+  const h = document.createElement("div");
+  h.className = "bigheart";
+  h.textContent = "❤️";
+  h.style.left = (ev.clientX - r.left) + "px";
+  h.style.top = (ev.clientY - r.top) + "px";
+  reelEl.appendChild(h);
+  setTimeout(() => h.remove(), 900);
+}
 function toggleLike(i) {
   const key = itemKey(entries[i]);
   cfg.liked[key] = !cfg.liked[key];
   saveCfg();
   const btn = reelEls[i].querySelector(".btn-like");
   btn.textContent = cfg.liked[key] ? "❤️" : "🤍";
-  if (cfg.liked[key]) {
-    for (let n = 0; n < 6; n++) {
-      const h = document.createElement("div");
-      h.className = "burst";
-      h.textContent = ["❤️","💛","🧡","💜","⭐","💖"][n];
-      const r = btn.getBoundingClientRect(), a = document.getElementById("app").getBoundingClientRect();
-      h.style.left = (r.left - a.left + (Math.random() * 40 - 25)) + "px";
-      h.style.top = (r.top - a.top - 10 - Math.random() * 20) + "px";
-      h.style.animationDelay = (n * 60) + "ms";
-      document.getElementById("app").appendChild(h);
-      setTimeout(() => h.remove(), 1400);
-    }
-  }
+  btn.classList.toggle("on", !!cfg.liked[key]);
+  if (cfg.liked[key]) { heartPopFx(btn); burstAt(btn); }
 }
 
 /* =====================================================================
@@ -1844,6 +2172,8 @@ function loadPvItem() {
   document.getElementById("pvLike").textContent = cfg.liked[itemKey(it)] ? "❤️" : "🤍";
   document.getElementById("pvToggle").textContent = "⏸";
   document.getElementById("pvSpin").style.display = "block";
+  const pvb = document.getElementById("pvBar");
+  pvb.style.transition = "none"; pvb.style.width = "0%"; void pvb.offsetWidth; pvb.style.transition = "";
   pvPaused = false;
 
   // fast path: reuse the live YouTube player — video swaps beat full reboots
@@ -1851,7 +2181,7 @@ function loadPvItem() {
     const old = pvMedia.querySelector(".pvpre");
     if (old) old.remove();
     pvMedia.insertAdjacentHTML("afterbegin",
-      '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onerror="this.remove()">');
+      '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onload="this.classList.add(\'ld\')" onerror="this.remove()">');
     const rsf = cfg.resume[itemKey(it)];
     try {
       pv.p.loadVideoById(rsf && rsf.t > 10 ? { videoId: it.id, startSeconds: rsf.t } : it.id);
@@ -1863,7 +2193,7 @@ function loadPvItem() {
   teardownPlayer(true);
   if (it.kind === "yt") {
     if (apiFailed) { pvFail(); return; }
-    pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onerror="this.remove()"><div id="pv-hold"></div>';
+    pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onload="this.classList.add(\'ld\')" onerror="this.remove()"><div id="pv-hold"></div>';
     const rec = { kind: "yt", ready: false, p: null };
     pv = rec;
     whenApi(() => {
@@ -1917,7 +2247,7 @@ function loadPvItem() {
     v.preload = "auto";
     v.muted = !cfg.soundOn;
     pvMedia.innerHTML = (it.kind === "mp4" && it.aid)
-      ? '<img class="pvpre" src="https://archive.org/services/img/' + it.aid + '" onerror="this.remove()">'
+      ? '<img class="pvpre" src="https://archive.org/services/img/' + it.aid + '" onload="this.classList.add(\'ld\')" onerror="this.remove()">'
       : "";
     pvMedia.appendChild(v);
     pv = { kind: "vid", v };
@@ -1993,7 +2323,9 @@ document.getElementById("pvLike").addEventListener("click", () => {
   const k = itemKey(it);
   cfg.liked[k] = !cfg.liked[k];
   saveCfg();
-  document.getElementById("pvLike").textContent = cfg.liked[k] ? "❤️" : "🤍";
+  const btn = document.getElementById("pvLike");
+  btn.textContent = cfg.liked[k] ? "❤️" : "🤍";
+  if (cfg.liked[k]) { heartPopFx(btn); burstAt(btn); }
 });
 
 /* ---------------- sound ---------------- */
@@ -2023,15 +2355,31 @@ document.addEventListener("touchstart", attemptAutoUnmute, true);
 /* ---------------- progress + watch time ---------------- */
 setInterval(() => {
   if (curView === "shorts" && active !== null && sp && spReady) {
-    let t = 0, d = 0;
-    try { t = sp.getCurrentTime(); d = sp.getDuration(); } catch (e) {}
+    let t = 0, d = 0, match = true;
+    try {
+      // loadVideoById is async: one tick can still report the PREVIOUS
+      // video, and the new width glide would animate that stale value
+      const vd = sp.getVideoData && sp.getVideoData();
+      if (vd && vd.video_id && spVideoId && vd.video_id !== spVideoId) match = false;
+      t = sp.getCurrentTime(); d = sp.getDuration();
+    } catch (e) {}
     const bar = reelEls[active] && reelEls[active].querySelector(".progress i");
-    if (bar) bar.style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
+    if (bar && match) bar.style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
   }
   if (curView === "player" && pv) {
-    let t = 0, d = 0;
-    if (pv.kind === "yt") { try { if (pv.ready) { t = pv.p.getCurrentTime(); d = pv.p.getDuration(); } } catch (e) {} }
+    let t = 0, d = 0, match = true;
+    if (pv.kind === "yt") {
+      try {
+        if (pv.ready) {
+          const vd = pv.p.getVideoData && pv.p.getVideoData();
+          const want = pvList[pvIdx] && pvList[pvIdx].id;
+          if (vd && vd.video_id && want && vd.video_id !== want) match = false;
+          t = pv.p.getCurrentTime(); d = pv.p.getDuration();
+        }
+      } catch (e) {}
+    }
     else { t = pv.v.currentTime; d = pv.v.duration || 0; }
+    if (!match) return;
     document.getElementById("pvBar").style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
     // continue-watching: remember position in longer videos
     const cw = pvList[pvIdx];
@@ -2203,7 +2551,30 @@ function newGateQuestion() {
   }
   gateA.value = "";
 }
-function openGate(cb) { gateCb = cb; gateForgotMode = false; newGateQuestion(); gateWrap.style.display = "flex"; setTimeout(() => gateA.focus(), 50); }
+/* on-screen digit pad: touch devices and TVs never see the OS keyboard slide
+   over the gate ("not fine pointer" rather than "coarse" — TV remotes report
+   pointer:none). Desktop keeps the focused text field. */
+const FINE_POINTER = window.matchMedia("(pointer: fine)");
+const gatePad = document.getElementById("gatePad");
+["1","2","3","4","5","6","7","8","9","","0","⌫"].forEach(k => {
+  if (!k) { gatePad.appendChild(document.createElement("span")); return; }
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "gate-key";
+  b.textContent = k;
+  b.setAttribute("aria-label", k === "⌫" ? "Delete" : k);
+  b.addEventListener("click", () => {
+    if (k === "⌫") gateA.value = gateA.value.slice(0, -1);
+    else if (gateA.value.length < 4) gateA.value += k;
+  });
+  gatePad.appendChild(b);
+});
+function openGate(cb) {
+  gateCb = cb; gateForgotMode = false; newGateQuestion();
+  gateModal.classList.remove("shake");
+  gateWrap.style.display = "flex";
+  if (FINE_POINTER.matches) { gateA.readOnly = false; setTimeout(() => gateA.focus(), 50); }
+  else gateA.readOnly = true;
+}
 document.getElementById("gateCancel").addEventListener("click", () => { gateWrap.style.display = "none"; gateCb = null; });
 document.getElementById("gateForgotBtn").addEventListener("click", () => { gateForgotMode = true; newGateQuestion(); });
 function tryGate() {
@@ -2730,7 +3101,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (curView !== "shorts") return;
   if (e.key === "ArrowDown") { e.preventDefault(); nextReel(); }
-  if (e.key === "ArrowUp") { e.preventDefault(); if (active > 0) feed.scrollTo({ top: (active - 1) * feed.clientHeight, behavior: "smooth" }); }
+  if (e.key === "ArrowUp") { e.preventDefault(); if (active > 0) feed.scrollTo({ top: (active - 1) * feed.clientHeight, behavior: RM.matches ? "auto" : "smooth" }); }
   if (e.key === " ") { e.preventDefault(); onTap(active); }
 });
 window.addEventListener("resize", () => { if (curView === "shorts" && active !== null) feed.scrollTop = active * feed.clientHeight; });
@@ -3059,6 +3430,27 @@ window.addEventListener("pagehide", () => { try { localStorage.setItem(LS_KEY, J
 if (cfg.age === null) showView("age");
 else { renderHome(); showView("home"); }
 checkBedtime();
+function dismissSplash() {
+  const s = document.getElementById("splash");
+  if (!s || s._going) return;
+  s._going = true;
+  // hold long enough for the logo pop to play (skip the hold for reduced motion);
+  // a slow boot already ate the time, so this never adds to real wait
+  const wait = RM.matches ? 0 : Math.max(0, 1100 - performance.now());
+  setTimeout(() => {
+    // replay the current view's entrance so the first-boot age-picker
+    // stagger happens in front of the user, not behind the opaque splash
+    if (curView === "age" && !RM.matches) {
+      const v = document.getElementById("ageView");
+      v.classList.remove("on"); void v.offsetWidth; v.classList.add("on");
+    }
+    s.classList.add("done"); setTimeout(() => s.remove(), 450);
+  }, wait);
+}
+// rAF gives one painted frame of the ready UI first; the timeout covers
+// pages that boot without compositing (background tab, hidden webview)
+requestAnimationFrame(dismissSplash);
+setTimeout(dismissSplash, 1200);
 </script>
 </body>
 </html>
