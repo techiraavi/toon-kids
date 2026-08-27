@@ -239,13 +239,16 @@
     background: #fff3cd; border: 1px solid #ffe08a; border-radius: 14px; padding: 10px 12px;
   }
 
-  /* ================= AGE PICKER ================= */
-  #ageView { background: linear-gradient(160deg, #7b3fe4, #4f2ba8 55%, #2c1b5e); color: #fff;
+  /* ================= AGE PICKER + WHO'S WATCHING ================= */
+  #ageView, #kidView { background: linear-gradient(160deg, #7b3fe4, #4f2ba8 55%, #2c1b5e); color: #fff;
              align-items: center; justify-content: center; text-align: center;
              padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); }
   #ageView .mascots { font-size: 36px; letter-spacing: 6px; }
-  #ageView h2 { margin: 10px 0 2px; font-size: 26px; }
-  #ageView p { margin: 0 0 18px; opacity: .85; font-weight: 600; font-size: 14px; }
+  #ageView h2, #kidView h2 { margin: 10px 0 2px; font-size: 26px; }
+  #ageView p, #kidView p { margin: 0 0 18px; opacity: .85; font-weight: 600; font-size: 14px; }
+  #kidView .ageGrid { grid-template-columns: repeat(auto-fit, 96px); max-width: 340px; }
+  #kidView .ageBtn { width: 96px; height: 96px; font-size: 15px; }
+  #kidView .ageBtn .em { font-size: 34px; }
   .ageGrid { display: grid; grid-template-columns: repeat(3, 78px); gap: 12px; justify-content: center; }
   .ageBtn {
     border: none; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 800; color: #fff;
@@ -323,7 +326,8 @@
           display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.35);
           transition: transform .12s; color: #fff; }
   .rbtn:active { transform: scale(.86); }
-  .rbtn.btn-like.on { background: rgba(255,82,82,.32); }
+  .rbtn.btn-like.on { background: rgba(255,82,82,.32);
+                      box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 4px 14px rgba(0,0,0,.35); }
   .rbtn.pop, .pv-top button.pop { animation: heartPop .5s var(--spring); }
   @keyframes heartPop { 40% { transform: scale(1.4); } 65% { transform: scale(.85); } }
   .meta { position: absolute; left: 12px; right: 84px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 8; }
@@ -475,8 +479,39 @@
   #bedScreen h2 { margin: 0; font-size: 30px; }
   #bedScreen p { margin: 0; opacity: .85; font-weight: 600; }
 
-  /* resume-progress strip on cards */
-  .thumb .resb { position: absolute; left: 0; bottom: 0; height: 5px; background: #ff5252; border-radius: 0 3px 3px 0; }
+  /* parent "pause now" lock screen */
+  #pauseScreen { position: absolute; inset: 0; z-index: 71; display: none; flex-direction: column; align-items: center;
+                 justify-content: center; gap: 12px; background: linear-gradient(180deg, #14332b, #060412); color: #fff;
+                 text-align: center; padding: 28px; }
+  #pauseScreen .big { font-size: 84px; animation: bounce 3s ease-in-out infinite; }
+  #pauseScreen h2 { margin: 0; font-size: 30px; }
+  #pauseScreen p { margin: 0; opacity: .85; font-weight: 600; }
+
+  /* kid catalog search */
+  .searchBar { display: flex; gap: 8px; max-width: 600px; margin: 0 auto 14px; }
+  .searchBar .pp-input { background: #fff; }
+  #homeView.t-little #searchBtn { display: none; } /* pre-readers navigate by tiles */
+
+  /* Ollie the Owl — one drawn mascot, posed per screen via wrapper classes */
+  .owlSvg { width: 110px; height: 110px; display: block; margin: 0 auto; }
+  .owlWrap { display: inline-block; }
+  .owlWrap .eye, .owlWrap .wingL, .owlWrap .wingR, .owlWrap .cap { transform-box: fill-box; transform-origin: center; }
+  .owlWrap .cap { display: none; }
+  .owl-blink .eye { animation: owlBlink 3.2s ease-in-out infinite; }
+  @keyframes owlBlink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.08); } }
+  .owl-sleep .eye { transform: scaleY(.12); }
+  .owl-sleep .cap { display: block; }
+  .owl-sleep .owlSvg { animation: owlBob 3.4s ease-in-out infinite; }
+  @keyframes owlBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  .owl-peek .wingL { transform: translate(15px, -27px) rotate(38deg); }
+  .owl-peek .wingR { transform: translate(-15px, -27px) rotate(-38deg); }
+  .owl-wave .wingR { animation: owlWave .8s ease-in-out infinite; transform-origin: 60% 12%; }
+  @keyframes owlWave { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(34deg); } }
+
+  /* resume-progress strip on cards: light track so progress reads by length,
+     not just by spotting red on a dark thumbnail */
+  .thumb .resbt { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(255,255,255,.4); }
+  .thumb .resbt .resb { display: block; height: 100%; background: #ff5252; border-radius: 0 3px 3px 0; }
 
   /* blink-break screen */
   #eyeBreak { position: absolute; inset: 0; z-index: 72; display: none; flex-direction: column; align-items: center;
@@ -575,6 +610,10 @@
        source than the early TV rules, so they must be re-declared here */
     .shelf h3 { font-size: 24px; } .sshort .t { font-size: 15px; }
     .backBtn svg, .pv-top button svg { width: 28px; height: 28px; }
+    #kidView .ageGrid { grid-template-columns: repeat(auto-fit, 140px); max-width: 500px; }
+    #kidView .ageBtn { width: 140px; height: 128px; font-size: 20px; }
+    #kidView .ageBtn .em { font-size: 48px; }
+    #kidView h2 { font-size: 40px; }
     .ageGrid { grid-template-columns: repeat(3, 116px); gap: 18px; }
     .ageBtn { width: 116px; height: 96px; font-size: 36px; border-radius: 28px; }
     #ageView h2 { font-size: 40px; } #ageView p { font-size: 20px; }
@@ -616,6 +655,15 @@
     <h2>How old is your child?</h2>
     <p>We'll show only videos made for that age</p>
     <div class="ageGrid" id="ageGrid"></div>
+    <button id="ageRestore" style="margin-top:22px;border:none;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-weight:700;font-size:13px;padding:10px 18px;border-radius:999px;cursor:pointer">👨‍👩‍👧 Parent? Restore settings</button>
+  </div>
+
+  <!-- ============ WHO'S WATCHING (multi-child devices) ============ -->
+  <div class="view" id="kidView">
+    <img src="icon-180.png" alt="Toon Kids" style="width:110px;height:110px;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.35);background:#fff;">
+    <h2>Who's watching?</h2>
+    <p>Tap your picture!</p>
+    <div class="ageGrid" id="kidGrid"></div>
   </div>
 
   <!-- ============ HOME ============ -->
@@ -623,6 +671,7 @@
     <div class="hd">
       <img class="logoimg" src="icon-180.png" alt="Toon Kids logo">
       <h1>Toon Kids</h1>
+      <button class="gearBtn" id="searchBtn" aria-label="Search videos">🔍</button>
       <button class="agePill" id="agePill" aria-label="Change child's age">Age 4</button>
       <button class="gearBtn" id="gearBtn" aria-label="Parent settings">⚙️</button>
     </div>
@@ -636,13 +685,14 @@
     <div class="feed" id="feed"></div>
     <button class="backBtn" id="shortsBack" aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5 7.5 12l7 7"/></svg></button>
     <div id="shortsOffline" style="display:none; position:absolute; inset:0; z-index:12; background:linear-gradient(160deg,#2b1c57,#0e0a1f); color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:28px;">
-      <div style="font-size:72px">📡</div>
+      <div class="big" style="font-size:72px">📡</div>
       <h2 style="margin:0;font-size:26px">No internet right now</h2>
       <p style="margin:0;opacity:.85;font-weight:600">Cartoons need the internet.<br>Your own videos and Classics still work!</p>
       <button class="softbtn" id="shortsRetry">🔄 Try again</button>
     </div>
   </div>
   <div class="hint" id="soundHint">🔊 Tap the sound button to unmute</div>
+  <div class="hint" id="kidHint" style="top:calc(114px + env(safe-area-inset-top))"></div>
 
   <!-- ============ FULL PLAYER ============ -->
   <div class="view" id="playerView">
@@ -675,25 +725,33 @@
   <!-- ============ EYE COMFORT ============ -->
   <div id="warmOv"></div>
   <div id="dimOv"></div>
-  <div id="eyeBreak">
+  <div id="eyeBreak" role="alert">
     <div class="big">🦉</div>
     <h2>Blink break!</h2>
-    <p>Look at something far away<br>and blink slowly like an owl…</p>
+    <p>Look at something far away<br>and blink slowly with Ollie the owl…</p>
     <div id="eyeCount">20</div>
   </div>
 
   <div id="updToast">✨ Getting the newest cartoons…</div>
 
   <!-- ============ BEDTIME ============ -->
-  <div id="bedScreen">
+  <div id="bedScreen" role="alert">
     <div class="big">😴</div>
     <h2>It's sleepy time!</h2>
     <p>The cartoons are sleeping now.<br>See you in the morning! 🌙</p>
     <button class="softbtn" id="bedUnlockBtn">👨‍👩‍👧 Parents: unlock 15 minutes</button>
   </div>
 
+  <!-- ============ PARENT PAUSE ============ -->
+  <div id="pauseScreen" role="alert">
+    <div class="big">🧸</div>
+    <h2>Cartoon break!</h2>
+    <p>Time for something else right now.<br>Ask Mom or Dad when it's cartoon time again.</p>
+    <button class="softbtn" id="pauseUnlockBtn">👨‍👩‍👧 Parents: end the pause</button>
+  </div>
+
   <!-- ============ BREAK ============ -->
-  <div id="breakScreen">
+  <div id="breakScreen" role="alert">
     <div class="big">🌙</div>
     <h2>Time for a break!</h2>
     <p>Great watching today! Time to rest your eyes,<br>play, or have a snack. 🧸</p>
@@ -705,7 +763,7 @@
     <div class="modal" id="gateModal" role="dialog" aria-modal="true" aria-label="Parents only">
       <h3>👨‍👩‍👧 Parents only</h3>
       <p class="sub">Solve this to continue</p>
-      <div class="gate-q" id="gateQ">7 × 4 = ?</div>
+      <div class="gate-q" id="gateQ" aria-live="polite">7 × 4 = ?</div>
       <input class="gate-input" id="gateA" type="text" inputmode="numeric" autocomplete="off" placeholder="?">
       <div class="gate-pad" id="gatePad"></div>
       <div class="mrow">
@@ -717,18 +775,46 @@
   </div>
 
   <!-- ============ PARENT PANEL ============ -->
-  <div id="parentPanel">
+  <div id="parentPanel" role="dialog" aria-modal="true" aria-label="Parent Zone">
     <div class="pp-head">
       <h2>⚙️ Parent Zone</h2>
       <button class="pp-close" id="ppClose" aria-label="Close parent zone">✕</button>
     </div>
     <div class="pp-body">
+      <div id="ppSaveWarn" class="pp-note" style="display:none;background:#fdecea;border:1px solid #f5c6cb;border-radius:12px;padding:10px 12px;color:#c62828;font-weight:700;margin:0 0 12px">⚠️ Settings can't be saved — this device's storage is full. Free some space, then change any setting to re-try.</div>
+      <div class="pp-card">
+        <h4>🧸 Pause cartoons now</h4>
+        <div class="pp-row">
+          <button class="pp-btn soft" id="ppPause30" style="flex:1">30 min</button>
+          <button class="pp-btn soft" id="ppPause60" style="flex:1">1 hour</button>
+          <button class="pp-btn soft" id="ppPauseDay" style="flex:1">Rest of today</button>
+        </div>
+        <p class="pp-note" id="ppPauseNote">For dinner time, guests, or heading out — the app locks instantly with a friendly note.</p>
+        <div class="pp-row" id="ppPauseActiveRow" style="display:none;margin-top:8px">
+          <button class="pp-btn warn" id="ppPauseEnd" style="flex:1">End pause now</button>
+        </div>
+      </div>
       <div class="pp-card">
         <h4>🧒 Child's age</h4>
         <div class="pp-row">
           <select class="pp-select" id="ppAge" style="flex:1"></select>
         </div>
         <p class="pp-note">Only videos tagged for this age group are shown.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>👧 Children on this device</h4>
+        <div class="plist" id="ppKids"></div>
+        <div class="pp-row" style="margin-top:8px">
+          <input class="pp-input" id="ppKidName" type="text" placeholder="Child's name…" maxlength="14">
+          <select class="pp-select" id="ppKidAge"></select>
+          <button class="pp-btn" id="ppKidAdd">Add</button>
+        </div>
+        <div class="pp-row" style="margin-top:8px">
+          <input class="pp-input" id="ppKidBday" type="date" style="flex:1" aria-label="Active child's birthday">
+          <span style="font-size:12px;color:#6b6486;font-weight:700">🎂 birthday of the active child (optional)</span>
+        </div>
+        <p class="pp-note">Each child gets their own favorites and continue-watching. The app asks "Who's watching?" at launch; switching to an OLDER child's profile asks for the parent gate.</p>
       </div>
 
       <div class="pp-card">
@@ -745,6 +831,15 @@
           </select>
         </div>
         <p class="pp-note" id="ppWatched">Watched today: 0 min</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>📊 This week</h4>
+        <div id="wkBars" style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-bottom:4px"></div>
+        <div id="wkDays" style="display:flex;gap:6px;margin-bottom:8px"></div>
+        <p class="pp-note" id="wkSummary" style="margin-top:0"></p>
+        <div class="plist" id="wkTop"></div>
+        <p class="pp-note">Tap 🚫 on anything you'd rather your child didn't see again — it disappears from the whole app.</p>
       </div>
 
       <div class="pp-card">
@@ -787,7 +882,13 @@
             <button class="pp-btn soft" id="gsForget" style="font-size:12px">Disconnect</button>
           </div>
         </div>
-        <p class="pp-note">Device videos, watch history and each child's age stay on each device — only parent settings sync.</p>
+        <div class="pp-row" style="margin-top:10px">
+          <button class="pp-btn soft" id="bkSave" style="flex:1">💾 Save backup file</button>
+          <button class="pp-btn soft" id="bkLoad" style="flex:1">📂 Restore from file</button>
+          <input type="file" id="bkFile" accept="application/json,.json" style="display:none">
+        </div>
+        <p class="pp-note" id="bkMsg" style="display:none"></p>
+        <p class="pp-note">Device videos, watch history and each child's age stay on each device — only parent settings sync. The backup file works without Google — save it anywhere safe (even WhatsApp it to yourself) and restore on a new device.</p>
       </div>
 
       <div class="pp-card">
@@ -831,6 +932,10 @@
         <div class="pp-row">
           <label class="switch"><input type="checkbox" id="ppAutoEve" aria-label="Automatic evening eye comfort"><span></span></label>
           <span style="font-size:13px;font-weight:700;color:#6b6486">Auto evening mode (7 PM – 6 AM: warm + dim)</span>
+        </div>
+        <div class="pp-row" style="margin-top:8px">
+          <label class="switch"><input type="checkbox" id="ppCc" aria-label="Show subtitles when available"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">Subtitles on YouTube videos (when the channel provides them)</span>
         </div>
         <p class="pp-note">Blink breaks follow the doctors' 20-20-20 rule: pause every 20 minutes and look far away for 20 seconds. Note: apps cannot change the device's hardware brightness — please also lower it in the device settings.</p>
       </div>
@@ -891,7 +996,18 @@
           <label class="switch"><input type="checkbox" id="ppFreshOn" aria-label="Automatically fetch fresh shorts"><span></span></label>
           <span style="font-size:13px;font-weight:700;color:#6b6486">Pull new shorts daily from this app's trusted channels</span>
         </div>
+        <div class="pp-row" style="margin-bottom:8px">
+          <label class="switch"><input type="checkbox" id="ppFreshApprove" aria-label="New shorts wait for approval"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">New shorts wait for my OK before kids see them</span>
+        </div>
         <p class="pp-note" id="ppFreshStatus" style="margin-top:0"></p>
+        <div id="ppPendingWrap" style="display:none">
+          <p class="pp-note" id="ppPendingHead" style="margin-top:10px;font-weight:800;color:#4f4370">Waiting for your OK (0)</p>
+          <div class="plist" id="ppPendingList"></div>
+          <div class="pp-row" style="margin-top:8px">
+            <button class="pp-btn" id="ppApproveAll" style="flex:1">✓ Approve all</button>
+          </div>
+        </div>
         <div class="pp-row" style="margin-top:10px">
           <input class="pp-input" id="ppKwInput" type="text" placeholder="Your own keyword… e.g. dinosaur rhymes">
           <button class="pp-btn" id="ppKwAdd">Add</button>
@@ -906,6 +1022,20 @@
           <button class="pp-btn warn" id="ppFreshClear">Clear pool</button>
         </div>
         <p class="pp-note">Channel pulls come only from the official channels already vetted in this app, filtered to the right age groups. Keyword pulls use YouTube strict Safe Search for the age groups ticked above — spot-check them in the Shorts feed. Requires your API key.</p>
+      </div>
+
+      <div class="pp-card">
+        <h4>🩺 Check my videos</h4>
+        <p class="pp-note" style="margin-top:0">YouTube videos can disappear over time (deleted or blocked by the channel). This checks every video in the app and lists any that no longer play.</p>
+        <div class="pp-row">
+          <button class="pp-btn" id="ppScan" style="flex:1">Run check</button>
+        </div>
+        <p class="pp-note" id="ppScanStatus" style="display:none"></p>
+        <div class="plist" id="ppScanList" style="margin-top:8px"></div>
+        <details style="margin-top:10px">
+          <summary id="ppHiddenCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Hidden videos (0)</summary>
+          <div class="plist" id="ppHiddenList" style="margin-top:8px"></div>
+        </details>
       </div>
 
       <div class="pp-card">
@@ -952,6 +1082,25 @@
 /* CSS can't reach explicit JS scroll options or DOM-spawned effects —
    every scripted animation checks this too */
 const RM = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+/* Ollie the Owl — inlined at every site (not <use>: CSS pose classes can't
+   reach inside a use-element's shadow DOM) */
+function owlSvg() {
+  return '<svg class="owlSvg" viewBox="0 0 120 120" aria-hidden="true">' +
+    '<path class="cap" d="M28 30 Q60 -6 92 30 L84 34 Q60 12 36 34 Z" fill="#5c6bc0"/>' +
+    '<circle class="cap" cx="94" cy="26" r="7" fill="#ffd54a"/>' +
+    '<path d="M30 36 L40 18 L50 33 Z" fill="#8d6e63"/>' +
+    '<path d="M90 36 L80 18 L70 33 Z" fill="#8d6e63"/>' +
+    '<ellipse cx="60" cy="70" rx="40" ry="44" fill="#8d6e63"/>' +
+    '<ellipse cx="60" cy="83" rx="27" ry="27" fill="#efe5dc"/>' +
+    '<g class="eye"><circle cx="45" cy="54" r="14" fill="#fff"/><circle cx="45" cy="54" r="6.5" fill="#3e2723"/><circle cx="47.5" cy="51" r="2.2" fill="#fff"/></g>' +
+    '<g class="eye"><circle cx="75" cy="54" r="14" fill="#fff"/><circle cx="75" cy="54" r="6.5" fill="#3e2723"/><circle cx="77.5" cy="51" r="2.2" fill="#fff"/></g>' +
+    '<path d="M60 62 L52 74 L68 74 Z" fill="#ffb300"/>' +
+    '<ellipse class="wingL" cx="24" cy="74" rx="12" ry="24" fill="#6d4c41"/>' +
+    '<ellipse class="wingR" cx="96" cy="74" rx="12" ry="24" fill="#6d4c41"/>' +
+    '<path d="M46 113 l6 -8 6 8 M62 113 l6 -8 6 8" stroke="#ffb300" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+    "</svg>";
+}
 
 const CATALOG = [
   /* ---- SONGS & RHYMES (2–4) : full videos ---- */
@@ -1240,6 +1389,116 @@ const CATALOG = [
   { kind:"yt", id:"aOaIzzPmP3E", title:"Sesame Friends Fun", ch:"Sesame Street", cat:"learn", fmt:"short", tiers:["little","big"] },
   { kind:"yt", id:"Jh0vXJdLTYU", title:"Grover's Silly Moment", ch:"Sesame Street", cat:"learn", fmt:"short", tiers:["little","big"] },
 
+  /* ---- TELUGU STORIES for 5-10 (Content Drop 3) ---- */
+  { kind:"yt", id:"es5t8yxryQI", title:"జట్టుగా చేసే పని విజయం (Teamwork Wins)", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"E8UQeqA4EfI", title:"చాచా టీవీ ఎక్కువ చూస్తాడు (Too Much TV)", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"vlB2ugBxB6A", title:"కష్టపడి పని చేసే తల్లి", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"ZEhkr2NjQH0", title:"Cussly పెంకితనం", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"VTfMXcEK098", title:"చిన్నారి అబద్ధాల కోరు (The Little Liar)", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"j555zjsPxj0", title:"పాము మరియు చీమలు + Story Collection", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"uKIlsrSu6Ms", title:"Chika అతని హోమ్ వర్క్", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"N53DKlbmtXo", title:"చీమ మరియు గొల్లభామ (Ant & Grasshopper)", ch:"KidsOne Telugu", cat:"telugu", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"UuNs5b25g6o", title:"జింక మరియు సోమరి జంతువులు", ch:"KidsOne Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"d-JYShkftQo", title:"నమ్మక ద్రోహం కథ", ch:"KidsOne Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"4wBNJUMQaDI", title:"ఏడుగురు డేగ సోదరులు", ch:"KidsOne Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"N7iqk8R23UU", title:"దుష్ట పాము - తెలివైన బాతు", ch:"KidsOne Telugu", cat:"telugu", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"Y2XUVheXLAs", title:"తెలివైన తెనాలి - Tenali Rama Kathalu", ch:"Infobells Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"34Eb0lE2ZqU", title:"బీర్బల్ కిచిడి కథ & More", ch:"Infobells Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"qXg74cACaIs", title:"బీర్బల్ డిటెక్టివ్", ch:"Infobells Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"RrT_1TLQnW0", title:"పెద్ద సింహం - చిన్న కుందేలు", ch:"Infobells Telugu", cat:"telugu", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"7H8zv0C4U-M", title:"టోపీల వ్యాపారి - కోతులు", ch:"Infobells Telugu", cat:"telugu", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"rM8Vd1QbN9M", title:"విక్రమ్ భేతాళ కథలు", ch:"Mango Kids Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"euvlF9-Rjb8", title:"పేదరాశి పెద్దమ్మ కథలు", ch:"Mango Kids Telugu", cat:"telugu", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"X6DcSw_fC9A", title:"పొడుపు కథలు (Telugu Riddles)", ch:"CVS 3D Rhymes", cat:"telugu", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"cIuV1JHf32A", title:"చాచా బాధ పడ్డాడు", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"yUSj6pG_Qs0", title:"Cussly పెంకితనం (Short)", ch:"ChuChu TV Telugu", cat:"telugu", fmt:"short", tiers:["big"] },
+
+  /* ---- HINDI RHYMES & SONGS (Content Drop 3) ---- */
+  { kind:"yt", id:"MKlM07RkGU0", title:"Aloo Kachaloo Beta Kahan Gaye The", ch:"Infobells Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"0VRwPWKQOXY", title:"हाथी राजा कहाँ चले", ch:"Infobells Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"OZ1R_Xg11lo", title:"चंदा मामा दूर के", ch:"Infobells Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"JeLIYZJ3hfM", title:"Bandar Mama Pahan Pajama", ch:"Infobells Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"4o-GbQHA7zY", title:"Titli Udi Bus Pe Chadi", ch:"Infobells Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"zuTwaiQ4kOE", title:"Top 25 Hindi Rhymes", ch:"Infobells Hindi", cat:"hindi", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"_BltB-q3zNA", title:"मछ्ली जल की रानी है", ch:"ChuChu TV Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"E53vZJQhJjI", title:"बारिश बारिश जाओ ना", ch:"ChuChu TV Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"TM83zp1AkUM", title:"अ से अनार - Hindi Varnamala Geet", ch:"ChuChu TV Hindi", cat:"hindi", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"I_D3hYBAJ9w", title:"Hindi Moral Stories Collection", ch:"ChuChu TV Hindi", cat:"hindi", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"o_DCQKnFqjw", title:"लकड़ी की काठी - Lakdi Ki Kathi", ch:"Jugnu Kids", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"kgM0RxNtvgQ", title:"Top 25 Hindi Rhymes Collection", ch:"Jugnu Kids", cat:"hindi", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"rWudStJxD0o", title:"स्कूल चले हम - School Chale Ham", ch:"Jugnu Kids", cat:"hindi", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"-2TqEjKm6Qk", title:"Upar Pankha Chalta Hai", ch:"Videogyan Hindi", cat:"hindi", fmt:"video", tiers:["little"] },
+  { kind:"yt", id:"y91pTlxu-Ns", title:"Bandar Mama & More - Collection", ch:"Videogyan Hindi", cat:"hindi", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"4pFSGO76NVg", title:"Ek Kauwa Pyaasa Tha", ch:"CVS 3D Rhymes", cat:"hindi", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"QEfAJ-hwNNk", title:"बारिश बारिश जाओ ना", ch:"ChuChu TV Hindi", cat:"hindi", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"Oe0j_7-JX9w", title:"क्या सो रहे हो लिटिल जौनी", ch:"ChuChu TV Hindi", cat:"hindi", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"ZNnhTTV4kw4", title:"Machli Jal Ki Rani Hai", ch:"Videogyan Hindi", cat:"hindi", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"ULTaZABEAe8", title:"लकड़ी की काठी", ch:"Jugnu Kids", cat:"hindi", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"lZ6h8RjDi7I", title:"हाथी राजा कहाँ चले", ch:"Infobells Hindi", cat:"hindi", fmt:"short", tiers:["little"] },
+
+  /* ---- QUIZ & RIDDLES (Content Drop 3) ---- */
+  { kind:"yt", id:"rlmsS1H9Ajs", title:"Guess That Animal — What Am I?", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"ndJDR8sS7lM", title:"Guess the Bamboo-Loving Animal", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"DqbpVejaqO8", title:"Can You Spot Them All?", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"moIrGJh56Sg", title:"Weird But True! Sharks", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"RJeVXNahrVk", title:"Weird But True! Egg Drop Challenge", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"EFwx9_fZpbc", title:"15 Facts You Wouldn't Believe", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"KKidzAXMvm8", title:"Geo Bee — Geography Quiz", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"gTyHzVj3YT0", title:"Brain Games: Order Out of Chaos", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"Dw16k7MIxJQ", title:"Brain Games: A Sixth Sense?", ch:"Nat Geo Kids", cat:"quiz", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"wyxWK8u1xjI", title:"Can You Guess the Animal?", ch:"SciShow Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"hG0-HS1cRT4", title:"Can You Guess the Animal? Vol 2", ch:"SciShow Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"SunQ8XIiAzc", title:"Can You Guess the Weather?", ch:"SciShow Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"ltCFPMZx3Hc", title:"Animal Guessing Game!", ch:"SciShow Kids", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"Dxb9DjeUoj8", title:"Chicken or Egg — Which Came First?", ch:"Peekaboo Kidz", cat:"quiz", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"kcWST_OOd6c", title:"Mysteries of the World", ch:"Peekaboo Kidz", cat:"quiz", fmt:"video", tiers:["super"] },
+
+  /* ---- STORIES & MOVE for 8-10 (Content Drop 3) ---- */
+  { kind:"yt", id:"op9Bc7GWCuw", title:"The Hula-Hoopin' Queen", ch:"Storyline Online", cat:"story", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"1_Zk4P50WT4", title:"As Fast As Words Could Fly", ch:"Storyline Online", cat:"story", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"-UO-fLPG1kg", title:"The Case of the Missing Carrot Cake", ch:"Storyline Online", cat:"story", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"To07TjBnrNY", title:"Maddi's Fridge", ch:"Storyline Online", cat:"story", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"slJkSLeHXUU", title:"Memoirs of a Hamster", ch:"Storyline Online", cat:"story", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"X1aw-HpWBT8", title:"The Busy Life of Ernestine Buckmeister", ch:"Storyline Online", cat:"story", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"XKa-i2uaAlw", title:"Kids Yoga for Gamers!", ch:"Cosmic Kids Yoga", cat:"move", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"R-BS87NTV5I", title:"Harry Potter Yoga Adventure", ch:"Cosmic Kids Yoga", cat:"move", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"XXH0EAKzPcM", title:"Get Yo Body Movin' Dance-A-Long", ch:"Koo Koo", cat:"move", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"rVmzDd-T2lE", title:"Pop See Ko Dance-A-Long", ch:"Koo Koo", cat:"move", fmt:"video", tiers:["super"] },
+
+  /* ---- FESTIVAL SPECIALS (appear only around each festival) ---- */
+  { kind:"yt", id:"KtVTgFsoQJg", title:"Vaccindi Vaccindi Sankranti", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"HNaVAlfhkvI", title:"Sankranti Vachindi", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"VX1cN2T94kM", title:"Sankranti Panduga Vaccindi", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"6jUGhpp_614", title:"Sankranthi with Chinnu", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"E2F-EH80_78", title:"Gobbiyallo Gobbiyallo", ch:"CVS Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"3uBUXqZQXEk", title:"సంక్రాంతి అమ్మా అమ్మా", ch:"Mango Telugu Rhymes", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"zPaY9e1_x4s", title:"Sankranthi Festival Songs", ch:"Mango Telugu Rhymes", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
+  { kind:"yt", id:"0WcFUZcCDPo", title:"Ugadi Ugadi Happy Happy Ugadi", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"ugadi" },
+  { kind:"yt", id:"GN5rUYZxuOY", title:"Ugadi Panduga with Chinnu & Pappu", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"ugadi" },
+  { kind:"yt", id:"V5aNHmdTZDg", title:"వచ్చింది వచ్చింది ఉగాది", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"ugadi" },
+  { kind:"yt", id:"YN15EU429Wg", title:"Papallara Rarandi - Ugadi Pata", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"ugadi" },
+  { kind:"yt", id:"BBgpJPVYx3Y", title:"ఉగాది పండుగ వచ్చింది", ch:"Infobells Telugu", cat:"song", fmt:"short", tiers:["little","big"], fest:"ugadi" },
+  { kind:"yt", id:"bRe3geCO8_g", title:"Dasara Panduga", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"dasara" },
+  { kind:"yt", id:"fVmoTSmETCE", title:"దసరా - విజయ గీతం", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"dasara" },
+  { kind:"yt", id:"vDBlgngjMws", title:"The Story of Vijaya Dashami", ch:"KidsOne Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"dasara" },
+  { kind:"yt", id:"NuRyRFUdQeY", title:"Amba Paluku Jagadamba Paluku", ch:"CVS 3D Rhymes", cat:"song", fmt:"video", tiers:["little","big"], fest:"dasara" },
+  { kind:"yt", id:"DncA95kLviw", title:"దీపావళి పాట", ch:"ChuChu TV Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"yhGj9rfsLQM", title:"దీపావళి పాటలు", ch:"ChuChu TV Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"cMcbGNB1AXw", title:"Diwali Story - Legend of Narakasura", ch:"ChuChu TV", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"V_USJDaqduc", title:"दीपावली गीत - Diwali Song", ch:"ChuChu TV Hindi", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"DxwkJNAHtWQ", title:"వచ్చింది వచ్చింది దీపావళి", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"JFWwGUt68e8", title:"రండి రండి దీపావళి జరుపుకుందాం", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"8Zk779-tB5Y", title:"Chinnu & Chitti Diwali Song", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"S2nk-OHKGCM", title:"Vaccindi Vaccindi Deepavali", ch:"Infobells Telugu", cat:"song", fmt:"short", tiers:["little","big"], fest:"diwali" },
+  { kind:"yt", id:"4YBGRGBj7_w", title:"Jingle Bells", ch:"Super Simple Songs", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"eQ34DSTjsLQ", title:"Jingle Bells - Christmas Carol", ch:"Super Simple Songs", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"UcWc_0Dt01c", title:"Christmas Songs for Children", ch:"Cocomelon", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"O06dK2Lv9WM", title:"We Wish You a Merry Christmas", ch:"Cocomelon", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"X99klxMRpzU", title:"12 Days of Christmas - Baby Shark", ch:"Pinkfong", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"SG1Ubwdshmw", title:"Jingle Bells - Telugu", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"jaS6itnwJ5k", title:"Chinnu & Chitti Christmas", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"christmas" },
+  { kind:"yt", id:"awkRKdcy1MA", title:"క్రిస్మస్ చెట్టు నక్షత్రాలు", ch:"Infobells Telugu", cat:"song", fmt:"short", tiers:["little","big"], fest:"christmas" },
+
   /* ---- CLASSICS (free public-domain films — play even without YouTube) ---- */
   { kind:"mp4", url:"https://archive.org/download/SantasSurprise/ClaCinOnl_an_SantasSurprise.mp4",
     aid:"SantasSurprise", title:"Santa's Surprise (1947)", ch:"Classic Cartoons", cat:"classic", fmt:"video", tiers:["little","big","super"] },
@@ -1312,11 +1571,13 @@ const CHANNEL_SOURCES = [
   { cid:"UCxlJ45KjG4XVcQ_hd8j227A", ch:"Peekaboo Kidz", cat:"learn", tiers:["super"] },
   { cid:"UCHvoq_rGmOKJKGId1nD1V4Q", ch:"Infobells Telugu", cat:"telugu", tiers:["little","big"] },
   { cid:"UCCdymBMKUtoNmgfam-hxLdQ", ch:"ChuChu TV Telugu", cat:"telugu", tiers:["little","big"] },
-  { cid:"UCoookXUzPciGrEZEXmh4Jjg", ch:"Sesame Street", cat:"learn", tiers:["little","big"] }
+  { cid:"UCoookXUzPciGrEZEXmh4Jjg", ch:"Sesame Street", cat:"learn", tiers:["little","big"] },
+  { cid:"UC1ciY6kR3yj3kaKZ6R7ewAg", ch:"Infobells Hindi", cat:"hindi", tiers:["little","big"] },
+  { cid:"UCbH4Ii9Htdqc-QgxoV3M0Qw", ch:"ChuChu TV Hindi", cat:"hindi", tiers:["little","big"] }
 ];
 
 const TIER_OF_AGE = a => (a <= 4 ? "little" : a <= 7 ? "big" : "super");
-const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", song:"🎵 Songs", learn:"🧠 Learning", telugu:"🌸 Telugu", story:"📖 Stories", move:"🤸 Move & Dance", craft:"🎨 Art & Drawing", calm:"🌙 Bedtime", classic:"🍿 Classics", my:"📁 My Videos" };
+const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", song:"🎵 Songs", learn:"🧠 Learning", quiz:"🧩 Quiz & Riddles", telugu:"🌸 Telugu", hindi:"🌼 Hindi", story:"📖 Stories", move:"🤸 Move & Dance", craft:"🎨 Art & Drawing", calm:"🌙 Bedtime", classic:"🍿 Classics", my:"📁 My Videos" };
 const LS_KEY = "toonKids.v1";
 const isFileProto = location.protocol === "file:";
 
@@ -1336,15 +1597,28 @@ function loadCfg() {
   if (raw && (!c || typeof c !== "object")) {
     try { localStorage.setItem(LS_KEY + ".bak", raw); } catch (e) {}
   }
+  // main key gone or corrupt: fall back to the corruption backup, then the
+  // daily snapshot, before giving up and starting fresh
+  if (!c || typeof c !== "object") {
+    [LS_KEY + ".bak", LS_KEY + ".snap"].some(k => {
+      try {
+        const r2 = localStorage.getItem(k), c2 = r2 ? JSON.parse(r2) : null;
+        if (c2 && typeof c2 === "object") { c = c2; return true; }
+      } catch (e) {}
+      return false;
+    });
+  }
   if (!c || typeof c !== "object") c = {};
   const D = {
-    age: null, soundOn: true, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
+    age: null, soundOn: true, captions: false, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
     liked: {}, custom: [], seen: {}, resume: {},
     watch: { date: todayStr(), secs: 0, bonus: 0 },
+    watchLog: {}, hiddenKeys: [], failCounts: {}, deadIds: [],
+    kids: [], activeKid: null, kidData: {}, bdayShown: null,
     eye: { warm: 0, dim: 0, autoEve: true, breakMin: 20 },
     bedtime: { on: false, start: 21, end: 7 },
-    bedOverrideUntil: 0, removedCustom: [],
-    fresh: { on: true, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] },
+    bedOverrideUntil: 0, pausedUntil: 0, removedCustom: [],
+    fresh: { on: true, requireApproval: false, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] },
     gClientId: null, gEmail: null, gLastSync: 0
   };
   const m = {};
@@ -1360,6 +1634,29 @@ function loadCfg() {
   ["items", "kws", "blocked"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
   if (!Array.isArray(m.custom)) m.custom = [];
   if (!Array.isArray(m.removedCustom)) m.removedCustom = [];
+  if (!Array.isArray(m.hiddenKeys)) m.hiddenKeys = [];
+  m.hiddenKeys = m.hiddenKeys.filter(k => typeof k === "string").slice(-200);
+  if (!Array.isArray(m.deadIds)) m.deadIds = [];
+  m.deadIds = m.deadIds.filter(okId).slice(-200);
+  if (!m.failCounts || typeof m.failCounts !== "object") m.failCounts = {};
+  if (!m.watchLog || typeof m.watchLog !== "object") m.watchLog = {};
+  // profiles: migrate a single-child device into kids[0] once
+  if (!Array.isArray(m.kids)) m.kids = [];
+  m.kids = m.kids.filter(k => k && typeof k === "object" && Number.isFinite(Number(k.age))).slice(0, 6);
+  if (!m.kidData || typeof m.kidData !== "object") m.kidData = {};
+  if (m.age !== null && !m.kids.length) {
+    m.kids = [{ id: 1, name: "", emoji: null, age: m.age, birthday: null }];
+    m.activeKid = 1;
+  }
+  // a dangling activeKid would orphan the flat data on the next switch:
+  // adopt it to the first surviving kid, and drop snapshots of removed kids
+  if (m.kids.length && !m.kids.some(k => k.id === m.activeKid)) m.activeKid = m.kids[0].id;
+  Object.keys(m.kidData).forEach(id => {
+    if (!m.kids.some(k => String(k.id) === id)) delete m.kidData[id];
+  });
+  // keep only the last 30 days of the watch log
+  const wlCut = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  Object.keys(m.watchLog).forEach(d => { if (d < wlCut) delete m.watchLog[d]; });
   m.removedCustom = m.removedCustom.filter(okId).slice(-200);
   m.custom = m.custom.filter(it => it && Array.isArray(it.tiers) && (it.kind !== "yt" || okId(it.id)));
   m.fresh.items = m.fresh.items.filter(it => it && Array.isArray(it.tiers) && okId(it.id));
@@ -1381,7 +1678,45 @@ function loadCfg() {
   });
   // drop hearts for content that no longer exists anywhere
   Object.keys(m.liked).forEach(k => { if (!keep.has(k)) delete m.liked[k]; });
+  // inactive siblings' snapshots get the same pruning as the flat maps,
+  // or a 6-profile device grows without bound
+  Object.values(m.kidData).forEach(d => {
+    if (!d || typeof d !== "object") return;
+    ["liked", "seen", "resume"].forEach(f => { if (!d[f] || typeof d[f] !== "object") d[f] = {}; });
+    Object.keys(d.seen).forEach(k => {
+      const entry = d.seen[k];
+      if (!keep.has(k) && (!entry || !entry.t || entry.t < cutoff)) delete d.seen[k];
+    });
+    Object.keys(d.resume).forEach(k => {
+      const entry = d.resume[k];
+      if (!entry || !keep.has(k)) { delete d.resume[k]; return; }
+      if (entry.at && entry.at < Date.now() - 30 * 24 * 3600 * 1000) delete d.resume[k];
+    });
+    Object.keys(d.liked).forEach(k => { if (!keep.has(k)) delete d.liked[k]; });
+  });
   return m;
+}
+
+/* Hide any item (built-in catalog included) from the whole app. */
+function hideItemKey(k) {
+  if (!k || (cfg.hiddenKeys || []).includes(k)) return;
+  (cfg.hiddenKeys = cfg.hiddenKeys || []).push(k);
+  if (cfg.hiddenKeys.length > 200) cfg.hiddenKeys = cfg.hiddenKeys.slice(-200);
+  saveCfg();
+}
+
+/* Learn from playback failures: after 2 confirmed "video gone" errors on
+   different days, quarantine the id so kids stop hitting the Oops screen. */
+function noteYtError(id, code) {
+  if (!okId(id) || [100, 101, 150].indexOf(Number(code)) === -1) return;
+  cfg.failCounts = cfg.failCounts || {};
+  const fc = cfg.failCounts[id] = cfg.failCounts[id] || { n: 0, d: null };
+  if (fc.d !== todayStr()) { fc.n++; fc.d = todayStr(); }
+  if (fc.n >= 2 && !(cfg.deadIds || []).includes(id)) {
+    (cfg.deadIds = cfg.deadIds || []).push(id);
+    if (cfg.deadIds.length > 200) cfg.deadIds = cfg.deadIds.slice(-200);
+  }
+  saveCfg();
 }
 
 /* Remember shorts the parent removed so auto-refresh never re-adds them. */
@@ -1391,18 +1726,25 @@ function blockFresh(id) {
   if (cfg.fresh.blocked.length > 500) cfg.fresh.blocked = cfg.fresh.blocked.slice(-500);
 }
 let cfg = loadCfg();
+let saveFailed = false; // surfaced as a Parent Zone banner — never fail silently
 function saveCfg() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    saveFailed = false;
   } catch (e) {
     // storage full: shed the oldest watch-history and retry once so parental
     // settings are never silently dropped
     try {
-      const keys = Object.keys(cfg.seen);
-      keys.sort((a, b) => ((cfg.seen[a] && cfg.seen[a].t) || 0) - ((cfg.seen[b] && cfg.seen[b].t) || 0));
-      keys.slice(0, Math.ceil(keys.length / 2)).forEach(k => delete cfg.seen[k]);
+      const shed = (seen) => {
+        const keys = Object.keys(seen);
+        keys.sort((a, b) => ((seen[a] && seen[a].t) || 0) - ((seen[b] && seen[b].t) || 0));
+        keys.slice(0, Math.ceil(keys.length / 2)).forEach(k => delete seen[k]);
+      };
+      shed(cfg.seen);
+      Object.values(cfg.kidData || {}).forEach(d => { if (d && d.seen) shed(d.seen); });
       localStorage.setItem(LS_KEY, JSON.stringify(cfg));
-    } catch (e2) {}
+      saveFailed = false;
+    } catch (e2) { saveFailed = true; }
   }
 }
 
@@ -1417,7 +1759,8 @@ function ytFailMessage() {
 function locked() {
   return document.getElementById("breakScreen").style.display === "flex" ||
          document.getElementById("bedScreen").style.display === "flex" ||
-         document.getElementById("eyeBreak").style.display === "flex";
+         document.getElementById("eyeBreak").style.display === "flex" ||
+         Date.now() < (cfg.pausedUntil || 0);
 }
 
 /* ---------------- IndexedDB (local videos) ---------------- */
@@ -1434,9 +1777,37 @@ async function idbGet(k) { const d = await idbOpen(); return new Promise((res, r
 async function idbDel(k) { const d = await idbOpen(); return new Promise((res) => { const t = d.transaction("videos","readwrite"); t.objectStore("videos").delete(k); t.oncomplete=res; t.onerror=res; }); }
 
 /* ---------------- content selection ---------------- */
-function allItems() { return CATALOG.concat(cfg.custom).concat(cfg.fresh.items); }
+function allItems() { return CATALOG.concat(cfg.custom).concat(cfg.fresh.items.filter(it => !it.pending)); }
 function tier() { return TIER_OF_AGE(cfg.age || 4); }
-function itemsForAge() { return allItems().filter(it => (it.tiers || []).includes(tier())); }
+
+/* Festival calendar: fixed-date festivals forever; lunar ones from a local
+   per-year table (±1 day is fine — the shelf shows for a whole week). */
+const FEST_DATES = {
+  sankranti: { fixed: "01-14" },
+  ugadi:  { 2026: "03-19", 2027: "04-07", 2028: "03-27", 2029: "03-16", 2030: "04-03", 2031: "03-23", 2032: "04-10" },
+  dasara: { 2026: "10-20", 2027: "10-09", 2028: "09-27", 2029: "10-16", 2030: "10-06", 2031: "09-25", 2032: "10-12" },
+  diwali: { 2026: "11-08", 2027: "10-29", 2028: "10-17", 2029: "11-05", 2030: "10-26", 2031: "11-14", 2032: "11-02" },
+  christmas: { fixed: "12-25" }
+};
+const FEST_LABELS = { sankranti: "🪁 Sankranti Special", ugadi: "🌿 Ugadi Special", dasara: "🏹 Dasara Special", diwali: "🪔 Diwali Special", christmas: "🎄 Christmas Special" };
+function activeFestival() {
+  const now = Date.now(), y = new Date().getFullYear();
+  for (const f of Object.keys(FEST_DATES)) {
+    const md = FEST_DATES[f].fixed || FEST_DATES[f][y];
+    if (!md) continue;
+    const d = new Date(y + "-" + md + "T00:00:00").getTime();
+    if (now >= d - 7 * 86400000 && now <= d + 2 * 86400000) return f;
+  }
+  return null;
+}
+
+function itemsForAge() {
+  const hid = new Set(cfg.hiddenKeys || []), dead = new Set(cfg.deadIds || []);
+  const fest = activeFestival();
+  return allItems().filter(it => (it.tiers || []).includes(tier()) &&
+    !hid.has(itemKey(it)) && !(it.kind === "yt" && dead.has(it.id)) &&
+    (!it.fest || it.fest === fest)); // festival items only around their festival
+}
 function gridItems(cat) {
   if (cat === "fav") return itemsForAge().filter(it => cfg.liked[itemKey(it)]);
   const items = itemsForAge().filter(it => it.fmt === "video" || it.kind === "local");
@@ -1476,7 +1847,8 @@ function freshSort(items, dailyStable) {
 }
 
 /* ---------------- views ---------------- */
-const views = { age: document.getElementById("ageView"), home: document.getElementById("homeView"),
+const views = { age: document.getElementById("ageView"), kid: document.getElementById("kidView"),
+                home: document.getElementById("homeView"),
                 shorts: document.getElementById("shortsView"), player: document.getElementById("playerView") };
 
 /* ---- history handling: the system back button/gesture must navigate the
@@ -1570,12 +1942,12 @@ function gridSwapFx() {
   g.classList.remove("swap"); void g.offsetWidth; g.classList.add("swap");
 }
 document.getElementById("navHome").addEventListener("click", () => {
-  if (curView === "shorts") { pendingTabCat = "all"; goBack(); return; }
-  curCat = "all"; renderHome(); updateNav(); gridSwapFx();
+  if (curView === "shorts") { pendingTabCat = "all"; searchQ = null; goBack(); return; }
+  curCat = "all"; searchQ = null; renderHome(); updateNav(); gridSwapFx();
 });
 document.getElementById("navFav").addEventListener("click", () => {
-  if (curView === "shorts") { pendingTabCat = "fav"; goBack(); return; }
-  curCat = "fav"; renderHome(); updateNav(); gridSwapFx();
+  if (curView === "shorts") { pendingTabCat = "fav"; searchQ = null; goBack(); return; }
+  curCat = "fav"; searchQ = null; renderHome(); updateNav(); gridSwapFx();
 });
 document.getElementById("navShorts").addEventListener("click", () => {
   if (curView !== "shorts") openShorts();
@@ -1605,6 +1977,59 @@ document.getElementById("grid").addEventListener("scroll", (e) => {
 }, { passive: true });
 document.getElementById("shortsView").addEventListener("pointerdown", () => navPeek(2500), { passive: true });
 
+/* ---------------- per-child profiles ----------------
+   The ACTIVE child's liked/seen/resume live flat on cfg exactly as before
+   (no call-site changes anywhere); inactive children are snapshots in
+   cfg.kidData, swapped in and out on switch. */
+function activeKidObj() { return (cfg.kids || []).find(k => k.id === cfg.activeKid) || null; }
+function syncActiveKid() { const k = activeKidObj(); if (k) k.age = cfg.age; }
+function kidEmoji(k) { return k.emoji || AGE_EMO[k.age] || "🙂"; }
+function doKidSwitch(id) {
+  const target = cfg.kids.find(k => k.id === id);
+  if (!target) return;
+  if (cfg.activeKid !== null && cfg.activeKid !== id) {
+    cfg.kidData[cfg.activeKid] = { liked: cfg.liked, seen: cfg.seen, resume: cfg.resume };
+  }
+  const d = cfg.kidData[id] || {};
+  cfg.liked = d.liked || {};
+  cfg.seen = d.seen || {};
+  cfg.resume = d.resume || {};
+  delete cfg.kidData[id]; // the active child's data lives flat
+  cfg.activeKid = id;
+  cfg.age = target.age;
+  searchQ = null; // one child's search session must not follow the next child
+  saveCfg();
+  renderHome();
+  showView("home");
+}
+function switchKid(id) {
+  const target = cfg.kids.find(k => k.id === id);
+  if (!target) return;
+  if (target.id === cfg.activeKid) { renderHome(); showView("home"); return; }
+  // switching UP to an older sibling's profile keeps the parent gate —
+  // a younger child must not wander into older-tier content alone
+  if (Number(target.age) > Number(cfg.age)) openGate(() => doKidSwitch(id));
+  else doKidSwitch(id);
+}
+function renderKidView() {
+  const grid = document.getElementById("kidGrid");
+  grid.innerHTML = "";
+  (cfg.kids || []).forEach((k, i) => {
+    const b = document.createElement("button");
+    b.className = "ageBtn";
+    const h = [260, 150, 32, 215, 300, 95][i % 6];
+    b.style.setProperty("--h", h);
+    // luminous hues need the same darkening the age picker applies
+    if (h >= 32 && h <= 185) {
+      b.style.setProperty("--l1", "34%"); b.style.setProperty("--l2", "28%"); b.style.setProperty("--l3", "19%");
+    }
+    b.style.animationDelay = (i * 60) + "ms";
+    b.innerHTML = '<span class="em">' + kidEmoji(k) + "</span>" + escapeHtml(k.name || ("Age " + k.age));
+    b.addEventListener("click", () => switchKid(k.id));
+    grid.appendChild(b);
+  });
+}
+
 /* ---------------- age picker ---------------- */
 const AGE_HUES = [16, 32, 48, 95, 150, 185, 215, 260, 300];
 const AGE_EMO = { 2: "🐣", 3: "🐥", 4: "🐰", 5: "🦊", 6: "🐼", 7: "🦁", 8: "🐯", 9: "🦖", 10: "🚀" };
@@ -1621,14 +2046,68 @@ for (let a = 2; a <= 10; a++) {
   }
   b.style.animationDelay = ((a - 2) * 45) + "ms";
   b.innerHTML = '<span class="em">' + AGE_EMO[a] + "</span>" + a + "<small>years</small>";
-  b.addEventListener("click", () => { cfg.age = a; saveCfg(); renderHome(); showView("home"); });
+  b.addEventListener("click", () => {
+    cfg.age = a;
+    if (!cfg.kids.length) { cfg.kids = [{ id: 1, name: "", emoji: null, age: a, birthday: null }]; cfg.activeKid = 1; }
+    else syncActiveKid();
+    saveCfg(); renderHome(); showView("home");
+  });
   ageGrid.appendChild(b);
 }
 const ppAge = document.getElementById("ppAge");
 for (let a = 2; a <= 10; a++) { const o = document.createElement("option"); o.value = a; o.textContent = a + " years old"; ppAge.appendChild(o); }
+const ppKidAge = document.getElementById("ppKidAge");
+for (let a = 2; a <= 10; a++) { const o = document.createElement("option"); o.value = a; o.textContent = a + " yrs"; ppKidAge.appendChild(o); }
+function renderKidZone() {
+  const list = document.getElementById("ppKids");
+  list.innerHTML = "";
+  (cfg.kids || []).forEach(k => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    const isActive = k.id === cfg.activeKid;
+    row.innerHTML =
+      '<div class="ph">' + kidEmoji(k) + "</div>" +
+      '<div class="nm">' + escapeHtml(k.name || "(no name)") + " · " + k.age + " yrs" +
+        (isActive ? ' <span style="color:#2e7d32">✓ active</span>' : "") +
+        (k.birthday ? " · 🎂 " + escapeHtml(String(k.birthday).slice(5)) : "") + "</div>" +
+      (isActive || cfg.kids.length <= 1 ? "" : '<button class="del" title="Remove profile">✕</button>');
+    const del = row.querySelector(".del");
+    if (del) del.addEventListener("click", () => {
+      if (!confirm("Remove " + (k.name || "this profile") + "? Their favorites on this device are deleted too.")) return;
+      cfg.kids = cfg.kids.filter(x => x.id !== k.id);
+      delete cfg.kidData[k.id];
+      saveCfg(); renderKidZone();
+    });
+    list.appendChild(row);
+  });
+  const ak = activeKidObj();
+  document.getElementById("ppKidBday").value = (ak && ak.birthday) || "";
+}
+document.getElementById("ppKidAdd").addEventListener("click", () => {
+  const name = document.getElementById("ppKidName").value.trim();
+  const age = parseInt(ppKidAge.value, 10) || 4;
+  if (cfg.kids.length >= 6) return;
+  // name the current unnamed profile first, so a fresh device's second child
+  // doesn't leave an anonymous first profile behind
+  if (cfg.kids.length === 1 && !cfg.kids[0].name) {
+    const first = prompt("First — what's the name of the child already using this device?");
+    if (first && first.trim()) cfg.kids[0].name = first.trim().slice(0, 14);
+  }
+  let id = Date.now();
+  while (cfg.kids.some(k => k.id === id)) id++;
+  cfg.kids.push({ id, name, emoji: AGE_EMO[age] || null, age, birthday: null });
+  saveCfg();
+  document.getElementById("ppKidName").value = "";
+  renderKidZone();
+});
+document.getElementById("ppKidBday").addEventListener("change", (e) => {
+  const ak = activeKidObj();
+  if (ak) { ak.birthday = e.target.value || null; saveCfg(); renderKidZone(); }
+});
 
 /* ---------------- home ---------------- */
 let curCat = "all";
+let searchQ = null; // null = search closed; string = active kid search
 /* a fresh install has hundreds of unseen items; springing every badge at once
    is a layer-churn burst on old iPads — only the first dozen animate */
 let newbBudget = 0;
@@ -1637,7 +2116,7 @@ function makeCard(it, ctxItems) {
   card.className = "card";
   const th = thumbFor(it);
   const rs = cfg.resume[itemKey(it)];
-  const resStrip = rs && rs.d ? '<i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i>' : "";
+  const resStrip = rs && rs.d ? '<div class="resbt"><i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i></div>' : "";
   card.innerHTML =
     '<div class="thumb">' + (it.kind === "local" ? "🎞️" : "🎬") +
       (th ? '<img loading="lazy" src="' + th + '" alt="" onload="this.classList.add(\'ld\')" onerror="this.remove()">' : "") +
@@ -1689,29 +2168,34 @@ function makeShelf(title, items, kind, cat) {
   return sec;
 }
 
-const SHELF_CATS = [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["telugu", "🌸 Telugu Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]];
-const CAT_COLORS = { song: "#ffe3ef", cartoon: "#e3f2fd", learn: "#e8f5e9", telugu: "#fff3e0", story: "#ede7f6", move: "#e0f7fa", craft: "#fce4ec", classic: "#fff8e1", calm: "#e8eaf6", my: "#f1f8e9" };
+const SHELF_CATS = [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["quiz", "🧩 Quiz & Riddles"], ["telugu", "🌸 Telugu Rhymes"], ["hindi", "🌼 Hindi Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]];
+const CAT_COLORS = { song: "#ffe3ef", cartoon: "#e3f2fd", learn: "#e8f5e9", quiz: "#e3fafc", telugu: "#fff3e0", hindi: "#e6fcf5", story: "#ede7f6", move: "#e0f7fa", craft: "#fce4ec", classic: "#fff8e1", calm: "#e8eaf6", my: "#f1f8e9" };
 function renderHome() {
   document.getElementById("app").dataset.tier = tier();
   document.getElementById("homeView").classList.toggle("t-little", tier() === "little");
+  const ak = activeKidObj();
   document.getElementById("agePill").innerHTML =
-    '<span class="avi">' + (TIER_AVATAR[tier()] || "🙂") + "</span><span>" + cfg.age + "</span>";
+    '<span class="avi">' + (ak ? kidEmoji(ak) : (TIER_AVATAR[tier()] || "🙂")) + "</span><span>" +
+    ((ak && ak.name) ? escapeHtml(ak.name) : cfg.age) + "</span>";
   syncThemeColor();
   newbBudget = 12;
   const grid = document.getElementById("grid");
   // remember where the child was: rebuilds must not throw them back to the top
   const prevTop = grid.scrollTop;
+  const wasSearch = !!grid.querySelector(".searchBar"); // closing search must not inherit its scroll depth
   const prevRows = {};
   grid.querySelectorAll(".shelf").forEach(s => {
     const h = s.querySelector("h3"), r = s.querySelector(".shelf-row");
-    if (h && r && r.scrollLeft) prevRows[h.textContent] = r.scrollLeft;
+    // key by category, not title — shelf titles change at 7 PM and during festivals
+    if (h && r && r.scrollLeft) prevRows[s.dataset.cat || h.textContent] = r.scrollLeft;
   });
   const restoreScroll = () => {
     grid.querySelectorAll(".shelf").forEach(s => {
       const h = s.querySelector("h3"), r = s.querySelector(".shelf-row");
-      if (h && r && prevRows[h.textContent]) r.scrollLeft = prevRows[h.textContent];
+      const k = s.dataset.cat || (h && h.textContent);
+      if (k && r && prevRows[k]) r.scrollLeft = prevRows[k];
     });
-    grid.scrollTop = prevTop;
+    if (!wasSearch) grid.scrollTop = prevTop;
   };
   grid.innerHTML = "";
   const warn = document.createElement("div");
@@ -1726,7 +2210,7 @@ function renderHome() {
     if (!items.length) {
       const e = document.createElement("div");
       e.className = "empty";
-      e.innerHTML = '<div style="font-size:56px;margin-bottom:8px">🤍</div>No favorites yet!<br>Tap the heart on cartoons you love.';
+      e.innerHTML = '<div class="owlWrap owl-wave" style="margin-bottom:8px">' + owlSvg() + "</div>No favorites yet!<br>Tap the heart on cartoons you love. 🤍";
       grid.appendChild(e);
     } else {
       const cards = document.createElement("div");
@@ -1739,9 +2223,60 @@ function renderHome() {
     return;
   }
 
+  // kid search: curated-catalog-only, readers can jump straight to "Bluey"
+  if (searchQ !== null) {
+    const bar = document.createElement("div");
+    bar.className = "searchBar";
+    bar.innerHTML = '<input class="pp-input" id="searchInput" type="text" placeholder="Find a cartoon…" autocomplete="off">' +
+      '<button class="pp-btn soft" id="searchClose" aria-label="Close search">✕</button>';
+    grid.appendChild(bar);
+    const res = document.createElement("div");
+    res.id = "searchResults";
+    grid.appendChild(res);
+    const inp = bar.querySelector("#searchInput");
+    inp.value = searchQ;
+    let sT = null; // debounced: a full 40-card rebuild per keystroke janks old iPads
+    inp.addEventListener("input", () => {
+      searchQ = inp.value;
+      clearTimeout(sT);
+      sT = setTimeout(renderSearchResults, 200);
+    });
+    bar.querySelector("#searchClose").addEventListener("click", () => { searchQ = null; renderHome(); });
+    renderSearchResults();
+    updateNav();
+    return;
+  }
+
   // Home tab: category tile rail, then YouTube-Kids-style shelves
   const rail = document.createElement("div");
   rail.className = "catRail";
+  // agency inside the vetted catalog: one least-watched pick, one random dance
+  const surprisePool = freshSort(gridItems("all"), false).filter(x => x.fmt !== "short");
+  if (surprisePool.length) {
+    const t = document.createElement("button");
+    t.className = "catTile";
+    t.setAttribute("aria-label", "Surprise video");
+    t.style.setProperty("--cbg", "#fff3bf");
+    t.innerHTML = '<span class="em">🎲</span><span>Surprise!</span>';
+    t.addEventListener("click", () => {
+      const pool = freshSort(gridItems("all"), false).filter(x => x.fmt !== "short");
+      if (pool.length) openPlayer(pool, 0);
+    });
+    rail.appendChild(t);
+  }
+  const dancePool = gridItems("move").filter(x => x.fmt !== "short");
+  if (dancePool.length) {
+    const t = document.createElement("button");
+    t.className = "catTile";
+    t.setAttribute("aria-label", "Dance break");
+    t.style.setProperty("--cbg", "#d3f9d8");
+    t.innerHTML = '<span class="em">🕺</span><span>Dance!</span>';
+    t.addEventListener("click", () => {
+      const pool = freshSort(gridItems("move"), false).filter(x => x.fmt !== "short");
+      if (pool.length) openPlayer(pool, Math.floor(Math.random() * pool.length));
+    });
+    rail.appendChild(t);
+  }
   SHELF_CATS.forEach(([c, label]) => {
     if (!gridItems(c).length) return;
     const sp = label.indexOf(" ");
@@ -1763,13 +2298,50 @@ function renderHome() {
     .sort((a, b) => ((cfg.resume[itemKey(b)].at || 0) - (cfg.resume[itemKey(a)].at || 0)))
     .slice(0, 10);
   if (resumeItems.length) grid.appendChild(makeShelf("▶ Continue watching", resumeItems, "video"));
+  // festival shelf materializes the week of the festival, right up top
+  const fest = activeFestival();
+  if (fest) {
+    const fitems = freshSort(itemsForAge().filter(it => it.fest === fest), true);
+    if (fitems.length) grid.appendChild(makeShelf(FEST_LABELS[fest], fitems, "video"));
+  }
+  document.querySelector(".hd h1").textContent = fest ? "Toon Kids " + FEST_LABELS[fest].split(" ")[0] : "Toon Kids";
+  // birthday takes the headline over everything, once-a-year balloons included
+  const bkid = activeKidObj();
+  if (bkid && bkid.birthday && String(bkid.birthday).slice(5) === todayStr().slice(5)) {
+    document.querySelector(".hd h1").textContent = "🎂 Happy Birthday" + (bkid.name ? ", " + bkid.name : "") + "!";
+    if (cfg.bdayShown !== todayStr() && !RM.matches) {
+      cfg.bdayShown = todayStr(); saveCfg();
+      for (let n = 0; n < 8; n++) {
+        const h = document.createElement("div");
+        h.className = "burst";
+        h.textContent = ["🎈","🎉","🎊","🎈","⭐","🎂","🎈","🎉"][n];
+        h.style.left = (8 + Math.random() * 84) + "%";
+        h.style.top = "72%";
+        h.style.animationDelay = (n * 150) + "ms";
+        document.getElementById("app").appendChild(h);
+        setTimeout(() => h.remove(), 2600);
+      }
+    }
+  }
   const newItems = all.filter(it => seenCount(it) === 0).slice(0, 12);
   if (newItems.length) grid.appendChild(makeShelf("✨ New for you", newItems, "video"));
   const shortsShelf = freshSort(shortItems(), true).slice(0, 12);
   if (shortsShelf.length) grid.appendChild(makeShelf("⚡ Shorts", shortsShelf, "shorts"));
-  SHELF_CATS.forEach(([c, label]) => {
+  // after 7 PM the calm shelves float to the top (pairs with auto evening eye
+  // comfort) — same clock test applyEye uses
+  let shelfCats = SHELF_CATS;
+  const hNow = new Date().getHours();
+  const evening = hNow >= 19 || hNow < 6; // same window as applyEye's auto-evening
+  if (evening) {
+    const pri = ["calm", "story", "telugu"];
+    shelfCats = SHELF_CATS.slice().sort((a, b) => {
+      const ai = pri.indexOf(a[0]), bi = pri.indexOf(b[0]);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+  }
+  shelfCats.forEach(([c, label]) => {
     const its = freshSort(gridItems(c), true).slice(0, 30);
-    if (its.length) grid.appendChild(makeShelf(label, its, "video", c));
+    if (its.length) grid.appendChild(makeShelf(evening && c === "calm" ? "🌙 Sleepy time songs" : label, its, "video", c));
   });
   if (!grid.querySelector(".shelf")) {
     const e = document.createElement("div");
@@ -1781,7 +2353,38 @@ function renderHome() {
   updateNav();
 }
 
-document.getElementById("agePill").addEventListener("click", () => openGate(() => showView("age")));
+function renderSearchResults() {
+  const box = document.getElementById("searchResults");
+  if (!box) return;
+  const q = (searchQ || "").trim().toLowerCase();
+  box.innerHTML = "";
+  if (q.length < 2) { box.innerHTML = '<div class="empty">Type to find cartoons… 🔍</div>'; return; }
+  const items = freshSort(itemsForAge(), true).filter(it =>
+    (it.title || "").toLowerCase().includes(q) ||
+    (it.ch || "").toLowerCase().includes(q) ||
+    (CAT_LABELS[it.cat] || "").toLowerCase().includes(q)).slice(0, 40);
+  if (!items.length) {
+    box.innerHTML = '<div class="empty"><div style="font-size:56px;margin-bottom:8px">🔍</div>Nothing found — try another word!</div>';
+    return;
+  }
+  const cards = document.createElement("div");
+  cards.className = "cards";
+  items.forEach(it => cards.appendChild(makeCard(it, items)));
+  box.appendChild(cards);
+}
+document.getElementById("searchBtn").addEventListener("click", () => {
+  searchQ = searchQ === null ? "" : null;
+  if (searchQ !== null) curCat = "all"; // the fav branch returns before the search branch
+  renderHome();
+  updateNav();
+  if (searchQ !== null) setTimeout(() => { const i = document.getElementById("searchInput"); if (i) i.focus(); }, 60);
+});
+document.getElementById("agePill").addEventListener("click", () => {
+  // multi-child device: the pill is the profile switcher (gate only guards
+  // switching UP, inside switchKid). Single child: gated age change, as ever.
+  if ((cfg.kids || []).length > 1) { renderKidView(); showView("kid"); }
+  else openGate(() => showView("age"));
+});
 
 /* ---------------- YouTube API ---------------- */
 let apiReady = false, apiFailed = false;
@@ -1826,6 +2429,7 @@ let io = null;
 let sp = null, spReady = false, spVideoId = null;
 
 function openShorts(list, startIdx) {
+  if (locked()) return;
   // 60 per visit is plenty — the freshness shuffle picks a different set next time
   const src = list && list.length ? list : freshSort(shortItems(), false).slice(0, 60);
   entries = src.map(it => ({ ...it, dead: false }));
@@ -1857,12 +2461,12 @@ function makeReel(i) {
       ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + e.id + '/hqdefault.jpg\'">'
       : "") +
     '<div class="spin"></div>' +
-    '<div class="oops"><div class="big">🙈</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
+    '<div class="oops"><div class="big owlWrap owl-peek">' + owlSvg() + '</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
     '<div class="tapzone"></div>' +
     '<div class="scrim"></div>' +
     '<div class="rail">' +
-      '<button class="rbtn btn-sound" aria-label="Sound on or off">' + (cfg.soundOn ? "🔊" : "🔇") + "</button>" +
-      '<button class="rbtn btn-like' + (liked ? " on" : "") + '" aria-label="Like">' + (liked ? "❤️" : "🤍") + "</button>" +
+      '<button class="rbtn btn-sound" aria-label="Sound" aria-pressed="' + (cfg.soundOn ? "true" : "false") + '">' + (cfg.soundOn ? "🔊" : "🔇") + "</button>" +
+      '<button class="rbtn btn-like' + (liked ? " on" : "") + '" aria-label="Like" aria-pressed="' + (liked ? "true" : "false") + '">' + (liked ? "❤️" : "🤍") + "</button>" +
     "</div>" +
     '<div class="meta"><div class="chip">' + escapeHtml(e.title || "Cartoon") + "</div>" +
       (e.ch ? '<div class="chip-ch">' + escapeHtml(e.ch) + "</div>" : "") + "</div>" +
@@ -1957,7 +2561,7 @@ function createShortsPlayer(videoId, cueOnly) {
     if (sp || (!cueOnly && curView !== "shorts")) return;
     sp = new YT.Player("sp-hold", {
       width: "100%", height: "100%", videoId: spVideoId, /* current, not closed-over: queued calls stay in sync */
-      playerVars: { autoplay: cueOnly ? 0 : 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
+      playerVars: { autoplay: cueOnly ? 0 : 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1, ...(cfg.captions ? { cc_load_policy: 1, cc_lang_pref: "en" } : {}) },
       events: {
         onReady: () => {
           spReady = true;
@@ -1979,7 +2583,14 @@ function createShortsPlayer(videoId, cueOnly) {
           if (paused) spPause();
         },
         onStateChange: onSpState,
-        onError: () => { if (active !== null) reelError(active); }
+        onError: (ev) => {
+          // ask the PLAYER which video failed — the error can arrive after a
+          // swipe already advanced `active` to a healthy neighbour
+          let vid = null;
+          try { vid = (ev.target.getVideoData() || {}).video_id; } catch (e) {}
+          if (okId(vid)) noteYtError(vid, ev && ev.data);
+          if (active !== null) reelError(active);
+        }
       }
     });
     setTimeout(() => {
@@ -2148,6 +2759,7 @@ function toggleLike(i) {
   const btn = reelEls[i].querySelector(".btn-like");
   btn.textContent = cfg.liked[key] ? "❤️" : "🤍";
   btn.classList.toggle("on", !!cfg.liked[key]);
+  btn.setAttribute("aria-pressed", cfg.liked[key] ? "true" : "false");
   if (cfg.liked[key]) { heartPopFx(btn); burstAt(btn); }
 }
 
@@ -2158,6 +2770,7 @@ let pvList = [], pvIdx = 0, pv = null, pvPaused = false;
 const pvMedia = document.getElementById("pvMedia");
 
 function openPlayer(list, idx) {
+  if (locked()) return;
   pvList = list; pvIdx = idx;
   const wasPlayer = curView === "player";
   showView("player");
@@ -2170,7 +2783,8 @@ function loadPvItem() {
   document.getElementById("pvTitle").textContent = it.title;
   document.getElementById("pvSound").textContent = cfg.soundOn ? "🔊" : "🔇";
   document.getElementById("pvLike").textContent = cfg.liked[itemKey(it)] ? "❤️" : "🤍";
-  document.getElementById("pvToggle").textContent = "⏸";
+  const pvtb = document.getElementById("pvToggle");
+  pvtb.textContent = "⏸"; pvtb.setAttribute("aria-label", "Pause");
   document.getElementById("pvSpin").style.display = "block";
   const pvb = document.getElementById("pvBar");
   pvb.style.transition = "none"; pvb.style.width = "0%"; void pvb.offsetWidth; pvb.style.transition = "";
@@ -2200,7 +2814,7 @@ function loadPvItem() {
       if (pv !== rec) return;
       rec.p = new YT.Player("pv-hold", {
         width: "100%", height: "100%", videoId: it.id,
-        playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1 },
+        playerVars: { autoplay: 1, controls: 0, playsinline: 1, rel: 0, iv_load_policy: 3, fs: 0, disablekb: 1, modestbranding: 1, ...(cfg.captions ? { cc_load_policy: 1, cc_lang_pref: "en" } : {}) },
         events: {
           onReady: () => {
             rec.ready = true;
@@ -2209,7 +2823,8 @@ function loadPvItem() {
             // honor pauses and lock screens that arrived while the player booted
             if (pvPaused || locked()) {
               if (locked()) pvPaused = true;
-              document.getElementById("pvToggle").textContent = "▶";
+              const rb = document.getElementById("pvToggle");
+              rb.textContent = "▶"; rb.setAttribute("aria-label", "Play");
               try { rec.p.pauseVideo(); } catch (e) {}
               return;
             }
@@ -2230,13 +2845,19 @@ function loadPvItem() {
             if (ev.data === YT.PlayerState.PLAYING) {
               if (locked()) { try { pv.p.pauseVideo(); } catch (e) {} return; }
               pvPaused = false; // keep the ⏸/▶ button truthful
-              document.getElementById("pvToggle").textContent = "⏸";
+              const ptb = document.getElementById("pvToggle");
+              ptb.textContent = "⏸"; ptb.setAttribute("aria-label", "Pause");
               document.getElementById("pvSpin").style.display = "none";
               const pp = pvMedia.querySelector(".pvpre");
               if (pp) pp.remove();
             }
           },
-          onError: () => pvFail()
+          onError: (ev) => {
+            let vid = null;
+            try { vid = (ev.target.getVideoData() || {}).video_id; } catch (e) {}
+            if (okId(vid)) noteYtError(vid, ev && ev.data);
+            pvFail();
+          }
         }
       });
       setTimeout(() => { if (pv === rec && !rec.ready) pvFail(); }, 12000);
@@ -2306,8 +2927,11 @@ function pvPlaying() {
 }
 function pvToggle() {
   if (!pv) return;
+  if (pvPaused && locked()) return; // resuming behind a lock is forbidden; pausing is always allowed
   pvPaused = !pvPaused;
-  document.getElementById("pvToggle").textContent = pvPaused ? "▶" : "⏸";
+  const tb = document.getElementById("pvToggle");
+  tb.textContent = pvPaused ? "▶" : "⏸";
+  tb.setAttribute("aria-label", pvPaused ? "Play" : "Pause");
   if (pv.kind === "yt") { try { pvPaused ? pv.p.pauseVideo() : pv.p.playVideo(); } catch (e) {} }
   else pvPaused ? pv.v.pause() : pv.v.play().catch(() => {});
 }
@@ -2337,7 +2961,10 @@ function toggleSound() {
   saveCfg();
   applyShortsSound();
   if (pv) { if (pv.kind === "yt") { try { cfg.soundOn ? (pv.p.unMute(), pv.p.setVolume(100)) : pv.p.mute(); } catch (e) {} } else pv.v.muted = !cfg.soundOn; }
-  document.querySelectorAll(".btn-sound").forEach(b => b.textContent = cfg.soundOn ? "🔊" : "🔇");
+  document.querySelectorAll(".btn-sound").forEach(b => {
+    b.textContent = cfg.soundOn ? "🔊" : "🔇";
+    b.setAttribute("aria-pressed", cfg.soundOn ? "true" : "false");
+  });
   if (cfg.soundOn) soundHint.style.display = "none";
 }
 
@@ -2391,12 +3018,22 @@ setInterval(() => {
   }
 }, 400);
 
+/* gentle heads-up pills: predictable endings prevent lock-screen meltdowns */
+let warned5 = false, warned1 = false, bedWarned = false, kidHintTimer = null;
+function kidHint(msg, ms) {
+  const el = document.getElementById("kidHint");
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(kidHintTimer);
+  kidHintTimer = setTimeout(() => { el.style.display = "none"; }, ms || 5000);
+}
 let expKey = null, expSecs = 0;
 setInterval(() => {
   if (document.visibilityState !== "visible") return;
   // roll the daily counters over at midnight even if the app never reloads
   if (cfg.watch.date !== todayStr()) {
     cfg.watch = { date: todayStr(), secs: 0, bonus: 0 };
+    warned5 = warned1 = false;
     saveCfg();
     if (breakScreen.style.display === "flex") breakScreen.style.display = "none";
   }
@@ -2413,8 +3050,18 @@ setInterval(() => {
     if (expSecs === (inShorts ? 3 : 10)) bumpSeen(k);
   }
   cfg.watch.secs++;
+  // weekly report data: per-day seconds + per-category split (no new tracking
+  // surface — this is the same data cfg.watch already counted, kept 30 days)
+  const wl = cfg.watchLog[todayStr()] = cfg.watchLog[todayStr()] || { s: 0, c: {} };
+  wl.s++;
+  if (curItem && curItem.cat) wl.c[curItem.cat] = (wl.c[curItem.cat] || 0) + 1;
   if (cfg.watch.secs % 15 === 0) saveCfg();
   const lim = cfg.timeLimitMin > 0 ? cfg.timeLimitMin * 60 + (cfg.watch.bonus || 0) : Infinity;
+  if (lim !== Infinity) {
+    const remain = lim - cfg.watch.secs;
+    if (remain <= 300 && remain > 60 && !warned5) { warned5 = true; kidHint("🦉 5 more minutes of cartoons!"); }
+    if (remain <= 60 && remain > 0 && !warned1) { warned1 = true; kidHint("🦉 1 minute left — last one!"); }
+  }
   if (cfg.watch.secs >= lim) { showBreak(); return; }
   eyeSecs++;
   if (cfg.eye.breakMin > 0 && eyeSecs >= cfg.eye.breakMin * 60 &&
@@ -2446,7 +3093,18 @@ function startEyeBreak() {
   if (wasPlayer && !pvPaused) pvToggle();
   spPause();
   const ov = document.getElementById("eyeBreak");
+  ov.querySelector("h2").textContent = "Blink break!";
+  const wrap = ov.querySelector(".owlWrap");
+  if (wrap) { wrap.classList.remove("owl-wave"); wrap.classList.add("owl-blink"); }
   ov.style.display = "flex";
+  const endBreak = () => {
+    ov.style.display = "none";
+    // bedtime or the daily limit may have engaged during the countdown —
+    // never resume behind another lock screen
+    if (locked()) return;
+    if (wasShorts && curView === "shorts") { paused = false; playReel(active); }
+    if (wasPlayer && curView === "player" && pvPaused) pvToggle();
+  };
   // timestamp-based so background-tab timer throttling can't stall the break
   const endAt = Date.now() + 20000;
   document.getElementById("eyeCount").textContent = 20;
@@ -2455,12 +3113,13 @@ function startEyeBreak() {
     document.getElementById("eyeCount").textContent = Math.max(0, left);
     if (left <= 0) {
       clearInterval(t);
-      ov.style.display = "none";
-      // bedtime or the daily limit may have engaged during the countdown —
-      // never resume behind another lock screen
-      if (locked()) return;
-      if (wasShorts && curView === "shorts") { paused = false; playReel(active); }
-      if (wasPlayer && curView === "player" && pvPaused) pvToggle();
+      // Ollie celebrates the finished break — limits delivered by a friend
+      if (!RM.matches && wrap) {
+        wrap.classList.remove("owl-blink"); wrap.classList.add("owl-wave");
+        ov.querySelector("h2").textContent = "Great blinking!";
+        document.getElementById("eyeCount").textContent = "🎉";
+        setTimeout(endBreak, 1200);
+      } else endBreak();
     }
   }, 500);
 }
@@ -2476,9 +3135,34 @@ function inBedtime() {
   return s < e ? (h >= s && h < e) : (h >= s || h < e);
 }
 function checkBedtime() {
+  // parent "pause now": same lock mechanics as bedtime, on-demand
+  const ps = document.getElementById("pauseScreen");
+  if (Date.now() < (cfg.pausedUntil || 0)) {
+    const wasP = ps.style.display === "flex";
+    ps.style.display = "flex";
+    // never steal focus while the panel/gate covers the lock screen
+    if (!wasP && panel.style.display !== "flex" && gateWrap.style.display !== "flex")
+      setTimeout(() => { try { document.getElementById("pauseUnlockBtn").focus(); } catch (e) {} }, 100);
+    if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
+    if (curView === "player" && pv && !pvPaused) pvToggle();
+    spPause();
+  } else if (ps.style.display === "flex") {
+    ps.style.display = "none";
+  }
   const bs = document.getElementById("bedScreen");
+  // heads-up 10 minutes before the bedtime lock lands
+  if (cfg.bedtime.on && !inBedtime()) {
+    const now = new Date();
+    let diff = cfg.bedtime.start * 60 - (now.getHours() * 60 + now.getMinutes());
+    if (diff < 0) diff += 1440;
+    if (diff <= 10 && diff > 0 && !bedWarned) { bedWarned = true; kidHint("🌙 Sleepy time is coming soon…", 6000); }
+    if (diff > 10) bedWarned = false;
+  }
   if (inBedtime()) {
+    const wasShown = bs.style.display === "flex";
     bs.style.display = "flex";
+    if (!wasShown && panel.style.display !== "flex" && gateWrap.style.display !== "flex")
+      setTimeout(() => { try { document.getElementById("bedUnlockBtn").focus(); } catch (e) {} }, 100);
     // re-assert the pause on EVERY tick, not just the show transition —
     // playback must never continue behind the lock. spPause runs regardless
     // of view so even a stray background player can't keep making sound.
@@ -2497,6 +3181,14 @@ document.getElementById("bedUnlockBtn").addEventListener("click", () => {
     checkBedtime();
   });
 });
+document.getElementById("pauseUnlockBtn").addEventListener("click", () => {
+  openGate(() => { cfg.pausedUntil = 0; saveCfg(); checkBedtime(); });
+});
+function setPause(ms) { cfg.pausedUntil = Date.now() + ms; saveCfg(); checkBedtime(); renderPanel(); }
+document.getElementById("ppPause30").addEventListener("click", () => setPause(30 * 60 * 1000));
+document.getElementById("ppPause60").addEventListener("click", () => setPause(60 * 60 * 1000));
+document.getElementById("ppPauseDay").addEventListener("click", () => setPause(new Date().setHours(24, 0, 0, 0) - Date.now()));
+document.getElementById("ppPauseEnd").addEventListener("click", () => { cfg.pausedUntil = 0; saveCfg(); checkBedtime(); renderPanel(); });
 
 /* ---------------- break ---------------- */
 const breakScreen = document.getElementById("breakScreen");
@@ -2506,11 +3198,15 @@ function showBreak() {
   if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
   if (curView === "player" && pv && !pvPaused) pvToggle();
   spPause(); // no surviving background player may play behind the lock
-  if (!already) saveCfg();
+  if (!already) {
+    saveCfg();
+    setTimeout(() => { try { document.getElementById("unlockBtn").focus(); } catch (e) {} }, 100);
+  }
 }
 document.getElementById("unlockBtn").addEventListener("click", () => {
   openGate(() => {
     cfg.watch.bonus = (cfg.watch.bonus || 0) + 15 * 60;
+    warned5 = warned1 = false; // the countdown warnings apply to the bonus too
     saveCfg();
     breakScreen.style.display = "none";
   });
@@ -2643,6 +3339,13 @@ function renderPanel() {
   document.getElementById("ppDim").value = String(cfg.eye.dim || 0);
   document.getElementById("ppEyeBreak").value = String(cfg.eye.breakMin || 0);
   document.getElementById("ppAutoEve").checked = !!cfg.eye.autoEve;
+  document.getElementById("ppCc").checked = !!cfg.captions;
+  document.getElementById("ppSaveWarn").style.display = saveFailed ? "block" : "none";
+  const pActive = Date.now() < (cfg.pausedUntil || 0);
+  document.getElementById("ppPauseActiveRow").style.display = pActive ? "flex" : "none";
+  document.getElementById("ppPauseNote").textContent = pActive
+    ? ("⏸ Paused until " + new Date(cfg.pausedUntil).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
+    : "For dinner time, guests, or heading out — the app locks instantly with a friendly note.";
   document.getElementById("ppPinNote").textContent = cfg.pin
     ? "PIN is ON — the parent gate asks for this PIN."
     : "No PIN set — the gate uses a simple maths question that older kids might solve. Setting a PIN is recommended.";
@@ -2653,6 +3356,9 @@ function renderPanel() {
   renderKeyZone();
   renderFreshZone();
   renderGsZone();
+  renderWeekReport();
+  renderKidZone();
+  renderHiddenZone();
   renderCustomList();
 }
 
@@ -2681,12 +3387,19 @@ function renderCustomList() {
     list.appendChild(row);
   });
 }
-ppAge.addEventListener("change", (e) => { cfg.age = parseInt(e.target.value, 10); saveCfg(); });
-document.getElementById("ppLimit").addEventListener("change", (e) => { cfg.timeLimitMin = parseInt(e.target.value, 10) || 0; saveCfg(); });
+ppAge.addEventListener("change", (e) => { cfg.age = parseInt(e.target.value, 10); syncActiveKid(); saveCfg(); });
+document.getElementById("ppLimit").addEventListener("change", (e) => { cfg.timeLimitMin = parseInt(e.target.value, 10) || 0; warned5 = warned1 = false; saveCfg(); });
 document.getElementById("ppWarm").addEventListener("change", (e) => { cfg.eye.warm = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
 document.getElementById("ppDim").addEventListener("change", (e) => { cfg.eye.dim = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
 document.getElementById("ppEyeBreak").addEventListener("change", (e) => { cfg.eye.breakMin = parseInt(e.target.value, 10) || 0; eyeSecs = 0; saveCfg(); });
 document.getElementById("ppAutoEve").addEventListener("change", (e) => { cfg.eye.autoEve = e.target.checked; saveCfg(); applyEye(); });
+document.getElementById("ppCc").addEventListener("change", (e) => {
+  cfg.captions = e.target.checked;
+  saveCfg();
+  // players must be recreated to pick up the new caption playerVars
+  teardownFeed();
+  teardownPlayer(true);
+});
 
 /* PIN management */
 document.getElementById("ppPinSave").addEventListener("click", () => {
@@ -2882,6 +3595,7 @@ async function autoRefreshFresh(force) {
   try {
     const key = encodeURIComponent(cfg.apiKey);
     const known = new Set(allItems().filter(i => i.kind === "yt").map(i => i.id));
+    cfg.fresh.items.forEach(i => known.add(i.id)); // pending items count as known too
     (cfg.fresh.blocked || []).forEach(id => known.add(id)); // parent-removed: never re-add
     const candidates = {};
     const freshItems = [];
@@ -2918,7 +3632,7 @@ async function autoRefreshFresh(force) {
           const c = candidates[v.id];
           const secs = isoDurToSecs(v.contentDetails && v.contentDetails.duration);
           if (c && okId(v.id) && v.status && v.status.embeddable && secs > 0 && secs <= 183) {
-            freshItems.push({ kind: "yt", id: v.id, title: c.title, ch: c.ch, cat: c.cat, fmt: "short", tiers: c.tiers.slice(), fresh: true });
+            freshItems.push({ kind: "yt", id: v.id, title: c.title, ch: c.ch, cat: c.cat, fmt: "short", tiers: c.tiers.slice(), fresh: true, ...(f.requireApproval ? { pending: true } : {}) });
           }
         });
       }
@@ -2941,9 +3655,11 @@ async function autoRefreshFresh(force) {
     f.items = f.items.concat(freshItems);
     if (f.items.length > 120) {
       // rotate out oldest UNLOVED items only — a hearted short must never
-      // silently vanish from the child's Favorites
-      const loved = f.items.filter(it => cfg.liked[itemKey(it)]);
-      const rest = f.items.filter(it => !cfg.liked[itemKey(it)]);
+      // silently vanish from ANY child's Favorites (inactive siblings included)
+      const lovedKeys = new Set(Object.keys(cfg.liked || {}));
+      Object.values(cfg.kidData || {}).forEach(d => Object.keys((d && d.liked) || {}).forEach(k => lovedKeys.add(k)));
+      const loved = f.items.filter(it => it.pending || lovedKeys.has(itemKey(it)));
+      const rest = f.items.filter(it => !it.pending && !lovedKeys.has(itemKey(it)));
       const room = Math.max(0, 120 - loved.length);
       f.items = rest.slice(Math.max(0, rest.length - room)).concat(loved);
     }
@@ -2955,14 +3671,208 @@ async function autoRefreshFresh(force) {
 }
 setTimeout(() => autoRefreshFresh(false), 6000);
 
+/* Weekly Watch Report — rendered from data the app already collects */
+function renderWeekReport() {
+  const bars = document.getElementById("wkBars"), dayRow = document.getElementById("wkDays");
+  if (!bars) return;
+  bars.innerHTML = ""; dayRow.innerHTML = "";
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 24 * 3600 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    days.push({ key, label: "SMTWTFS"[d.getDay()], secs: (cfg.watchLog[key] && cfg.watchLog[key].s) || 0 });
+  }
+  const max = Math.max(60, ...days.map(d => d.secs));
+  const limitSecs = cfg.timeLimitMin > 0 ? cfg.timeLimitMin * 60 : 0;
+  days.forEach(d => {
+    const over = limitSecs && d.secs > limitSecs;
+    const b = document.createElement("div");
+    b.style.cssText = "flex:1;border-radius:6px 6px 0 0;background:" + (over ? "#e5544b" : "var(--brand)") +
+      ";opacity:" + (d.secs ? "1" : ".18") + ";height:" + Math.max(4, Math.round(d.secs / max * 100)) + "%";
+    b.title = Math.round(d.secs / 60) + " min";
+    bars.appendChild(b);
+    const l = document.createElement("div");
+    l.style.cssText = "flex:1;text-align:center;font-size:11px;font-weight:800;color:#6b6486";
+    l.textContent = d.label;
+    dayRow.appendChild(l);
+  });
+  const totalMin = Math.round(days.reduce((a, d) => a + d.secs, 0) / 60);
+  const catTot = {};
+  days.forEach(d => { const c = (cfg.watchLog[d.key] || {}).c || {}; Object.keys(c).forEach(k => catTot[k] = (catTot[k] || 0) + c[k]); });
+  const topCats = Object.entries(catTot).sort((a, b) => b[1] - a[1]).slice(0, 3)
+    .map(([c]) => (CAT_LABELS[c] || c)).join(", ");
+  document.getElementById("wkSummary").textContent =
+    "This week: " + totalMin + " min" + (topCats ? " • mostly " + topCats : "") +
+    (limitSecs ? " • red bars went over the daily limit" : "");
+  // most-watched titles with one-tap hide
+  const byKey = {};
+  allItems().forEach(it => byKey[itemKey(it)] = it);
+  const top = Object.entries(cfg.seen)
+    .filter(([k, s]) => byKey[k] && s && s.n > 1 && s.t > Date.now() - 7 * 24 * 3600 * 1000)
+    .sort((a, b) => b[1].n - a[1].n).slice(0, 5);
+  const tl = document.getElementById("wkTop");
+  tl.innerHTML = "";
+  if (!top.length) { tl.innerHTML = '<p class="pp-note">Most-watched videos will appear here.</p>'; return; }
+  top.forEach(([k, s]) => {
+    const it = byKey[k];
+    const th = thumbFor(it);
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML =
+      (th ? '<img src="' + th + '" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' : '<div class="ph">🎬</div>') +
+      '<div class="nm">' + escapeHtml(it.title) + ' <span style="color:#6b6486">· watched ' + s.n + "×</span></div>" +
+      '<button class="del" title="Hide from the app">🚫</button>';
+    row.querySelector(".del").addEventListener("click", () => {
+      if (!confirm('Hide "' + it.title + '" from the whole app?')) return;
+      hideItemKey(k);
+      renderWeekReport();
+    });
+    tl.appendChild(row);
+  });
+}
+
+/* Every hidden/quarantined video is listed and restorable — false positives
+   must never be a life sentence */
+function renderHiddenZone() {
+  const list = document.getElementById("ppHiddenList");
+  if (!list) return;
+  list.innerHTML = "";
+  const byKey = {}, byId = {};
+  CATALOG.concat(cfg.custom).concat(cfg.fresh.items).forEach(it => {
+    byKey[itemKey(it)] = it;
+    if (it.kind === "yt") byId[it.id] = it;
+  });
+  const rows = [];
+  (cfg.deadIds || []).forEach(id => rows.push({ label: (byId[id] && byId[id].title) || id, undo: () => {
+    cfg.deadIds = cfg.deadIds.filter(x => x !== id);
+    if (cfg.failCounts) delete cfg.failCounts[id];
+  } }));
+  (cfg.hiddenKeys || []).forEach(k => rows.push({ label: (byKey[k] && byKey[k].title) || k, undo: () => {
+    cfg.hiddenKeys = cfg.hiddenKeys.filter(x => x !== k);
+  } }));
+  document.getElementById("ppHiddenCount").textContent = "Hidden videos (" + rows.length + ")";
+  if (!rows.length) { list.innerHTML = '<p class="pp-note">Nothing hidden.</p>'; return; }
+  rows.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML = '<div class="ph">🚫</div><div class="nm">' + escapeHtml(r.label) + "</div>" +
+      '<button class="del" title="Show again" style="background:#e8f5e9;color:#2e7d32">↩</button>';
+    row.querySelector(".del").addEventListener("click", () => { r.undo(); saveCfg(); renderHiddenZone(); });
+    list.appendChild(row);
+  });
+}
+
+/* Catalog health scan — finds videos YouTube has taken away */
+document.getElementById("ppScan").addEventListener("click", async () => {
+  const st = document.getElementById("ppScanStatus"), list = document.getElementById("ppScanList");
+  const btn = document.getElementById("ppScan");
+  st.style.display = "block"; list.innerHTML = ""; btn.disabled = true;
+  const ytItems = allItems().filter(it => it.kind === "yt");
+  const ids = Array.from(new Set(ytItems.map(it => it.id)));
+  const dead = [];
+  try {
+    if (cfg.apiKey) {
+      for (let i = 0; i < ids.length; i += 50) {
+        st.textContent = "Checking… " + Math.min(i + 50, ids.length) + " / " + ids.length;
+        const r = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status&maxResults=50&id=" + ids.slice(i, i + 50).join(",") + "&key=" + encodeURIComponent(cfg.apiKey));
+        if (!r.ok) throw new Error("YouTube API problem — check the key or quota");
+        const j = await r.json();
+        const alive = new Set((j.items || []).filter(v => v.status && v.status.embeddable !== false).map(v => v.id));
+        ids.slice(i, i + 50).forEach(id => { if (!alive.has(id)) dead.push(id); });
+      }
+    } else {
+      for (let i = 0; i < ids.length; i++) {
+        if (i % 10 === 0) st.textContent = "Checking… " + i + " / " + ids.length + " (slower without an API key)";
+        try {
+          const r = await fetch("https://noembed.com/embed?url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + ids[i]));
+          const j = await r.json();
+          // only a definitive "gone" counts — rate limits and transient errors
+          // must never fabricate a dead list
+          if (j && j.error && /not found|404|unavailable|removed|private/i.test(String(j.error))) dead.push(ids[i]);
+        } catch (e) {}
+        await new Promise(res => setTimeout(res, 220));
+      }
+    }
+    st.textContent = dead.length
+      ? "⚠️ " + dead.length + " of " + ids.length + " videos no longer play:"
+      : "✓ All " + ids.length + " YouTube videos are alive and playable!";
+    const byId = {};
+    ytItems.forEach(it => byId[it.id] = it);
+    dead.forEach(id => {
+      const it = byId[id];
+      const row = document.createElement("div");
+      row.className = "pitem";
+      row.innerHTML =
+        '<div class="ph">💀</div>' +
+        '<div class="nm">' + escapeHtml((it && it.title) || id) + '<br><span style="color:#6b6486">' + escapeHtml((it && it.ch) || "") + "</span></div>" +
+        '<button class="del" title="Hide from the app">🚫</button>';
+      row.querySelector(".del").addEventListener("click", () => {
+        if (!(cfg.deadIds || []).includes(id)) { (cfg.deadIds = cfg.deadIds || []).push(id); saveCfg(); }
+        row.remove();
+      });
+      list.appendChild(row);
+    });
+    if (dead.length) {
+      const rowB = document.createElement("div");
+      rowB.className = "pp-row";
+      rowB.style.marginTop = "8px";
+      rowB.innerHTML = '<button class="pp-btn warn" id="ppHideAllDead" style="flex:1">🚫 Hide all of them</button>';
+      rowB.querySelector("#ppHideAllDead").addEventListener("click", () => {
+        dead.forEach(id => { if (!(cfg.deadIds || []).includes(id)) (cfg.deadIds = cfg.deadIds || []).push(id); });
+        if (cfg.deadIds.length > 200) cfg.deadIds = cfg.deadIds.slice(-200);
+        saveCfg();
+        list.innerHTML = "";
+        st.textContent = "✓ Hidden — the kids won't hit them any more.";
+      });
+      list.appendChild(rowB);
+    }
+  } catch (e) {
+    st.textContent = "⚠️ " + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 function renderFreshZone() {
   document.getElementById("ppFreshOn").checked = !!cfg.fresh.on;
+  document.getElementById("ppFreshApprove").checked = !!cfg.fresh.requireApproval;
   const st = document.getElementById("ppFreshStatus");
-  if (!cfg.apiKey) st.textContent = "Needs your free API key (set it in the search card above).";
+  if (!cfg.apiKey) {
+    st.textContent = cfg.fresh.items.length
+      ? cfg.fresh.items.length + " synced shorts in the pool. New ones arrive via Google sync when you tap Restore — or add your own API key above."
+      : "Needs your free API key (set it in the search card above) — or approved shorts arrive via Google sync when you tap Restore.";
+  }
   else if (!cfg.fresh.on) st.textContent = "Automatic refresh is off.";
   else if (cfg.fresh.lastError) st.textContent = "⚠️ " + cfg.fresh.lastError;
-  else st.textContent = cfg.fresh.items.length + " fresh shorts in the pool" +
+  else st.textContent = cfg.fresh.items.filter(it => !it.pending).length + " fresh shorts in the pool" +
     (cfg.fresh.lastRun ? " • last refresh " + new Date(cfg.fresh.lastRun).toLocaleString() : " • not refreshed yet");
+  // approval queue: nothing reaches the kids until the parent taps ✓
+  const pend = cfg.fresh.items.filter(it => it.pending);
+  const wrap = document.getElementById("ppPendingWrap");
+  wrap.style.display = pend.length ? "block" : "none";
+  if (pend.length) {
+    document.getElementById("ppPendingHead").textContent = "Waiting for your OK (" + pend.length + ")";
+    const pl = document.getElementById("ppPendingList");
+    pl.innerHTML = "";
+    pend.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "pitem";
+      row.innerHTML =
+        '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
+        '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#6b6486">' + escapeHtml(it.ch || "") + "</span></div>" +
+        '<button class="pv" title="Preview on YouTube" style="background:#efecf9;color:#4f4370">👁</button>' +
+        '<button class="ok" title="Approve" style="background:#e8f5e9;color:#2e7d32">✓</button>' +
+        '<button class="del" title="Reject forever">✕</button>';
+      row.querySelector(".pv").addEventListener("click", () => window.open("https://www.youtube.com/watch?v=" + it.id, "_blank"));
+      row.querySelector(".ok").addEventListener("click", () => { delete it.pending; saveCfg(); renderFreshZone(); });
+      row.querySelector(".del").addEventListener("click", () => {
+        blockFresh(it.id);
+        cfg.fresh.items = cfg.fresh.items.filter(x => x.id !== it.id);
+        saveCfg(); renderFreshZone();
+      });
+      pl.appendChild(row);
+    });
+  }
   const list = document.getElementById("ppKwList");
   list.innerHTML = "";
   if (!cfg.fresh.kws.length) list.innerHTML = '<p class="pp-note">No keywords yet — channel pulls still run.</p>';
@@ -2998,6 +3908,11 @@ function renderFreshZone() {
   });
 }
 document.getElementById("ppFreshOn").addEventListener("change", (e) => { cfg.fresh.on = e.target.checked; saveCfg(); renderFreshZone(); });
+document.getElementById("ppFreshApprove").addEventListener("change", (e) => { cfg.fresh.requireApproval = e.target.checked; saveCfg(); renderFreshZone(); });
+document.getElementById("ppApproveAll").addEventListener("click", () => {
+  cfg.fresh.items.forEach(it => { delete it.pending; });
+  saveCfg(); renderFreshZone();
+});
 document.getElementById("ppKwAdd").addEventListener("click", () => {
   const inp = document.getElementById("ppKwInput");
   const q = inp.value.trim();
@@ -3083,7 +3998,15 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("keydown", (e) => {
   const tag = (e.target && e.target.tagName) || "";
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-  if (locked()) { e.preventDefault(); return; }
+  if (locked()) {
+    // keyboard and TV-remote users must still reach the unlock buttons —
+    // but Enter/Space only pass INSIDE the lock/gate surfaces, or a child
+    // could tab to a covered card and start playback behind the lock
+    if (e.key === "Tab") return;
+    if ((e.key === "Enter" || e.key === " ") && e.target && e.target.closest &&
+        e.target.closest("#breakScreen,#bedScreen,#pauseScreen,#eyeBreak,#gateWrap")) return;
+    e.preventDefault(); return;
+  }
   // Escape/Backspace + smart-TV back keys (461 = webOS, 10009 = Tizen) go back
   const isBack = e.key === "Escape" || e.key === "Backspace" || e.keyCode === 461 || e.keyCode === 10009;
   if (isBack) {
@@ -3176,7 +4099,7 @@ async function gsGetToken() {
   return new Promise((res, rej) => {
     try {
       const client = google.accounts.oauth2.initTokenClient({
-        client_id: cfg.gClientId,
+        client_id: gcid(),
         scope: "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email",
         callback: (t) => {
           if (t && t.access_token) {
@@ -3192,10 +4115,16 @@ async function gsGetToken() {
   });
 }
 /* only PARENT settings sync; per-device things (age, history, local files) stay local */
+/* Paste the family's OAuth Client ID here (ends in .apps.googleusercontent.com)
+   to skip the per-device setup — it is origin-restricted, not a secret. */
+const DEFAULT_G_CLIENT_ID = "";
+function gcid() { return cfg.gClientId || DEFAULT_G_CLIENT_ID || null; }
 function gsSyncPayload() {
   return {
     v: 1, ts: Date.now(),
     apiKey: cfg.apiKey || null,
+    captions: !!cfg.captions,
+    pausedUntil: cfg.pausedUntil || 0,
     pin: cfg.pin,
     timeLimitMin: cfg.timeLimitMin,
     bedtime: cfg.bedtime,
@@ -3204,6 +4133,10 @@ function gsSyncPayload() {
     kws: cfg.fresh.kws,
     blocked: cfg.fresh.blocked,
     removedCustom: cfg.removedCustom || [],
+    hiddenKeys: cfg.hiddenKeys || [],
+    deadIds: cfg.deadIds || [],
+    freshItems: (cfg.fresh.items || []).filter(it => !it.pending).slice(-120)
+      .map(it => ({ id: it.id, title: it.title, ch: it.ch, cat: it.cat, tiers: it.tiers })),
     custom: cfg.custom.filter(it => it.kind === "yt")
   };
 }
@@ -3216,6 +4149,12 @@ function gsApplyPayload(p) {
   // weaken the parental locks — refuse rather than guess
   if (!p || typeof p !== "object" || p.v !== 1) return false;
   if (p.apiKey && typeof p.apiKey === "string") cfg.apiKey = p.apiKey;
+  const prevCc = !!cfg.captions;
+  if (typeof p.captions === "boolean") cfg.captions = p.captions;
+  // a payload may only STRENGTHEN the pause lock, never clear one that's
+  // running (same principle as the PIN rule below); expiry handles the rest
+  const pu = Number(p.pausedUntil);
+  if (Number.isFinite(pu) && pu > Date.now()) cfg.pausedUntil = Math.max(cfg.pausedUntil || 0, pu);
   // PIN: format-validated, and a PIN-less payload never clears a local PIN
   if (typeof p.pin === "string" && /^\d{4}$/.test(p.pin)) cfg.pin = p.pin;
   cfg.timeLimitMin = intIn(p.timeLimitMin, 0, 600, cfg.timeLimitMin);
@@ -3244,6 +4183,38 @@ function gsApplyPayload(p) {
   if (Array.isArray(p.removedCustom)) {
     cfg.removedCustom = Array.from(new Set((cfg.removedCustom || []).concat(p.removedCustom.filter(okId)))).slice(-200);
   }
+  if (Array.isArray(p.hiddenKeys)) {
+    cfg.hiddenKeys = Array.from(new Set((cfg.hiddenKeys || []).concat(p.hiddenKeys.filter(k => typeof k === "string" && k.length < 80)))).slice(-200);
+  }
+  if (Array.isArray(p.deadIds)) {
+    cfg.deadIds = Array.from(new Set((cfg.deadIds || []).concat(p.deadIds.filter(okId)))).slice(-200);
+  }
+  // approved fresh shorts ride the payload so keyless devices get them too
+  if (Array.isArray(p.freshItems)) {
+    const have = new Set(cfg.fresh.items.map(it => it.id));
+    p.freshItems
+      .filter(it => it && okId(it.id) && Array.isArray(it.tiers) && !have.has(it.id) && !cfg.fresh.blocked.includes(it.id))
+      .slice(0, 120)
+      .forEach(it => cfg.fresh.items.push({
+        kind: "yt", id: it.id,
+        title: String(it.title || "Short").slice(0, 120),
+        ch: String(it.ch || "").slice(0, 60),
+        cat: typeof it.cat === "string" ? it.cat.slice(0, 12) : "cartoon",
+        fmt: "short",
+        tiers: it.tiers.filter(t => ["little", "big", "super"].includes(t)),
+        fresh: true
+      }));
+    if (cfg.fresh.items.length > 150) {
+      // same loved-and-pending-exempt rotation as the auto-refresh cap — a
+      // Restore must never evict a hearted or awaiting-approval short
+      const lovedKeys = new Set(Object.keys(cfg.liked || {}));
+      Object.values(cfg.kidData || {}).forEach(d => Object.keys((d && d.liked) || {}).forEach(k => lovedKeys.add(k)));
+      const keepIt = cfg.fresh.items.filter(it => it.pending || lovedKeys.has(itemKey(it)));
+      const rest = cfg.fresh.items.filter(it => !it.pending && !lovedKeys.has(itemKey(it)));
+      const room = Math.max(0, 150 - keepIt.length);
+      cfg.fresh.items = rest.slice(Math.max(0, rest.length - room)).concat(keepIt);
+    }
+  }
   const gone = new Set(cfg.removedCustom || []);
   cfg.custom = cfg.custom.filter(it => it.kind !== "yt" || !gone.has(it.id));
   if (Array.isArray(p.custom)) {
@@ -3254,6 +4225,8 @@ function gsApplyPayload(p) {
   saveCfg();
   applyEye();
   checkBedtime();
+  // a restored caption setting must reach the warm persistent players too
+  if (!!cfg.captions !== prevCc) { try { teardownFeed(); teardownPlayer(true); } catch (e) {} }
   if (curView === "home") renderHome();
   return true;
 }
@@ -3322,7 +4295,7 @@ async function gsWhoAmI(token) {
   } catch (e) { return null; }
 }
 function renderGsZone() {
-  const has = !!cfg.gClientId;
+  const has = !!gcid();
   document.getElementById("gsSetup").style.display = has ? "none" : "block";
   document.getElementById("gsZone").style.display = has ? "block" : "none";
   if (!has) return;
@@ -3385,6 +4358,54 @@ document.getElementById("gsPull").addEventListener("click", async () => {
     gsStatus("✓ Settings restored!");
   } catch (e) { gsStatus("⚠️ " + e.message); }
 });
+/* offline backup file: works with no Google at all, validated by the same
+   strict gsApplyPayload a Drive restore goes through */
+function bkMsgShow(m) { const el = document.getElementById("bkMsg"); el.textContent = m; el.style.display = "block"; }
+document.getElementById("bkSave").addEventListener("click", () => {
+  const json = JSON.stringify(gsSyncPayload(), null, 2);
+  // old-iOS standalone PWAs ignore the download attribute (or navigate the
+  // chromeless window to raw JSON) — fall back to select-and-copy there
+  const canDownload = ("download" in HTMLAnchorElement.prototype) && !navigator.standalone;
+  if (canDownload) {
+    const blob = new Blob([json], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "toon-kids-settings.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    bkMsgShow("✓ Backup file saved — keep it somewhere safe.");
+    return;
+  }
+  let ta = document.getElementById("bkTa");
+  if (!ta) {
+    ta = document.createElement("textarea");
+    ta.id = "bkTa"; ta.readOnly = true;
+    ta.style.cssText = "width:100%;height:120px;margin-top:8px;font-size:11px;border-radius:10px;border:2px solid #ddd6f0;padding:8px;font-family:monospace";
+    const msg = document.getElementById("bkMsg");
+    msg.parentNode.insertBefore(ta, msg);
+  }
+  ta.style.display = "block";
+  ta.value = json;
+  ta.focus(); ta.setSelectionRange(0, ta.value.length);
+  let copied = false;
+  try { copied = document.execCommand("copy"); } catch (e) {}
+  bkMsgShow(copied ? "✓ Backup copied — paste it somewhere safe (Notes, WhatsApp…)." : "Copy the text above and save it somewhere safe.");
+});
+document.getElementById("bkLoad").addEventListener("click", () => document.getElementById("bkFile").click());
+document.getElementById("bkFile").addEventListener("change", (ev) => {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!f) return;
+  if (!confirm("Apply the parent settings from this backup file to this device?")) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    let ok = false;
+    try { ok = gsApplyPayload(JSON.parse(rd.result)); } catch (e) {}
+    bkMsgShow(ok ? "✓ Settings restored from the backup file." : "⚠️ That file isn't a Toon Kids backup.");
+    if (ok) renderPanel();
+  };
+  rd.readAsText(f);
+});
 document.getElementById("gsForget").addEventListener("click", () => {
   if (!confirm("Disconnect Google sync on this device? (Nothing is deleted from your Google account.)")) return;
   cfg.gClientId = null; cfg.gEmail = null; cfg.gLastSync = 0;
@@ -3407,12 +4428,24 @@ window.addEventListener("storage", (e) => {
     if (!cfg.fresh) cfg.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [], blocked: [] };
     if (!cfg.fresh.blocked) cfg.fresh.blocked = [];
     if (!Array.isArray(cfg.removedCustom)) cfg.removedCustom = [];
+    // an old-version tab writes an old-shape cfg: re-default every field this
+    // version depends on, or the watch interval throws and profiles get wiped
+    if (!cfg.watchLog || typeof cfg.watchLog !== "object") cfg.watchLog = {};
+    if (!cfg.failCounts || typeof cfg.failCounts !== "object") cfg.failCounts = {};
+    if (!Array.isArray(cfg.hiddenKeys)) cfg.hiddenKeys = [];
+    if (!Array.isArray(cfg.deadIds)) cfg.deadIds = [];
+    if (!Array.isArray(cfg.kids)) cfg.kids = [];
+    if (!cfg.kidData || typeof cfg.kidData !== "object") cfg.kidData = {};
+    if (cfg.kids.length && !cfg.kids.some(k => k.id === cfg.activeKid)) cfg.activeKid = cfg.kids[0].id;
     if (cfg.watch && cfg.watch.secs < mySecs) cfg.watch.secs = mySecs;
     applyEye();
     checkBedtime();
     // reflect the other copy's changes IMMEDIATELY: removed/blocked content
     // must stop being reachable in this session, not just after a re-render
-    if (curView === "home" || curView === "age") renderHome();
+    // (but never yank the search input out from under a typing child)
+    if (curView === "home" || curView === "age") {
+      if (!(searchQ !== null && document.activeElement && document.activeElement.id === "searchInput")) renderHome();
+    }
     else if (curView === "shorts") {
       const blockedSet = new Set(cfg.fresh.blocked || []);
       const allowed = new Set(shortItems().filter(it => !blockedSet.has(it.id)).map(it => it.id));
@@ -3427,7 +4460,39 @@ window.addEventListener("storage", (e) => {
 window.addEventListener("pagehide", () => { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} });
 
 /* ---------------- boot ---------------- */
+// ask the browser NOT to evict our storage (Safari purges unused sites after
+// ~7 days — that would wipe the PIN, favorites, and the sync setup itself).
+// Skipped on Firefox, where persist() shows a permission prompt the child
+// would see at every launch; the gesture-time request in ppFile still runs.
+try {
+  const isFirefox = "MozAppearance" in document.documentElement.style;
+  if (!isFirefox && navigator.storage && navigator.storage.persisted) {
+    navigator.storage.persisted().then(p => {
+      if (!p && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    }).catch(() => {});
+  }
+} catch (e) {}
+// once-daily snapshot: a second recovery copy behind the corruption .bak
+try {
+  if (localStorage.getItem(LS_KEY + ".snapday") !== todayStr()) {
+    localStorage.setItem(LS_KEY + ".snap", JSON.stringify(cfg));
+    localStorage.setItem(LS_KEY + ".snapday", todayStr());
+  }
+} catch (e) {}
+// Ollie takes over the static lock/error screens' emoji
+[["eyeBreak", "owl-blink"], ["bedScreen", "owl-sleep"], ["breakScreen", "owl-sleep"], ["pauseScreen", "owl-wave"], ["shortsOffline", "owl-peek"]].forEach(([id, pose]) => {
+  const big = document.getElementById(id).querySelector(".big");
+  if (big) { big.classList.add("owlWrap", pose); big.innerHTML = owlSvg(); }
+});
+document.getElementById("ageRestore").addEventListener("click", () => openGate(() => {
+  document.getElementById("ppResults").innerHTML = "";
+  searchMsg("");
+  renderPanel();
+  panel.style.display = "flex";
+  pushNav("panel");
+}));
 if (cfg.age === null) showView("age");
+else if ((cfg.kids || []).length > 1) { renderKidView(); showView("kid"); }
 else { renderHome(); showView("home"); }
 checkBedtime();
 function dismissSplash() {
