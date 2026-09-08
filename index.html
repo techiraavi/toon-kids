@@ -202,7 +202,8 @@
   .shelf-row .card { flex: 0 0 var(--shelfcard); width: var(--shelfcard); scroll-snap-align: start; }
   .sshort { flex: 0 0 118px; width: 118px; border: none; cursor: pointer; font-family: inherit; padding: 0; background: none; scroll-snap-align: start; }
   .sshort .sthumb { width: 118px; height: 200px; border-radius: 14px; background: linear-gradient(135deg, #b39ddb, #90caf9); overflow: hidden; position: relative; box-shadow: 0 3px 10px rgba(60,40,120,.14); }
-  .sshort .sthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sshort .sthumb img { width: 100%; height: 100%; object-fit: cover; display: block; position: relative; }
+  .sshort .sthumb .sph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 34px; }
   .sshort:active .sthumb { transform: scale(.96); }
   .sshort .t { font-size: 11.5px; font-weight: 800; color: #26203d; margin-top: 6px; text-align: left;
                display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1946,6 +1947,62 @@ function thumbFor(it) {
   if (it.kind === "mp4" && it.aid) return "https://archive.org/services/img/" + it.aid;
   return null;
 }
+
+/* YouTube serves a tiny grey placeholder (120x90) with HTTP 200 when a
+   thumbnail variant doesn't exist — onerror never fires for it. So every
+   kid-facing thumbnail walks a fallback chain on BOTH error and
+   suspicious-load until a real picture appears. */
+function thumbOk(img) {
+  if (img.naturalWidth > 120) { img.classList.add("ld"); return; }
+  thumbErr(img);
+}
+function thumbErr(img) {
+  const alts = (img.dataset.alt || "").split(",").filter(Boolean);
+  if (alts.length && img.dataset.vid) {
+    img.dataset.alt = alts.slice(1).join(",");
+    img.src = "https://i.ytimg.com/vi/" + img.dataset.vid + "/" + alts[0] + ".jpg";
+    return;
+  }
+  if (img.naturalWidth > 0) img.classList.add("ld"); // a real 120px default.jpg beats nothing
+  else img.remove(); // truly unloadable: reveal the drawn placeholder tile
+}
+
+/* Local videos get a REAL thumbnail: one frame captured to a canvas the
+   first time their card renders, then cached in IndexedDB forever. */
+const localThumbBusy = {};
+async function localThumb(localKey) {
+  const tkey = localKey + ":thumb";
+  let t = null;
+  try { t = await idbGet(tkey); } catch (e) {}
+  if (t) return t;
+  if (localThumbBusy[localKey]) return null;
+  localThumbBusy[localKey] = true;
+  try {
+    const blob = await idbGet(localKey);
+    if (!blob) return null;
+    t = await new Promise((res) => {
+      const url = URL.createObjectURL(blob);
+      const v = document.createElement("video");
+      let settled = false;
+      const done = (val) => { if (settled) return; settled = true; URL.revokeObjectURL(url); res(val); };
+      v.muted = true; v.playsInline = true; v.preload = "metadata";
+      v.onerror = () => done(null);
+      v.onloadeddata = () => { try { v.currentTime = Math.min(1, (v.duration || 2) / 2); } catch (e) { done(null); } };
+      v.onseeked = () => {
+        try {
+          const c = document.createElement("canvas");
+          c.width = 320; c.height = 180;
+          c.getContext("2d").drawImage(v, 0, 0, 320, 180);
+          done(c.toDataURL("image/jpeg", 0.72));
+        } catch (e) { done(null); }
+      };
+      v.src = url;
+      setTimeout(() => done(null), 8000);
+    });
+    if (t) { try { await idbPut(tkey, t); } catch (e) {} }
+    return t;
+  } finally { delete localThumbBusy[localKey]; }
+}
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
 /* ---------------- freshness rotation ----------------
@@ -2243,12 +2300,24 @@ function makeCard(it, ctxItems) {
   const resStrip = rs && rs.d ? '<div class="resbt"><i class="resb" style="width:' + Math.min(100, Math.round(rs.t / rs.d * 100)) + '%"></i></div>' : "";
   card.innerHTML =
     '<div class="thumb">' + (it.kind === "local" ? "🎞️" : "🎬") +
-      (th ? '<img loading="lazy" src="' + th + '" alt="" onload="this.classList.add(\'ld\')" onerror="this.remove()">' : "") +
+      (th ? (it.kind === "yt"
+        ? '<img loading="lazy" src="' + th + '" alt="" data-vid="' + it.id + '" data-alt="hqdefault,default" onload="thumbOk(this)" onerror="thumbErr(this)">'
+        : '<img loading="lazy" src="' + th + '" alt="" onload="this.classList.add(\'ld\')" onerror="this.remove()">') : "") +
       (seenCount(it) === 0 ? '<div class="newb' + (newbBudget-- > 0 ? "" : " still") + '">✨ New</div>' : "") +
       resStrip +
       '<div class="pl">▶</div></div>' +
     '<div class="t">' + escapeHtml(it.title) + "</div>" +
     '<div class="c">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · ⚡ Short" : "") + "</div>";
+  // local videos: fill in the captured-frame thumbnail once it's ready
+  if (it.kind === "local" && it.localKey) {
+    localThumb(it.localKey).then(d => {
+      if (!d || !card.isConnected) return;
+      const tdiv = card.querySelector(".thumb");
+      if (tdiv && !tdiv.querySelector("img")) {
+        tdiv.insertAdjacentHTML("afterbegin", '<img src="' + d + '" alt="" class="ld">');
+      }
+    }).catch(() => {});
+  }
   card.addEventListener("click", () => {
     if (it.fmt === "short") {
       const shorts = ctxItems.filter(x => x.fmt === "short");
@@ -2277,7 +2346,7 @@ function makeShelf(title, items, kind, cat) {
       b.className = "sshort";
       b.setAttribute("aria-label", it.title);
       b.innerHTML =
-        '<div class="sthumb"><img loading="lazy" src="https://i.ytimg.com/vi/' + it.id + '/oardefault.jpg" alt="" onload="this.classList.add(\'ld\')" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg\'"></div>' +
+        '<div class="sthumb"><span class="sph">🎬</span><img loading="lazy" src="https://i.ytimg.com/vi/' + it.id + '/oardefault.jpg" alt="" data-vid="' + it.id + '" data-alt="hqdefault,mqdefault,default" onload="thumbOk(this)" onerror="thumbErr(this)"></div>' +
         '<div class="t">' + escapeHtml(it.title) + "</div>";
       b.addEventListener("click", () => {
         const idx = full.findIndex(x => x.id === it.id);
@@ -2582,7 +2651,7 @@ function makeReel(i) {
   const liked = !!cfg.liked[itemKey(e)];
   sec.innerHTML =
     (e.kind === "yt"
-      ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + e.id + '/hqdefault.jpg\'">'
+      ? '<img class="pre" loading="lazy" src="https://i.ytimg.com/vi/' + e.id + '/oardefault.jpg" data-vid="' + e.id + '" data-alt="hqdefault,mqdefault,default" onload="thumbOk(this)" onerror="thumbErr(this)">'
       : "") +
     '<div class="spin"></div>' +
     '<div class="oops"><div class="big owlWrap owl-peek">' + owlSvg() + '</div><p class="oops-msg">Oops, this one flew away!</p></div>' +
@@ -2919,7 +2988,7 @@ function loadPvItem() {
     const old = pvMedia.querySelector(".pvpre");
     if (old) old.remove();
     pvMedia.insertAdjacentHTML("afterbegin",
-      '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onload="this.classList.add(\'ld\')" onerror="this.remove()">');
+      '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" data-vid="' + it.id + '" data-alt="mqdefault,default" onload="thumbOk(this)" onerror="thumbErr(this)">');
     const rsf = cfg.resume[itemKey(it)];
     try {
       pv.p.loadVideoById(rsf && rsf.t > 10 ? { videoId: it.id, startSeconds: rsf.t } : it.id);
@@ -2931,7 +3000,7 @@ function loadPvItem() {
   teardownPlayer(true);
   if (it.kind === "yt") {
     if (apiFailed) { pvFail(); return; }
-    pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" onload="this.classList.add(\'ld\')" onerror="this.remove()"><div id="pv-hold"></div>';
+    pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" data-vid="' + it.id + '" data-alt="mqdefault,default" onload="thumbOk(this)" onerror="thumbErr(this)"><div id="pv-hold"></div>';
     const rec = { kind: "yt", ready: false, p: null };
     pv = rec;
     whenApi(() => {
