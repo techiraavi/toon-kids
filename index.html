@@ -20,6 +20,8 @@
      (splash included) hostage to fonts.googleapis.com on degraded networks -->
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-180.png">
@@ -626,6 +628,124 @@
     .rbtn { width: 72px; height: 72px; font-size: 33px; }
   }
 
+  /* ==================== YOUTUBE-APP LOOK ====================
+     Home chrome restyled to the real YouTube app's visual language: white
+     theme, Roboto, flat filter chips, YouTube card anatomy (rounded thumb →
+     avatar circle + two-line title + channel line), flat labeled bottom bar.
+     The shorts feed and player already match. This layer sits late in the
+     cascade and overrides the earlier playful skin wholesale; the kid/lock
+     screens keep the Baloo look on purpose. */
+  body { font-family: "Roboto", "Segoe UI", system-ui, sans-serif; }
+  #splash, #ageView, #kidView, #breakScreen, #bedScreen, #pauseScreen, #eyeBreak {
+    font-family: "Baloo 2", "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
+  }
+  .app, #homeView { background: #fff; }
+  .hd {
+    background: #fff; color: #0f0f0f;
+    border-radius: 0; box-shadow: none; border-bottom: 1px solid #e5e5e5;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+  }
+  .hd .logoimg { width: 30px; height: 30px; border: none; transform: none; border-radius: 7px; box-shadow: none; }
+  .hd h1 { color: #0f0f0f; font-size: 20px; letter-spacing: -0.5px; font-weight: 700; font-family: "Roboto", "Segoe UI", sans-serif; }
+  #searchBtn, .gearBtn { background: none; color: #0f0f0f; width: 40px; height: 40px; font-size: 20px; }
+  .agePill { background: #f2f2f2; color: #0f0f0f; box-shadow: none; padding: 5px 10px; font-size: 13px; }
+  #app[data-tier="little"] .agePill { background: #f2f2f2; color: #0f0f0f; box-shadow: none; }
+  .grid { background: #fff; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+  /* filter chips */
+  .catRail { gap: 8px; padding: 10px 2px 12px; }
+  .catTile { flex-direction: row; gap: 6px; min-width: 0; border-radius: 8px; background: #f2f2f2;
+             color: #0f0f0f; padding: 7px 12px; font-size: 14px; font-weight: 500;
+             font-family: "Roboto", "Segoe UI", sans-serif; }
+  .catTile .em { font-size: 16px; line-height: 1; }
+
+  /* shelves + cards */
+  .shelf h3 { color: #0f0f0f; font-size: 16px; font-weight: 700; font-family: "Roboto", "Segoe UI", sans-serif; }
+  .card { background: none; box-shadow: none; border-radius: 0; overflow: visible; }
+  .card:hover { transform: none; box-shadow: none; }
+  .sshort:hover .sthumb { transform: none; }
+  .thumb { border-radius: 12px; overflow: hidden; }
+  .thumb .pl { display: none; }
+  .thumb .newb { background: #f00; color: #fff; box-shadow: none; }
+  .cmeta { display: flex; gap: 10px; padding: 10px 4px 0; align-items: flex-start; }
+  .cavatar { width: 32px; height: 32px; border-radius: 50%; flex: none; display: flex; align-items: center;
+             justify-content: center; color: #fff; font-size: 15px; font-weight: 500;
+             font-family: "Roboto", "Segoe UI", sans-serif; }
+  .ctxt { min-width: 0; }
+  .card .t { color: #0f0f0f; font-weight: 500; font-size: 14px; padding: 0; line-height: 1.35;
+             font-family: "Roboto", "Segoe UI", sans-serif; }
+  .card .c { color: #606060; font-weight: 400; font-size: 12px; padding: 2px 0 0; }
+  #homeView.t-little .card .t { padding: 0; }
+  #homeView.t-little .cavatar { display: none; } /* pre-readers: picture + big title only */
+  .sshort .sthumb { border-radius: 12px; box-shadow: none; }
+  .sshort .t { color: #0f0f0f; font-weight: 500; font-family: "Roboto", "Segoe UI", sans-serif; }
+  .searchBar .pp-input { border-radius: 999px; border-color: #e5e5e5; }
+
+  /* flat labeled bottom bar, exactly like the app */
+  #bottomNav {
+    left: 0; right: 0; bottom: 0; transform: none;
+    border-radius: 0; padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
+    background: #fff; border: none; border-top: 1px solid #e5e5e5;
+    box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+    gap: 0; justify-content: space-around;
+  }
+  #bottomNav.show { animation: none; }
+  #bottomNav.dark { background: #0f0f0f; border-top-color: #2f2f2f; box-shadow: none; }
+  #bottomNav.navHidden { transform: translateY(110%); }
+  #navPill { display: none; }
+  .navBtn { flex: 1; flex-direction: column; gap: 3px; padding: 6px 0; min-height: 0; min-width: 0;
+            font-size: 10px; color: #0f0f0f; font-weight: 400; border-radius: 0;
+            font-family: "Roboto", "Segoe UI", sans-serif; }
+  #bottomNav.dark .navBtn { color: #f1f1f1; }
+  .navBtn .ico { width: 24px; height: 24px; }
+  .navBtn.active { color: #0f0f0f; font-weight: 500; }
+  #bottomNav.dark .navBtn.active { color: #fff; }
+  .navBtn.active .ico { transform: none; }
+
+  /* the persistent bar means the shorts overlays and toast sit above it —
+     all raised from ONE token that tracks the bar's real rendered height */
+  :root { --navh: 62px; }
+  #shortsView .progress { bottom: calc(var(--navh) + env(safe-area-inset-bottom)); }
+  #shortsView .meta { bottom: calc(var(--navh) + 84px + env(safe-area-inset-bottom)); }
+  #shortsView .rail { bottom: calc(var(--navh) + 150px + env(safe-area-inset-bottom)); }
+  #updToast { bottom: calc(var(--navh) + 16px + env(safe-area-inset-bottom)); }
+
+  /* responsive steps for the new anatomy (this layer out-cascades the old ones) */
+  @media (min-width: 700px) {
+    .navBtn { flex: none; min-width: 110px; }
+    #bottomNav { justify-content: center; gap: 10px; }
+  }
+  @media (min-width: 1200px) {
+    .card .t { font-size: 15px; } .card .c { font-size: 13px; }
+    .shelf h3 { font-size: 18px; } .hd h1 { font-size: 22px; }
+  }
+  @media (min-width: 1900px) {
+    :root { --navh: 74px; }
+    .hd h1 { font-size: 30px; } .hd .logoimg { width: 44px; height: 44px; }
+    #searchBtn, .gearBtn { width: 56px; height: 56px; font-size: 26px; }
+    .card .t { font-size: 18px; } .card .c { font-size: 14px; }
+    .shelf h3 { font-size: 24px; } .sshort .t { font-size: 15px; }
+    .catTile { font-size: 18px; padding: 10px 18px; } .catTile .em { font-size: 22px; }
+    .navBtn { font-size: 13px; min-width: 150px; } .navBtn .ico { width: 32px; height: 32px; }
+    .cavatar { width: 44px; height: 44px; font-size: 20px; }
+    .agePill { font-size: 17px; padding: 8px 14px; }
+  }
+
+  /* iOS standalone draws WHITE status text (black-translucent meta) — paint
+     just the safe-area strip of the white header dark so the clock stays
+     readable; below the notch the header is still pure white */
+  .hd { background: linear-gradient(to bottom, #0f0f0f 0, #0f0f0f env(safe-area-inset-top, 0px), #fff env(safe-area-inset-top, 0px)); }
+
+  /* yellow focus rings vanish on white chrome; blue for home, yellow stays on the dark bar */
+  #homeView button:focus-visible, #bottomNav button:focus-visible { outline-color: #065fd4; }
+  #bottomNav.dark button:focus-visible { outline-color: #ffd54a; }
+
+  /* pre-readers keep their BIG colorful picture tiles — the grey chips are
+     for children who can read (see "pre-readers jump by picture" above) */
+  #homeView.t-little .catTile { flex-direction: column; background: var(--cbg, #efecf9);
+    border-radius: 18px; padding: 10px 16px; min-width: 78px; font-size: 12px; gap: 4px; }
+  #homeView.t-little .catTile .em { font-size: 28px; }
+
   /* ---- reduced motion: MUST stay the last rules in this stylesheet so the
      blanket kill out-cascades every equal-specificity animation above ---- */
   @media (prefers-reduced-motion: reduce) {
@@ -1121,7 +1241,7 @@ const CATALOG = [
   { kind:"yt", id:"B0J4bDD_9oU", title:"One Potato, Two Potato", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
   { kind:"yt", id:"_xmvMS5-QKk", title:"This Is The Way", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
   { kind:"yt", id:"RncOk4MQYSQ", title:"Count & Play with Caitie", ch:"Super Simple Play", cat:"learn", fmt:"short", tiers:["little"] },
-  { kind:"yt", id:"NFP_RP7Jh5c", title:"Head Shoulders Football Fun", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little"] },
+  { kind:"yt", id:"NFP_RP7Jh5c", title:"Head Shoulders Football Fun", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little","big"] },
   { kind:"yt", id:"h5_6Z0GJTHs", title:"Baa Baa Black Sheep", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little"] },
   { kind:"yt", id:"iWVKbdtjKkc", title:"The Boo Boo Song", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little"] },
   { kind:"yt", id:"r2R0u4CBJkc", title:"Johny Johny with Daddy", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little"] },
@@ -1590,6 +1710,68 @@ const CATALOG = [
   { kind:"yt", id:"T5UU-yZ5XG4", title:"Akbar Birbal: आखिरी चित्र", ch:"Shemaroo Kids", cat:"hindi", fmt:"video", tiers:["super"] },
   { kind:"yt", id:"_FFTcifeyNs", title:"जादुई पैंसिल - Panchatantra", ch:"Jugnu Kids", cat:"hindi", fmt:"video", tiers:["big","super"] },
 
+  /* ---- PLAY TIME: real-people play & activities (Content Drop 5) ---- */
+  { kind:"yt", id:"shHOc5vt4sQ", title:"Maddie Becomes a Princess!", ch:"Toys and Colors", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"ZK_J5HwEn64", title:"Ellie Must Find the ABCs", ch:"Toys and Colors", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"wMlyA7RJPNs", title:"The Perfect Birthday Gift", ch:"Toys and Colors", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"aElzjwyiTSM", title:"Learning to Share the Slime", ch:"Vlad and Niki", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"vVM243RSKxc", title:"Helping Uncle + Sweet Machine", ch:"Vlad and Niki", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"Qo1O9RoenNI", title:"DIY Birthday Present for Alice", ch:"Vlad and Niki", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"6KUnwa0ebLE", title:"Nastya: Why We Drink Water", ch:"Like Nastya", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"RzNzbGfx9Zg", title:"Nastya Learns to Wash Hands", ch:"Like Nastya", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"IyTH47zsijg", title:"A Family Day with Dad", ch:"Like Nastya", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"y-WZRObIWyQ", title:"Nastya: Learning to Read Books", ch:"Like Nastya", cat:"play", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"c3VN_K5ngJo", title:"Kids Try Working in Restaurants!", ch:"Kids Diana Show", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"H79zQrxPvjk", title:"Kids Go Camping!", ch:"Kids Diana Show", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"5XbX66r5914", title:"Kids Become Scouts", ch:"Kids Diana Show", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"lhUDjMKnaMI", title:"GIANT Pickleball!", ch:"Ryan's World", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"fXSW586g0Jo", title:"Halloween Sing Along with Ryan", ch:"Ryan's World", cat:"play", fmt:"video", tiers:["big"] },
+  { kind:"yt", id:"A-8F1CdJKLw", title:"Eric Helps Eva Reach Her Toy!", ch:"Toys and Colors", cat:"play", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"jzJ3aO2YrwQ", title:"Lily and the Pool Rules!", ch:"Toys and Colors", cat:"play", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"bm3cFSnKupg", title:"Fishing Day with Dad", ch:"Vlad and Niki", cat:"play", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"btElLBg07aw", title:"Nastya's Jump Dance", ch:"Like Nastya", cat:"play", fmt:"short", tiers:["big"] },
+  { kind:"yt", id:"iSOiTfnrdoo", title:"Little Scouts Learn to Recycle ♻️", ch:"Kids Diana Show", cat:"play", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"bsI4zzijb0I", title:"How Firefighters Put Out a Fire!", ch:"Kids Diana Show", cat:"play", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"wiJCuOk6moM", title:"Healthy or Unhealthy Breakfast?", ch:"Kids Diana Show", cat:"play", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"2oUZeLJE2LU", title:"Cardboard Face Challenge!", ch:"Ryan's World", cat:"play", fmt:"short", tiers:["big"] },
+
+  /* ---- PLAY TIME for 8-10 (Content Drop 5) ---- */
+  { kind:"yt", id:"teW7A5EoP_o", title:"Rocket League in Real Life", ch:"Dude Perfect", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"MhXPm7JcWCo", title:"All Sports Golf Battle 7", ch:"Dude Perfect", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"Q_xwiljjLiE", title:"Ultimate Fort Battle", ch:"Dude Perfect", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"9IiYOTzJ2uw", title:"I Built a Roller Coaster In My Lab", ch:"Mark Rober", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"jjpjjcMeujM", title:"Ronaldo vs My Goalie Robot", ch:"Mark Rober", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"q2C1JpQi5G4", title:"America's Underwater City", ch:"Mark Rober", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"Q_Y0S5c4j4M", title:"Zach King's Best Magic Videos", ch:"Zach King", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"NYUWVjyESIQ", title:"Zach King vs Dude Perfect", ch:"Zach King", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"c8yjUrGQzW0", title:"Secret Magic Movie Room", ch:"Zach King", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"XmkoPheiyC0", title:"Aerobie Across a 222m Canyon!", ch:"How Ridiculous", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"OplKmBOugIA", title:"How Far Will GIANT Frisbees Fly?", ch:"How Ridiculous", cat:"play", fmt:"video", tiers:["super"] },
+  { kind:"yt", id:"HIWwbW1qW1w", title:"Who Made The Shot?", ch:"Dude Perfect", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"u6RTMCclpSQ", title:"Sports By Their Literal Names 🤣", ch:"Dude Perfect", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"KwqeKTM9M_8", title:"$100 Slime Challenge", ch:"Mark Rober", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"5N17EbYJBwQ", title:"4 Levels of Satisfying Crunches", ch:"Mark Rober", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"jwF7JS1JOvo", title:"Star Wars Lego Build Goes Wrong", ch:"Zach King", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"jKuTomFX5Co", title:"Meccha Chameleon In Real Life", ch:"Zach King", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"lAa7QX8m2FA", title:"Longest Frisbee Throw Ever?", ch:"How Ridiculous", cat:"play", fmt:"short", tiers:["super"] },
+  { kind:"yt", id:"BtEv9y32-BM", title:"GOODBYE BALL 😂", ch:"How Ridiculous", cat:"play", fmt:"short", tiers:["super"] },
+
+  /* ---- SONG SHORTS for 5-10 (Content Drop 5) ---- */
+  { kind:"yt", id:"fPZU3WHMGYM", title:"Learn the Planets Song", ch:"Gracie's Corner", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"8Wd_mDVm0DI", title:"Sukuma (Get Up!)", ch:"Gracie's Corner", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"Af9NVWnj6hc", title:"Humpty Dumpty 🥚", ch:"Bounce Patrol", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"SQu9NMBrhi8", title:"Wheels on the Bus 🚍", ch:"Bounce Patrol", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"3iO6CxItX24", title:"Five Little Monkeys 🐵", ch:"Bounce Patrol", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"RpXfL0iY73A", title:"All Star Dance-A-Long", ch:"Koo Koo", cat:"song", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"GKlfX6F-DI0", title:"Public Library Song", ch:"Koo Koo", cat:"song", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"PVjZ5D-wVLY", title:"Believer Dance Break", ch:"GoNoodle", cat:"song", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"sfj1j-VE-Tc", title:"Melting Dance Break 🧊", ch:"GoNoodle", cat:"song", fmt:"short", tiers:["big","super"] },
+  { kind:"yt", id:"DHf1I6jYYEI", title:"The Blue Color Song Pt 1", ch:"ChuChu TV", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"e87xaEjYMtg", title:"Peanut Butter and Jelly 🥜", ch:"Super Simple Songs", cat:"song", fmt:"short", tiers:["little","big"] },
+  { kind:"yt", id:"IPQf9OdjO8s", title:"Planets Song: All 8 Planets", ch:"Gracie's Corner", cat:"song", fmt:"video", tiers:["little","big"] },
+  { kind:"yt", id:"VknuQmKfbV0", title:"KIDZ BOP: Dracula 🎃", ch:"KIDZ BOP", cat:"song", fmt:"video", tiers:["big","super"] },
+  { kind:"yt", id:"dWu3QsD4LnQ", title:"KIDZ BOP: Hit The Wall", ch:"KIDZ BOP", cat:"song", fmt:"video", tiers:["super"] },
+
   /* ---- FESTIVAL SPECIALS (appear only around each festival) ---- */
   { kind:"yt", id:"KtVTgFsoQJg", title:"Vaccindi Vaccindi Sankranti", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
   { kind:"yt", id:"HNaVAlfhkvI", title:"Sankranti Vachindi", ch:"Infobells Telugu", cat:"song", fmt:"video", tiers:["little","big"], fest:"sankranti" },
@@ -1698,11 +1880,16 @@ const CHANNEL_SOURCES = [
   { cid:"UCCdymBMKUtoNmgfam-hxLdQ", ch:"ChuChu TV Telugu", cat:"telugu", tiers:["little","big"] },
   { cid:"UCoookXUzPciGrEZEXmh4Jjg", ch:"Sesame Street", cat:"learn", tiers:["little","big"] },
   { cid:"UC1ciY6kR3yj3kaKZ6R7ewAg", ch:"Infobells Hindi", cat:"hindi", tiers:["little","big"] },
-  { cid:"UCbH4Ii9Htdqc-QgxoV3M0Qw", ch:"ChuChu TV Hindi", cat:"hindi", tiers:["little","big"] }
+  { cid:"UCbH4Ii9Htdqc-QgxoV3M0Qw", ch:"ChuChu TV Hindi", cat:"hindi", tiers:["little","big"] },
+  /* auto-pulled play uploads are UNVETTED — never tier them into the 2-4 feed;
+     the hand-picked little entries live in CATALOG above */
+  { cid:"UCgFXm4TI8htWmCyJ6cVPG_A", ch:"Toys and Colors", cat:"play", tiers:["big"] },
+  { cid:"UCJplp5SjeGSdVdwsfb9Q7lQ", ch:"Like Nastya", cat:"play", tiers:["big"] },
+  { cid:"UCRijo3ddMTht_IHyNSNXpNQ", ch:"Dude Perfect", cat:"play", tiers:["super"] }
 ];
 
 const TIER_OF_AGE = a => (a <= 4 ? "little" : a <= 7 ? "big" : "super");
-const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", song:"🎵 Songs", learn:"🧠 Learning", quiz:"🧩 Quiz & Riddles", telugu:"🌸 Telugu", hindi:"🌼 Hindi", story:"📖 Stories", move:"🤸 Move & Dance", craft:"🎨 Art & Drawing", calm:"🌙 Bedtime", classic:"🍿 Classics", my:"📁 My Videos" };
+const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", play:"🧸 Play Time", song:"🎵 Songs", learn:"🧠 Learning", quiz:"🧩 Quiz & Riddles", telugu:"🌸 Telugu", hindi:"🌼 Hindi", story:"📖 Stories", move:"🤸 Move & Dance", craft:"🎨 Art & Drawing", calm:"🌙 Bedtime", classic:"🍿 Classics", my:"📁 My Videos" };
 const LS_KEY = "toonKids.v1";
 const isFileProto = location.protocol === "file:";
 
@@ -2073,7 +2260,7 @@ let curView = null;
 /* OS status bar follows the current screen (and the tier accent on home/age) */
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 function syncThemeColor() {
-  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4" };
+  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4", home: "#ffffff" };
   let c = VIEW_THEME[curView];
   if (!c) { try { c = getComputedStyle(document.getElementById("app")).getPropertyValue("--brand").trim(); } catch (e) {} }
   if (themeMeta) themeMeta.setAttribute("content", c || "#7b3fe4");
@@ -2137,7 +2324,11 @@ document.getElementById("navShorts").addEventListener("click", () => {
 /* auto-hide: the capsule slides away while the child scrolls or watches,
    and glides back on scroll-up, pause, tap, or idle */
 let navHideTimer = null, lastGridTop = 0;
-function navSetHidden(h) { document.getElementById("bottomNav").classList.toggle("navHidden", h); }
+/* The flat YouTube-style bar is persistent, like the real app's. The auto-hide
+   machinery below stays wired but inert behind this flag, in case a future
+   skin wants the old sliding behavior back. */
+const NAV_AUTOHIDE = false;
+function navSetHidden(h) { document.getElementById("bottomNav").classList.toggle("navHidden", NAV_AUTOHIDE && h); }
 function navPeek(autoHideMs) {
   navSetHidden(false);
   clearTimeout(navHideTimer);
@@ -2287,6 +2478,12 @@ document.getElementById("ppKidBday").addEventListener("change", (e) => {
 });
 
 /* ---------------- home ---------------- */
+/* stable per-channel avatar color, like YouTube's generated channel circles */
+function chHue(s) {
+  let h = 0;
+  for (let i = 0; i < (s || "").length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return h;
+}
 let curCat = "all";
 let searchQ = null; // null = search closed; string = active kid search
 /* a fresh install has hundreds of unseen items; springing every badge at once
@@ -2306,8 +2503,13 @@ function makeCard(it, ctxItems) {
       (seenCount(it) === 0 ? '<div class="newb' + (newbBudget-- > 0 ? "" : " still") + '">✨ New</div>' : "") +
       resStrip +
       '<div class="pl">▶</div></div>' +
-    '<div class="t">' + escapeHtml(it.title) + "</div>" +
-    '<div class="c">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · ⚡ Short" : "") + "</div>";
+    '<div class="cmeta">' +
+      '<div class="cavatar" style="background:hsl(' + chHue(it.ch || it.title) + ', 45%, 38%)">' +
+        escapeHtml((Array.from((it.ch || it.title || "T").trim())[0] || "T").toUpperCase()) + "</div>" +
+      '<div class="ctxt">' +
+        '<div class="t">' + escapeHtml(it.title) + "</div>" +
+        '<div class="c">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · ⚡ Short" : "") + "</div>" +
+      "</div></div>";
   // local videos: fill in the captured-frame thumbnail once it's ready
   if (it.kind === "local" && it.localKey) {
     localThumb(it.localKey).then(d => {
@@ -2361,8 +2563,10 @@ function makeShelf(title, items, kind, cat) {
   return sec;
 }
 
-const SHELF_CATS = [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["learn", "🧠 Learning"], ["quiz", "🧩 Quiz & Riddles"], ["telugu", "🌸 Telugu Rhymes"], ["hindi", "🌼 Hindi Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]];
-const CAT_COLORS = { song: "#ffe3ef", cartoon: "#e3f2fd", learn: "#e8f5e9", quiz: "#e3fafc", telugu: "#fff3e0", hindi: "#e6fcf5", story: "#ede7f6", move: "#e0f7fa", craft: "#fce4ec", classic: "#fff8e1", calm: "#e8eaf6", my: "#f1f8e9" };
+const SHELF_CATS = [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["play", "🧸 Play Time"], ["learn", "🧠 Learning"], ["quiz", "🧩 Quiz & Riddles"], ["telugu", "🌸 Telugu Rhymes"], ["hindi", "🌼 Hindi Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]];
+/* under the YouTube-look layer these tints render ONLY in pre-reader (t-little)
+   mode — readers get flat grey chips like the real app */
+const CAT_COLORS = { song: "#ffe3ef", cartoon: "#e3f2fd", play: "#fff0f6", learn: "#e8f5e9", quiz: "#e3fafc", telugu: "#fff3e0", hindi: "#e6fcf5", story: "#ede7f6", move: "#e0f7fa", craft: "#fce4ec", classic: "#fff8e1", calm: "#e8eaf6", my: "#f1f8e9" };
 function renderHome() {
   document.getElementById("app").dataset.tier = tier();
   document.getElementById("homeView").classList.toggle("t-little", tier() === "little");
