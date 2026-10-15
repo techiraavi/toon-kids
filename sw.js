@@ -1,6 +1,6 @@
 /* Toon Kids service worker — network-first so every deploy reaches users
    immediately when online; cached shell keeps the app opening offline. */
-const CACHE = "toonkids-shell-v3"; // bumped for the GUI redesign + font caching
+const CACHE = "toonkids-shell-v4"; // bumped for the YouTube-look white chrome (manifest colors changed)
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
