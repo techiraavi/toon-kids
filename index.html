@@ -984,7 +984,7 @@
               <li>console.cloud.google.com → APIs &amp; Services → <b>OAuth consent screen</b>: External, app name "Toon Kids", add your Gmail under <b>Test users</b></li>
               <li>Library → enable the <b>Google Drive API</b></li>
               <li>Credentials → Create credentials → <b>OAuth client ID</b> → Web application</li>
-              <li>Under Authorized JavaScript origins add: <b>https://toon-kids-raavi.netlify.app</b></li>
+              <li>Under Authorized JavaScript origins add: <b id="gsOrigin">https://techiraavi.github.io</b></li>
               <li>Copy the <b>Client ID</b> (ends in .apps.googleusercontent.com) and paste it below</li>
             </ol>
           </details>
@@ -4693,6 +4693,9 @@ async function gsWhoAmI(token) {
   } catch (e) { return null; }
 }
 function renderGsZone() {
+  // the OAuth origin must match wherever this copy is served from (Pages,
+  // Netlify, a fork) — a hardcoded host sends parents to the wrong setting
+  if (/^https?:$/.test(location.protocol)) document.getElementById("gsOrigin").textContent = location.origin;
   const has = !!gcid();
   document.getElementById("gsSetup").style.display = has ? "none" : "block";
   document.getElementById("gsZone").style.display = has ? "block" : "none";

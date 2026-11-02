@@ -2,12 +2,14 @@
 
 A kid-safe, age-filtered video app in a single self-contained web page — like a personal YouTube Kids, fully controlled by parents.
 
-**Live app:** https://toon-kids-raavi.netlify.app
+**Live app:** https://techiraavi.github.io/toon-kids/
+
+Open it on any phone, tablet or laptop — no install, no account. To use it like an app, add it to your home screen (Safari: Share → Add to Home Screen; Chrome: ⋮ → Add to Home screen).
 
 ## Features
 
 - **Age profiles (2–10):** content is tagged into three tiers (2–4, 5–7, 8–10); only the selected tier's videos are ever shown.
-- **Curated catalog:** ~66 cartoons, nursery rhymes, learning videos and classic public-domain films — official channels only, every video validated as embeddable.
+- **Curated catalog:** 500+ videos and shorts — cartoons, nursery rhymes, learning, quizzes, stories, real-world play, dance, bedtime songs, Telugu and Hindi rhymes, and classic public-domain films — official channels only, every video validated as embeddable.
 - **Shorts feed:** vertical swipe reels (portrait, full-bleed on phones, centered column on wide screens) with watch-aware rotation — frequently seen shorts sink back, fresh ones surface with a ✨ New badge.
 - **Full player:** kid-simple controls, auto-play-next, continue-watching resume for long videos.
 - **Parent Zone** (PIN-protected): keyword search (bring-your-own free YouTube API key), Quick Add packs, paste-a-link, local video files (IndexedDB), per-age tagging, daily screen-time limit, bedtime lock, eye comfort (warm filter, dimmer, auto evening mode, 20-20-20 blink breaks).
@@ -25,7 +27,11 @@ A kid-safe, age-filtered video app in a single self-contained web page — like 
 
 ## Deploy
 
-Any static host works. For the existing Netlify site:
+The live app is served by **GitHub Pages** from the `main` branch — every push to `main` goes live within about a minute, no build step.
+
+Any static host works. To run your own copy, fork this repo and enable Pages (Settings → Pages → Deploy from a branch → `main` / root).
+
+A secondary mirror is kept on Netlify (https://toon-kids-raavi.netlify.app):
 
 ```bash
 npx netlify-cli deploy --prod --dir . --site 9168d97b-b789-4769-8355-ad76e7275478
