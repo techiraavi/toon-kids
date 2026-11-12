@@ -12,6 +12,7 @@ Open it on any phone, tablet or laptop — no install, no account. To use it lik
 - **Curated catalog:** 500+ videos and shorts — cartoons, nursery rhymes, learning, quizzes, stories, real-world play, dance, bedtime songs, Telugu and Hindi rhymes, and classic public-domain films — official channels only, every video validated as embeddable.
 - **Shorts feed:** vertical swipe reels (portrait, full-bleed on phones, centered column on wide screens) with watch-aware rotation — frequently seen shorts sink back, fresh ones surface with a ✨ New badge.
 - **Full player:** kid-simple controls, auto-play-next, continue-watching resume for long videos.
+- **Games (2–10):** 14 calm mini games, seven for each age group, harder as the child grows. Ages 2–4: Bubble Pop, Animal Friends, Colour Match, Count with Me, Shape Sorter, Memory Match, What's Next?. Ages 5–7: Shape Sorter, Memory Match, First Letter, Maths Fun, 123 Telugu Hindi, Tic-Tac-Toe, What's Next?. Ages 8–10: Memory Match, Maths Fun, 123 Telugu Hindi, Word Scramble, Tic-Tac-Toe, Mini Sudoku, Fun Facts Quiz. Every game ends after a fixed number of rounds — no scores, streaks, countdowns or ads — a wrong tap gets a kind second try, and play time counts toward the daily screen-time limit. Parents can switch games off in the Parent Zone.
 - **Parent Zone** (PIN-protected): keyword search (bring-your-own free YouTube API key), Quick Add packs, paste-a-link, local video files (IndexedDB), per-age tagging, daily screen-time limit, bedtime lock, eye comfort (warm filter, dimmer, auto evening mode, 20-20-20 blink breaks).
 - **Device adaptive:** phone / tablet / laptop / TV layouts, safe-area aware, installable as a home-screen app (PWA).
 - **Self-updating:** installed apps detect new deploys (ETag polling) and refresh themselves at a safe moment; a network-first service worker keeps launches instant and offline-tolerant.
@@ -20,10 +21,11 @@ Open it on any phone, tablet or laptop — no install, no account. To use it lik
 
 | File | Purpose |
 |---|---|
-| `index.html` | The entire app — UI, catalog, players, parental controls |
+| `index.html` | The entire app — UI, catalog, players, parental controls, the games framework and Bubble Pop |
+| `games.js` | The other games, fetched the first time the Games tab opens (never slows app launch) and cached for offline play |
 | `sw.js` | Service worker (network-first, offline shell fallback) |
 | `manifest.webmanifest` | PWA manifest |
-| `icon-180.png`, `icon-512.png` | App icons |
+| `icon-180.png`, `icon-192.png`, `icon-512.png` | App icons |
 
 ## Deploy
 

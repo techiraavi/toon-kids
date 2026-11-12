@@ -361,6 +361,9 @@
   .hint { position: absolute; top: calc(64px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
           background: rgba(0,0,0,.55); color: #ffd54a; padding: 8px 16px; border-radius: 999px;
           font-weight: 800; font-size: 14px; display: none; white-space: nowrap; }
+  /* the "5 more minutes" / bedtime heads-up must show over an open game (.gplay is 20, its end
+     card sits inside it) and stay under the lock screens (70+) */
+  #kidHint { z-index: 60; pointer-events: none; }
 
   /* ================= FULL PLAYER ================= */
   #playerView { background: #0e0a1f; }
@@ -747,14 +750,105 @@
     border-radius: 18px; padding: 10px 16px; min-width: 78px; font-size: 12px; gap: 4px; }
   #homeView.t-little .catTile .em { font-size: 28px; }
 
+  /* ==================== GAMES ==================== */
+  #gamesView { background: #fff; }
+  .ghub { flex: 1; overflow-y: auto; overscroll-behavior-y: contain;
+          padding: 12px 14px calc(var(--navh) + 16px + env(safe-area-inset-bottom));
+          scroll-padding-bottom: calc(var(--navh) + 16px + env(safe-area-inset-bottom)); }
+  .ghub button:focus-visible { outline: 4px solid #065fd4; outline-offset: 2px; } /* yellow vanishes on white */
+  .ghub h3 { max-width: 1460px; margin: 6px auto 12px; color: #0f0f0f; font-size: 16px; font-weight: 700;
+             font-family: "Roboto", "Segoe UI", sans-serif; }
+  .ghub .gnote { max-width: 1460px; margin: 18px auto 0; color: #606060; font-size: 12px; text-align: center; }
+  .gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 16px 12px; /* 2 columns from 320px up */
+            max-width: 1460px; margin: 0 auto; }
+  .gcard { border: none; background: none; padding: 0; text-align: left; cursor: pointer; font-family: inherit;
+           transition: transform var(--t-tap) var(--spring); }
+  .gcard:active { transform: scale(.95); }
+  .gcard .gart { aspect-ratio: 1 / 1; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+                 font-size: 64px; line-height: 1; background: linear-gradient(135deg, var(--g1), var(--g2)); }
+  .gcard .gt { color: #0f0f0f; font: 500 14px "Roboto", "Segoe UI", sans-serif; margin-top: 8px; }
+  .gcard .gb { color: #606060; font: 400 12px "Roboto", "Segoe UI", sans-serif; margin-top: 2px; }
+  #gamesView.t-little .gcard .gb { display: none; }
+  #gamesView.t-little .gcard .gt { font-size: 15px; }
+  /* games.js arrives on the first visit to the hub: a calm wait, or a retry when offline */
+  .gload { max-width: 1460px; margin: 22px auto 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
+           color: #606060; font: 500 14px "Roboto", "Segoe UI", sans-serif; text-align: center; }
+  .gload .gspin { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #e5e0f5; border-top-color: #7b3fe4;
+                  animation: spin .9s linear infinite; }
+  .gload .gretry { border: none; cursor: pointer; font: 700 15px "Roboto", "Segoe UI", sans-serif; padding: 11px 22px;
+                   border-radius: 999px; background: #0f0f0f; color: #fff; min-height: 44px; }
+  .gload .gretry:focus-visible { outline: 4px solid #065fd4; outline-offset: 2px; }
+  @media (min-width: 1900px) {
+    .ghub h3 { font-size: 26px; } .ghub .gnote { font-size: 18px; }
+    .gload { font-size: 20px; } .gload .gretry { font-size: 20px; min-height: 60px; padding: 14px 30px; }
+  }
+
+  /* the play surface: full screen over the hub, nav hidden, kid font */
+  .gplay { position: absolute; inset: 0; z-index: 20; display: none; flex-direction: column;
+           background: linear-gradient(160deg, #fff6e5, #efe7ff 60%, #e3f2ff);
+           font-family: "Baloo 2", "Segoe UI", "Comic Sans MS", system-ui, sans-serif; color: #26203d; }
+  .gplay.on { display: flex; }
+  .gbar { flex: none; display: flex; align-items: center; gap: 10px; padding: calc(8px + env(safe-area-inset-top)) 12px 6px; }
+  .gclose { flex: none; width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer; background: #fff;
+            color: #26203d; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(60,40,120,.15); }
+  .gclose svg { width: 22px; height: 22px; }
+  .gtitle { flex: 1; min-width: 0; font-weight: 800; font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gdots { flex: none; display: flex; gap: 4px; max-width: 48%; flex-wrap: wrap; justify-content: flex-end; }
+  .gdots i { width: 8px; height: 8px; border-radius: 50%; background: #d8d2ee; transition: background .3s; }
+  @media (min-width: 700px) { .gdots { gap: 6px; } .gdots i { width: 11px; height: 11px; } }
+  /* the smallest phones: keep a long title and 12 dots on one line */
+  @media (max-width: 340px) { .gtitle { font-size: 18px; } .gdots { gap: 3px; } .gdots i { width: 6px; height: 6px; } }
+  .gdots i.on { background: #7b3fe4; }
+  .gstage { flex: 1; position: relative; overflow: hidden; min-height: 0; margin-bottom: env(safe-area-inset-bottom); }
+  .gconf { position: absolute; z-index: 30; pointer-events: none; font-size: 30px; line-height: 1;
+           animation: gconf 1.1s ease-out forwards; }
+  @keyframes gconf { 0% { opacity: 1; transform: translate(-50%, -50%) scale(.6); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.3) rotate(var(--rot)); } }
+  .gdone { position: absolute; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center;
+           padding: 24px; background: rgba(38,32,61,.35); }
+  .gdone.on { display: flex; animation: wrapFade .25s ease-out; }
+  .gdcard { background: #fff; border-radius: 28px; padding: 22px 24px 24px; text-align: center; max-width: 392px; width: 100%;
+            max-height: 100%; overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(30,15,70,.3); animation: modalIn .3s var(--spring); }
+  .gdcard .owlSvg { width: 96px; height: 96px; }
+  .gdcard h2 { margin: 8px 0 4px; font-size: 28px; }
+  .gdcard p { margin: 0 0 18px; font-size: 16px; font-weight: 600; color: #6b6486; }
+  .gdbtns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .gdbtn { border: none; cursor: pointer; font-family: inherit; font-size: 17px; font-weight: 800; padding: 13px 20px;
+           border-radius: 999px; background: #efecf9; color: #4f4370; min-height: 48px;
+           transition: transform var(--t-tap) var(--spring); }
+  .gdbtn.primary { background: #7b3fe4; color: #fff; box-shadow: 0 4px 0 #5426ad; }
+  .gdbtn:active { transform: scale(.94); }
+  /* a phone on its side: the end card has to fit a 280-420px tall screen */
+  @media (max-height: 420px) {
+    .gdone { padding: 10px; }
+    .gdcard { padding: 12px 20px 14px; max-width: 440px; }
+    .gdcard .owlSvg { width: 56px; height: 56px; }
+    .gdcard h2 { margin: 2px 0; font-size: 22px; }
+    .gdcard p { margin-bottom: 10px; font-size: 14px; }
+  }
+  .gplay button:focus-visible { outline: 4px solid #065fd4; outline-offset: 2px; }
+  @media (min-width: 1200px) { .gcards { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } .gcard .gart { font-size: 84px; } }
+  @media (min-width: 1900px) {
+    .gcards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .gcard .gart { font-size: 104px; } .gcard .gt { font-size: 20px; } .gcard .gb { font-size: 15px; }
+    #gamesView.t-little .gcard .gt { font-size: 22px; }
+    .gtitle { font-size: 30px; } .gclose { width: 60px; height: 60px; } .gdots i { width: 14px; height: 14px; }
+  }
+
   /* ---- reduced motion: MUST stay the last rules in this stylesheet so the
      blanket kill out-cascades every equal-specificity animation above ---- */
   @media (prefers-reduced-motion: reduce) {
+    /* Transitions get 0s, not .01ms: ANY duration turns every style change into a transition, and a
+       size given in viewport units then reaches scripts one frame late when a phone is turned (a game
+       laid itself out for the old screen). Animations keep .01ms so animationend still fires. */
     *, *::before, *::after {
       animation-duration: .01ms !important; animation-iteration-count: 1 !important;
-      animation-delay: 0s !important; transition-duration: .01ms !important;
+      animation-delay: 0s !important; transition-duration: 0s !important;
     }
     .spin, #splash .ssp { animation: none; opacity: .6; }
+    /* the games' celebration: one still party popper (the animation would end it invisible) */
+    .gconf { animation: none; transform: translate(-50%, -50%); }
   }
 </style>
 </head>
@@ -836,11 +930,40 @@
     </div>
   </div>
 
+  <!-- ============ GAMES ============ -->
+  <div class="view" id="gamesView">
+    <div class="hd">
+      <img class="logoimg" src="icon-180.png" alt="Toon Kids logo">
+      <h1>Games</h1>
+    </div>
+    <div class="ghub" id="gHub"></div>
+    <div class="gplay" id="gPlay" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+      <div class="gbar">
+        <button class="gclose" id="gClose" aria-label="Close game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <div class="gtitle" id="gTitle"></div>
+        <div class="gdots" id="gDots" aria-hidden="true"></div>
+      </div>
+      <div class="gstage" id="gStage"></div>
+      <div class="gdone" id="gDone" role="alert">
+        <div class="gdcard">
+          <div class="gdowl owlWrap owl-wave" id="gDoneOwl"></div>
+          <h2 id="gDoneTitle">Great job!</h2>
+          <p id="gDoneMsg">You finished the game!</p>
+          <div class="gdbtns">
+            <button class="gdbtn primary" id="gAgain">🔁 Play again</button>
+            <button class="gdbtn" id="gMore">🎮 More games</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ BOTTOM NAVIGATION ============ -->
   <nav id="bottomNav">
     <span id="navPill"></span>
     <button class="navBtn" id="navHome" aria-label="Home"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8 2.4 11h2.8v9.5h5.3V14h3v6.5h5.3V11h2.8L12 2.8z"/></svg>Home</button>
     <button class="navBtn" id="navShorts" aria-label="Shorts"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2 5.6 13.4h4.8L9.2 22l9.2-11.9h-5L13.2 2z"/></svg>Shorts</button>
+    <button class="navBtn" id="navGames" aria-label="Games"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M7 6.5h10a5 5 0 0 1 4.9 6l-.9 4.4a3 3 0 0 1-5.2 1.3L14.2 16H9.8l-1.6 2.2A3 3 0 0 1 3 16.9l-.9-4.4a5 5 0 0 1 4.9-6zM7 9.5V11H5.5v1.5H7V14h1.5v-1.5H10V11H8.5V9.5H7zm9.8.3a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2zm-2.2 2.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z"/></svg>Games</button>
     <button class="navBtn" id="navFav" aria-label="Favorites"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.2S4.3 16.1 2.6 11.7C1.2 8.2 3.3 4.8 6.7 4.8c2 0 3.6 1.1 4.4 2.8h1.8c.8-1.7 2.4-2.8 4.4-2.8 3.4 0 5.5 3.4 4.1 6.9-1.7 4.4-9.4 9.5-9.4 9.5z"/></svg>Favorites</button>
   </nav>
 
@@ -953,6 +1076,11 @@
           </select>
         </div>
         <p class="pp-note" id="ppWatched">Watched today: 0 min</p>
+        <div class="pp-row" style="margin-top:10px">
+          <label class="switch"><input type="checkbox" id="ppGamesOn" aria-label="Show the Games tab"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">🎮 Show the Games tab</span>
+        </div>
+        <p class="pp-note">Each game ends after a few rounds. Game time counts toward the daily limit, just like videos.</p>
       </div>
 
       <div class="pp-card">
@@ -1890,7 +2018,7 @@ const CHANNEL_SOURCES = [
 ];
 
 const TIER_OF_AGE = a => (a <= 4 ? "little" : a <= 7 ? "big" : "super");
-const CAT_LABELS = { fav:"❤️ Favorites", cartoon:"🎬 Cartoons", play:"🧸 Play Time", song:"🎵 Songs", learn:"🧠 Learning", quiz:"🧩 Quiz & Riddles", telugu:"🌸 Telugu", hindi:"🌼 Hindi", story:"📖 Stories", move:"🤸 Move & Dance", craft:"🎨 Art & Drawing", calm:"🌙 Bedtime", classic:"🍿 Classics", my:"📁 My Videos" };
+const CAT_LABELS = { fav:"❤️ Favorites", games:"🎮 Games", cartoon:"🎬 Cartoons", play:"🧸 Play Time", song:"🎵 Songs", learn:"🧠 Learning", quiz:"🧩 Quiz & Riddles", telugu:"🌸 Telugu", hindi:"🌼 Hindi", story:"📖 Stories", move:"🤸 Move & Dance", craft:"🎨 Art & Drawing", calm:"🌙 Bedtime", classic:"🍿 Classics", my:"📁 My Videos" };
 const LS_KEY = "toonKids.v1";
 const isFileProto = location.protocol === "file:";
 
@@ -1923,7 +2051,7 @@ function loadCfg() {
   }
   if (!c || typeof c !== "object") c = {};
   const D = {
-    age: null, soundOn: true, captions: false, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
+    age: null, soundOn: true, captions: false, gamesOn: true, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
     liked: {}, custom: [], seen: {}, resume: {},
     watch: { date: todayStr(), secs: 0, bonus: 0 },
     watchLog: {}, hiddenKeys: [], failCounts: {}, deadIds: [],
@@ -2218,11 +2346,18 @@ function freshSort(items, dailyStable) {
 /* ---------------- views ---------------- */
 const views = { age: document.getElementById("ageView"), kid: document.getElementById("kidView"),
                 home: document.getElementById("homeView"),
-                shorts: document.getElementById("shortsView"), player: document.getElementById("playerView") };
+                shorts: document.getElementById("shortsView"), player: document.getElementById("playerView"),
+                games: document.getElementById("gamesView") };
+/* game state lives up here: navigation code reads it from boot onward,
+   long before the games framework further down is parsed */
+let gameCur = null, gameSession = 0, gameCleanups = [], gameLastInput = 0;
 
 /* ---- history handling: the system back button/gesture must navigate the
    app (shorts/player/panel → home) instead of exiting it ---- */
 let navDepth = 0, backInFlight = false;
+// a reload (or a restored tab) keeps the current entry's old depth in history.state while navDepth
+// starts again at 0: level them, or the next Back out of Games would be read as a Forward
+try { if (history.state && history.state.d) history.replaceState(null, ""); } catch (e) {}
 function pushNav(tag) { try { history.pushState({ tk: tag, d: navDepth + 1 }, ""); navDepth++; } catch (e) {} }
 function goBack() {
   // one traversal at a time: a rapid double-back must NEVER step past the
@@ -2241,17 +2376,29 @@ function goBack() {
     renderHome();
   }
 }
+let navUndo = 0; // > 0 while the popstate of our own step-back (below) is still on its way
 window.addEventListener("popstate", (e) => {
   backInFlight = false;
+  const prevDepth = navDepth;
   // derive depth from the entry itself so forward swipes can't corrupt it
   navDepth = (e.state && e.state.d) || 0;
+  if (navUndo) { clearTimeout(navUndo); navUndo = 0; return; }
   if (gateWrap.style.display === "flex") {
     gateWrap.style.display = "none"; gateCb = null;
     pushNav(curView); // keep the underlying view's history entry alive
     return;
   }
   if (panel.style.display === "flex") { closeParentPanel(); return; }
-  if (curView === "shorts" || curView === "player") {
+  // Forward (a laptop's button, an edge swipe) is never navigation inside Games: the entry it
+  // lands on belonged to a game that is closed now, so step straight back to where we were
+  if (curView === "games" && navDepth > prevDepth) {
+    navUndo = setTimeout(() => { navUndo = 0; }, 1500);
+    history.go(prevDepth - navDepth);
+    return;
+  }
+  // back inside Games closes the open game first, then leaves the hub
+  if (curView === "games" && gameCur) { closeGame(); return; }
+  if (curView === "shorts" || curView === "player" || curView === "games") {
     if (pendingTabCat) { curCat = pendingTabCat; pendingTabCat = null; }
     showView("home");
     renderHome();
@@ -2261,7 +2408,7 @@ let curView = null;
 /* OS status bar follows the current screen (and the tier accent on home/age) */
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 function syncThemeColor() {
-  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4", home: "#ffffff" };
+  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4", home: "#ffffff", games: "#ffffff" };
   let c = VIEW_THEME[curView];
   if (!c) { try { c = getComputedStyle(document.getElementById("app")).getPropertyValue("--brand").trim(); } catch (e) {} }
   if (themeMeta) themeMeta.setAttribute("content", c || "#7b3fe4");
@@ -2269,6 +2416,7 @@ function syncThemeColor() {
 function showView(name) {
   if (curView === "shorts" && name !== "shorts") { spPause(); teardownFeedDom(); scheduleSpIdle(); }
   if (curView === "player" && name !== "player") pvSoftExit();
+  if (curView === "games" && name !== "games" && gameCur) closeGame();
   if (name === "shorts") clearTimeout(spIdleTimer);
   if (name === "player") clearTimeout(pvIdleTimer);
   Object.values(views).forEach(v => v.classList.remove("on"));
@@ -2294,12 +2442,15 @@ function positionNavPill() {
 }
 function updateNav() {
   const nav = document.getElementById("bottomNav");
-  nav.classList.toggle("show", curView === "home" || curView === "shorts");
+  // an open game is full-screen: the bar returns on the games hub
+  nav.classList.toggle("show", curView === "home" || curView === "shorts" || (curView === "games" && !gameCur));
   nav.classList.toggle("dark", curView === "shorts");
-  const tab = curView === "shorts" ? "shorts" : (curCat === "fav" ? "fav" : "home");
+  const tab = curView === "shorts" ? "shorts" : curView === "games" ? "games" : (curCat === "fav" ? "fav" : "home");
   document.getElementById("navHome").classList.toggle("active", tab === "home");
   document.getElementById("navShorts").classList.toggle("active", tab === "shorts");
+  document.getElementById("navGames").classList.toggle("active", tab === "games");
   document.getElementById("navFav").classList.toggle("active", tab === "fav");
+  document.getElementById("navGames").style.display = cfg.gamesOn === false ? "none" : "";
   // rAF: offsetLeft reads 0 in the same frame the capsule flips display:none→flex
   positionNavPill();
   requestAnimationFrame(positionNavPill);
@@ -2311,16 +2462,23 @@ function gridSwapFx() {
   g.classList.remove("swap"); void g.offsetWidth; g.classList.add("swap");
 }
 document.getElementById("navHome").addEventListener("click", () => {
-  if (curView === "shorts") { pendingTabCat = "all"; searchQ = null; goBack(); return; }
+  if (curView === "shorts" || curView === "games") { pendingTabCat = "all"; searchQ = null; goBack(); return; }
   curCat = "all"; searchQ = null; renderHome(); updateNav(); gridSwapFx();
 });
 document.getElementById("navFav").addEventListener("click", () => {
-  if (curView === "shorts") { pendingTabCat = "fav"; searchQ = null; goBack(); return; }
+  if (curView === "shorts" || curView === "games") { pendingTabCat = "fav"; searchQ = null; goBack(); return; }
   curCat = "fav"; searchQ = null; renderHome(); updateNav(); gridSwapFx();
 });
 document.getElementById("navShorts").addEventListener("click", () => {
   if (curView !== "shorts") openShorts();
 });
+document.getElementById("navGames").addEventListener("click", () => {
+  if (curView !== "games") openGames();
+});
+// start fetching the games the moment a finger touches the tab
+document.getElementById("navGames").addEventListener("pointerdown", () => {
+  if (cfg.gamesOn !== false) loadGames();
+}, { passive: true });
 
 /* auto-hide: the capsule slides away while the child scrolls or watches,
    and glides back on scroll-up, pause, tap, or idle */
@@ -2834,9 +2992,10 @@ function openShorts(list, startIdx) {
   deadStreak = 0;
   document.getElementById("shortsOffline").style.display = "none";
   buildFeed((startIdx || 0) + 3);
-  const wasShorts = curView === "shorts";
+  const prevView = curView;
   showView("shorts");
-  if (!wasShorts) pushNav("shorts");
+  // tab-switching from Games reuses its history entry, so Back still lands on Home
+  if (prevView !== "shorts" && prevView !== "games") pushNav("shorts");
   const s = startIdx > 0 && startIdx < entries.length ? startIdx : 0;
   if (s > 0) feed.scrollTop = s * feed.clientHeight;
   if (entries.length) setActive(s, true);
@@ -3437,10 +3596,12 @@ setInterval(() => {
   }
   const inShorts = curView === "shorts" && active !== null && !paused && reelPlaying(active);
   const inPlayer = curView === "player" && !pvPaused && pvPlaying();
-  const watching = inShorts || inPlayer;
+  // games are screen time too — counted while a game is open and being played
+  const inGame = curView === "games" && !!gameCur && !locked() && Date.now() - gameLastInput < 120000;
+  const watching = inShorts || inPlayer || inGame;
   if (!watching) return;
   // freshness tracking: a short counts as seen after 3s, a video after 10s
-  const curItem = inShorts ? entries[active] : pvList[pvIdx];
+  const curItem = inShorts ? entries[active] : inPlayer ? pvList[pvIdx] : null;
   if (curItem) {
     const k = itemKey(curItem);
     if (k !== expKey) { expKey = k; expSecs = 0; }
@@ -3452,12 +3613,14 @@ setInterval(() => {
   // surface — this is the same data cfg.watch already counted, kept 30 days)
   const wl = cfg.watchLog[todayStr()] = cfg.watchLog[todayStr()] || { s: 0, c: {} };
   wl.s++;
-  if (curItem && curItem.cat) wl.c[curItem.cat] = (wl.c[curItem.cat] || 0) + 1;
+  const wcat = inGame ? "games" : curItem && curItem.cat;
+  if (wcat) wl.c[wcat] = (wl.c[wcat] || 0) + 1;
   if (cfg.watch.secs % 15 === 0) saveCfg();
   const lim = cfg.timeLimitMin > 0 ? cfg.timeLimitMin * 60 + (cfg.watch.bonus || 0) : Infinity;
   if (lim !== Infinity) {
     const remain = lim - cfg.watch.secs;
-    if (remain <= 300 && remain > 60 && !warned5) { warned5 = true; kidHint("🦉 5 more minutes of cartoons!"); }
+    const what = inGame ? "games" : "cartoons";
+    if (remain <= 300 && remain > 60 && !warned5) { warned5 = true; kidHint("🦉 5 more minutes of " + what + "!"); }
     if (remain <= 60 && remain > 0 && !warned1) { warned1 = true; kidHint("🦉 1 minute left — last one!"); }
   }
   if (cfg.watch.secs >= lim) { showBreak(); return; }
@@ -3577,10 +3740,11 @@ document.getElementById("bedUnlockBtn").addEventListener("click", () => {
     cfg.bedOverrideUntil = Date.now() + 15 * 60 * 1000;
     saveCfg();
     checkBedtime();
+    gRefocus();
   });
 });
 document.getElementById("pauseUnlockBtn").addEventListener("click", () => {
-  openGate(() => { cfg.pausedUntil = 0; saveCfg(); checkBedtime(); });
+  openGate(() => { cfg.pausedUntil = 0; saveCfg(); checkBedtime(); gRefocus(); });
 });
 function setPause(ms) { cfg.pausedUntil = Date.now() + ms; saveCfg(); checkBedtime(); renderPanel(); }
 document.getElementById("ppPause30").addEventListener("click", () => setPause(30 * 60 * 1000));
@@ -3607,6 +3771,7 @@ document.getElementById("unlockBtn").addEventListener("click", () => {
     warned5 = warned1 = false; // the countdown warnings apply to the bonus too
     saveCfg();
     breakScreen.style.display = "none";
+    gRefocus();
   });
 });
 
@@ -3738,6 +3903,7 @@ function renderPanel() {
   document.getElementById("ppEyeBreak").value = String(cfg.eye.breakMin || 0);
   document.getElementById("ppAutoEve").checked = !!cfg.eye.autoEve;
   document.getElementById("ppCc").checked = !!cfg.captions;
+  document.getElementById("ppGamesOn").checked = cfg.gamesOn !== false;
   document.getElementById("ppSaveWarn").style.display = saveFailed ? "block" : "none";
   const pActive = Date.now() < (cfg.pausedUntil || 0);
   document.getElementById("ppPauseActiveRow").style.display = pActive ? "flex" : "none";
@@ -3791,6 +3957,11 @@ document.getElementById("ppWarm").addEventListener("change", (e) => { cfg.eye.wa
 document.getElementById("ppDim").addEventListener("change", (e) => { cfg.eye.dim = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
 document.getElementById("ppEyeBreak").addEventListener("change", (e) => { cfg.eye.breakMin = parseInt(e.target.value, 10) || 0; eyeSecs = 0; saveCfg(); });
 document.getElementById("ppAutoEve").addEventListener("change", (e) => { cfg.eye.autoEve = e.target.checked; saveCfg(); applyEye(); });
+document.getElementById("ppGamesOn").addEventListener("change", (e) => {
+  cfg.gamesOn = e.target.checked;
+  saveCfg();
+  updateNav();
+});
 document.getElementById("ppCc").addEventListener("change", (e) => {
   cfg.captions = e.target.checked;
   saveCfg();
@@ -4410,6 +4581,8 @@ document.addEventListener("keydown", (e) => {
   if (isBack) {
     if (gateWrap.style.display === "flex") { e.preventDefault(); gateWrap.style.display = "none"; gateCb = null; return; }
     if (panel.style.display === "flex") { e.preventDefault(); goBack(); return; }
+    // Games: same as the X. Backspace stays with an open game (Word Scramble takes a letter back with it)
+    if (curView === "games") { if (gameCur && e.key === "Backspace") return; e.preventDefault(); if (!e.repeat) goBack(); return; }
     if (curView === "shorts" || curView === "player") { e.preventDefault(); goBack(); }
     return;
   }
@@ -4448,7 +4621,9 @@ async function checkForUpdate(initial) {
   maybeApplyUpdate();
 }
 function updateBlocked() {
-  return curView === "shorts" || curView === "player" ||
+  // Games as a whole (hub included): it sits one history step in, and a reload there would
+  // leave a dead Back press behind. The update lands when the child is back on Home.
+  return curView === "shorts" || curView === "player" || curView === "games" ||
          panel.style.display === "flex" || gateWrap.style.display === "flex" || locked();
 }
 function maybeApplyUpdate() {
@@ -4522,6 +4697,7 @@ function gsSyncPayload() {
     v: 1, ts: Date.now(),
     apiKey: cfg.apiKey || null,
     captions: !!cfg.captions,
+    gamesOn: cfg.gamesOn !== false,
     pausedUntil: cfg.pausedUntil || 0,
     pin: cfg.pin,
     timeLimitMin: cfg.timeLimitMin,
@@ -4549,6 +4725,7 @@ function gsApplyPayload(p) {
   if (p.apiKey && typeof p.apiKey === "string") cfg.apiKey = p.apiKey;
   const prevCc = !!cfg.captions;
   if (typeof p.captions === "boolean") cfg.captions = p.captions;
+  if (typeof p.gamesOn === "boolean") cfg.gamesOn = p.gamesOn;
   // a payload may only STRENGTHEN the pause lock, never clear one that's
   // running (same principle as the PIN rule below); expiry handles the rest
   const pu = Number(p.pausedUntil);
@@ -4730,7 +4907,7 @@ document.getElementById("gsSignIn").addEventListener("click", async () => {
     // auto-restore ONLY on a genuinely unconfigured device — a parent's
     // freshly built local settings must never be silently overwritten
     const locallyConfigured = !!(cfg.apiKey || cfg.pin || cfg.timeLimitMin > 0 || cfg.bedtime.on ||
-      cfg.custom.length || cfg.fresh.kws.length || cfg.fresh.blocked.length);
+      cfg.custom.length || cfg.fresh.kws.length || cfg.fresh.blocked.length || cfg.gamesOn === false);
     if (!locallyConfigured) {
       try {
         await gsPullSettings();
@@ -4815,6 +4992,500 @@ document.getElementById("gsForget").addEventListener("click", () => {
   renderGsZone();
 });
 
+/* =====================================================================
+   GAMES — calm, age-tiered mini games. Every game ends after a fixed
+   number of rounds (no streaks, no endless loops, no scores to chase),
+   and play time counts toward the daily screen-time limit like videos.
+
+   A game is registered with registerGame({ id, title, emoji, blurb,
+   colors: [c1, c2], tiers: ["little"|"big"|"super", ...], start(api) }).
+   start(api) renders into api.stage and may return a cleanup function.
+   ===================================================================== */
+const GAMES = [];
+function registerGame(def) {
+  if (!def || !/^[a-z0-9-]+$/.test(def.id || "") || typeof def.start !== "function") return;
+  if (GAMES.some(g => g.id === def.id)) return;
+  GAMES.push(def);
+}
+const gPlay = document.getElementById("gPlay"), gStage = document.getElementById("gStage"),
+      gDone = document.getElementById("gDone"), gBar = gPlay.querySelector(".gbar");
+
+let gAudio = null;
+const G_SOUNDS = {
+  tap: [[660, .06]], flip: [[880, .05]],
+  good: [[523, .09], [659, .09], [784, .16]],
+  oops: [[330, .12], [262, .18]],
+  win: [[523, .1], [659, .1], [784, .1], [1047, .3]]
+};
+function gSound(name) {
+  if (!cfg.soundOn || locked()) return; // nothing plays behind a lock screen
+  try {
+    gAudio = gAudio || new (window.AudioContext || window.webkitAudioContext)();
+    if (gAudio.state === "suspended") gAudio.resume();
+    let t = gAudio.currentTime + 0.01;
+    (G_SOUNDS[name] || G_SOUNDS.tap).forEach(([f, d]) => {
+      const o = gAudio.createOscillator(), g = gAudio.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(gAudio.destination);
+      o.start(t); o.stop(t + d + 0.03);
+      t += d * 0.9;
+    });
+  } catch (e) {}
+}
+/* Speaks through the device's own voices. Returns false (and stays silent)
+   when sound is off or no voice exists for the language, so a game can
+   fall back to showing the text. */
+function gSpeak(text, lang) {
+  if (!cfg.soundOn || !window.speechSynthesis || !text || locked()) return false;
+  try {
+    const want = (lang || "en-IN").toLowerCase();
+    const voices = speechSynthesis.getVoices() || [];
+    const v = voices.find(x => (x.lang || "").toLowerCase() === want) ||
+              voices.find(x => (x.lang || "").toLowerCase().slice(0, 2) === want.slice(0, 2));
+    if (!v && want.slice(0, 2) !== "en") return false;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text));
+    u.lang = v ? v.lang : want;
+    if (v) u.voice = v;
+    u.rate = 0.9; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
+}
+try { if (window.speechSynthesis) speechSynthesis.getVoices(); } catch (e) {} // warms the voice list
+
+function renderGameDots(done, total) {
+  const d = document.getElementById("gDots");
+  d.innerHTML = "";
+  const n = Math.max(0, Math.min(12, total | 0));
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement("i");
+    if (i < done) s.className = "on";
+    d.appendChild(s);
+  }
+}
+function gameCelebrate(x, y) {
+  const r = gStage.getBoundingClientRect();
+  const cx = x == null ? r.width / 2 : x, cy = y == null ? r.height / 2 : y;
+  const bits = RM.matches ? ["🎉"] : ["⭐", "🎉", "💛", "✨", "🌟", "💜", "🎈", "✨"];
+  bits.forEach((b, i) => {
+    const s = document.createElement("span");
+    s.className = "gconf";
+    s.textContent = b;
+    const ang = (i / bits.length) * Math.PI * 2;
+    s.style.left = cx + "px"; s.style.top = cy + "px";
+    s.style.setProperty("--dx", Math.round(Math.cos(ang) * 110) + "px");
+    s.style.setProperty("--dy", Math.round(Math.sin(ang) * 110 - 30) + "px");
+    s.style.setProperty("--rot", (i % 2 ? 40 : -40) + "deg");
+    gStage.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  });
+}
+// confetti is placed for the stage as it was: after a turn it would hang outside the new one
+window.addEventListener("resize", () => { gStage.querySelectorAll(".gconf").forEach(s => s.remove()); });
+
+/* The games' timers run on a clock that stops behind a lock screen: a timeout that falls due there
+   waits for the unlock and then keeps its place and its gaps (a spoken count-along comes back in
+   order, not as a burst), and the time spent locked does not count as idle time. */
+let gLockedMs = 0, gLockSince = 0;
+function gLockTick() {
+  const l = locked();
+  if (l && !gLockSince) gLockSince = Date.now();
+  else if (!l && gLockSince) {
+    const d = Date.now() - gLockSince;
+    gLockedMs += d; gLockSince = 0;
+    gameLastInput = Math.min(Date.now(), gameLastInput + d);
+  }
+  return l;
+}
+function makeGameApi(def, sess) {
+  const live = () => gameSession === sess && gameCur === def;
+  const api = {
+    stage: gStage,
+    tier: tier(),
+    age: cfg.age || 4,
+    reducedMotion: RM.matches,
+    sound: gSound,
+    speak: gSpeak,
+    rand: n => Math.floor(Math.random() * n),
+    shuffle(a) {
+      a = a.slice();
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    },
+    pick(a, k) { return api.shuffle(a).slice(0, k); },
+    // managed timers: cleared when the game closes; interval ticks skip while a lock screen is up
+    // A timeout that falls due behind a lock screen waits for the unlock (see gLockTick), so a round
+    // never changes (and nothing is said) where the child cannot see it. Interval ticks also stop once
+    // a game has had no touch for 2 minutes: from then on its time is no longer counted, so it must
+    // be a still screen.
+    timeout(fn, ms) {
+      let id = 0;
+      gLockTick();
+      const due = Date.now() + ms, seen = gLockedMs + (gLockSince ? Date.now() - gLockSince : 0);
+      const run = () => {
+        if (!live()) return;
+        if (gLockTick()) { id = setTimeout(run, 300); return; }
+        const wait = due + (gLockedMs - seen) - Date.now(); // what is left of its own delay
+        if (wait > 15) { id = setTimeout(run, wait); return; }
+        fn();
+      };
+      id = setTimeout(run, ms);
+      gameCleanups.push(() => clearTimeout(id));
+      return id;
+    },
+    interval(fn, ms) {
+      const id = setInterval(() => { if (live() && !locked() && Date.now() - gameLastInput < 120000) fn(); }, ms);
+      gameCleanups.push(() => clearInterval(id));
+      return id;
+    },
+    onCleanup(fn) { if (typeof fn === "function") gameCleanups.push(fn); },
+    css(text) {
+      if (document.getElementById("gcss-" + def.id)) return;
+      const s = document.createElement("style");
+      s.id = "gcss-" + def.id;
+      s.textContent = text;
+      document.head.appendChild(s);
+    },
+    el(tag, cls, html) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (html != null) e.innerHTML = html;
+      return e;
+    },
+    progress(done, total) { if (live()) renderGameDots(done, total); },
+    celebrate(x, y) { if (live()) gameCelebrate(x, y); },
+    done(opts) {
+      if (!live()) return;
+      // behind a lock screen the end card waits for the unlock (api.timeout holds it)
+      if (locked()) api.timeout(() => showGameDone(opts || {}), 300);
+      else showGameDone(opts || {});
+    },
+    isLive: live
+  };
+  return api;
+}
+
+/* Every game except Bubble Pop lives in games.js, built from
+   toon-games-staging by kit/integrate.js (which also stamps GAMES_VER).
+   It is fetched the first time the Games tab opens, so games never slow
+   down app launch, and a game that fails to load can't touch the videos. */
+const GAMES_VER = "e14d49e3a7";
+let gamesLoadState = "idle"; // idle | loading | slow | ready | failed
+let gamesLoadTry = 0, gamesScript = null; // "Try again" replaces a stalled <script>
+let gHubRefocus = false; // focus was in the hub when its last focusable element went away
+/* the games never pull keyboard / TV-remote focus off a lock screen's unlock button */
+function gFocus(el) { if (el && !locked()) { try { el.focus({ preventScroll: true }); } catch (e) {} } }
+/* ...and when a parent has unlocked over an open game, focus goes back into it (deferred: the Enter
+   that submitted the gate must not also press the button that receives focus) */
+function gRefocus() {
+  setTimeout(() => {
+    if (curView !== "games" || !gameCur || gPlay.contains(document.activeElement)) return;
+    gFocus(document.getElementById(gDone.classList.contains("on") ? "gAgain" : "gClose"));
+  }, 80);
+}
+function loadGames(again) {
+  if (window.__gamesLoaded) gamesLoadState = "ready";
+  // "slow" keeps waiting on a plain revisit; only "Try again" (again = true) starts over
+  if (gamesLoadState === "ready" || gamesLoadState === "loading" || (gamesLoadState === "slow" && !again)) return;
+  const hung = gamesLoadState === "slow"; // the earlier request is still open: a same-URL request would queue behind it
+  gamesLoadState = "loading";
+  if (gamesScript) gamesScript.remove();
+  const mine = ++gamesLoadTry;
+  const s = gamesScript = document.createElement("script");
+  s.src = "games.js?v=" + encodeURIComponent(GAMES_VER || "dev") + (hung ? "&r=" + mine : "");
+  s.async = true;
+  let slowT = 0;
+  const settle = st => {
+    clearTimeout(slowT);
+    // a stalled earlier request may still answer late: its games count, its failure or slowness do not
+    if (gamesLoadState === "ready" || (mine !== gamesLoadTry && st !== "ready")) return;
+    gamesLoadState = st;
+    if (curView === "games" && !gameCur) renderGamesHub();
+  };
+  // a slow network keeps waiting (the load may still finish); it just says so
+  slowT = setTimeout(() => { if (gamesLoadState === "loading") settle("slow"); }, 12000);
+  s.onload = () => settle(window.__gamesLoaded ? "ready" : "failed");
+  s.onerror = () => { s.remove(); settle("failed"); };
+  document.head.appendChild(s);
+}
+function gamesLoadNote() {
+  const w = document.createElement("div");
+  w.className = "gload";
+  w.setAttribute("role", "status");
+  if (gamesLoadState === "failed") {
+    w.appendChild(document.createElement("div")).textContent = "Couldn't get the games. Check the internet, then try again.";
+  } else {
+    w.innerHTML = '<div class="gspin" aria-hidden="true"></div><div>' +
+      (gamesLoadState === "slow" ? "Still getting the games… is the internet on?" : "Getting the games ready…") + "</div>";
+  }
+  // a connection that hangs never fails by itself: "slow" gets the button too
+  if (gamesLoadState === "failed" || gamesLoadState === "slow") {
+    const b = document.createElement("button");
+    b.className = "gretry";
+    b.textContent = "Try again";
+    b.addEventListener("click", () => { loadGames(true); renderGamesHub(); });
+    w.appendChild(b);
+  }
+  return w;
+}
+
+function renderGamesHub() {
+  const hub = document.getElementById("gHub");
+  views.games.classList.toggle("t-little", tier() === "little");
+  // the hub re-renders when games.js arrives: keep keyboard/remote focus on the same card,
+  // and after "Try again" hand it to the first card (the button it was on is gone)
+  const ae = document.activeElement;
+  const hadFocus = !!ae && hub.contains(ae);
+  const focusId = hadFocus && ae.dataset ? ae.dataset.gid : null;
+  hub.innerHTML = "";
+  const h = document.createElement("h3");
+  h.textContent = "🎮 Games for you";
+  hub.appendChild(h);
+  const list = GAMES.filter(g => (g.tiers || []).includes(tier()));
+  const grid = document.createElement("div");
+  grid.className = "gcards";
+  list.forEach(g => {
+    const b = document.createElement("button");
+    b.className = "gcard";
+    b.dataset.gid = g.id;
+    b.setAttribute("aria-label", g.title);
+    const c = g.colors || ["#a5d8ff", "#d0bfff"];
+    b.innerHTML = '<div class="gart" style="--g1:' + c[0] + ';--g2:' + c[1] + '" aria-hidden="true">' + escapeHtml(g.emoji || "🎮") + "</div>" +
+      '<div class="gt">' + escapeHtml(g.title) + "</div>" +
+      (g.blurb ? '<div class="gb">' + escapeHtml(g.blurb) + "</div>" : "");
+    b.addEventListener("click", () => openGame(g.id));
+    grid.appendChild(b);
+  });
+  hub.appendChild(grid);
+  if (gamesLoadState !== "ready") hub.appendChild(gamesLoadNote());
+  else if (!list.length) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "Games are on their way!";
+    hub.appendChild(e);
+  }
+  const n = document.createElement("p");
+  n.className = "gnote";
+  n.textContent = "Each game ends after a few rounds — then it's time to play again, watch, or go play outside!";
+  hub.appendChild(n);
+  if (hadFocus || gHubRefocus) {
+    const f = (focusId && hub.querySelector('[data-gid="' + focusId + '"]')) || hub.querySelector(".gcard, .gretry");
+    gHubRefocus = !f; // nothing to focus while the games are still coming: try again on the next render
+    gFocus(f);
+  }
+}
+
+function openGames() {
+  if (cfg.gamesOn === false || locked()) return;
+  const was = curView;
+  gHubRefocus = false;
+  loadGames();
+  renderGamesHub();
+  showView("games");
+  if (was === "home") pushNav("games");
+}
+
+function startGameSession(def) {
+  gameCleanups.splice(0).forEach(f => { try { f(); } catch (e) {} });
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  const sess = ++gameSession;
+  gStage.innerHTML = "";
+  gDone.classList.remove("on");
+  gStage.inert = gBar.inert = false;
+  renderGameDots(0, 0);
+  document.getElementById("gTitle").textContent = def.title;
+  gameLastInput = Date.now();
+  try {
+    const ret = def.start(makeGameApi(def, sess));
+    if (typeof ret === "function") gameCleanups.push(ret);
+  } catch (e) {
+    gStage.innerHTML = '<div class="empty">Oops — this game needs a rest. Try another one!</div>';
+  }
+}
+function openGame(id) {
+  const def = GAMES.find(g => g.id === id);
+  // one game at a time, never while a Back is still on its way, and only a game of this child's age group
+  if (!def || locked() || curView !== "games" || gameCur || backInFlight ||
+      cfg.gamesOn === false || !(def.tiers || []).includes(tier())) return;
+  gameCur = def;
+  gPlay.classList.add("on");
+  // the hub sits behind the open game: keep keyboard / TV-remote focus out of it
+  // (hidden as well, for browsers without inert; visibility keeps its scroll position)
+  const hub = document.getElementById("gHub");
+  hub.inert = true; hub.style.visibility = "hidden";
+  updateNav();
+  pushNav("game");
+  startGameSession(def);
+  gGuardArm();
+  setTimeout(() => gFocus(document.getElementById("gClose")), 60);
+}
+function closeGame() {
+  const was = gameCur;
+  gameCleanups.splice(0).forEach(f => { try { f(); } catch (e) {} });
+  gameSession++;
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  gameCur = null;
+  gPlay.classList.remove("on");
+  gDone.classList.remove("on");
+  gStage.innerHTML = "";
+  gStage.inert = gBar.inert = false;
+  const hub = document.getElementById("gHub");
+  hub.inert = false; hub.style.visibility = "";
+  updateNav();
+  // back on the hub: games.js may have arrived while this game was open
+  if (curView === "games") {
+    renderGamesHub();
+    gFocus(was && hub.querySelector('[data-gid="' + was.id + '"]'));
+  }
+}
+function showGameDone(opts) {
+  gSound("win");
+  document.getElementById("gDoneTitle").textContent = opts.title || "Great job!";
+  document.getElementById("gDoneMsg").textContent = opts.message || "You finished the game!";
+  const owl = document.getElementById("gDoneOwl");
+  if (!owl.firstChild) owl.innerHTML = owlSvg();
+  gDone.classList.add("on");
+  // the finished board and the top bar sit under the end card: out of keyboard / remote reach
+  gStage.inert = gBar.inert = true;
+  setTimeout(() => gFocus(document.getElementById("gAgain")), 60);
+}
+/* A small child's double tap (or a second press of OK on a remote) right after a game opens or
+   restarts must not land on the fresh board or close it again: for a moment the stage ignores
+   taps and the X ignores presses. Building a board can block the page for a second on a slow
+   phone, so the moment is counted from the painted board, and a tap is judged by when the finger
+   went down (its time stamp), not by when the page got round to it. */
+let gGuardAt = 0, gGuardTs = 0;
+function gGuardArm() {
+  gGuardAt = Date.now(); gGuardTs = performance.now() + 350;
+  requestAnimationFrame(() => requestAnimationFrame(() => { gGuardAt = Date.now(); gGuardTs = performance.now() + 350; }));
+}
+function gEarly(e) {
+  return Date.now() - gGuardAt < 350 || (!!e && e.isTrusted && e.timeStamp > 0 && e.timeStamp < 1e12 && e.timeStamp < gGuardTs);
+}
+document.getElementById("gClose").addEventListener("click", (e) => { if (!gEarly(e)) goBack(); });
+document.getElementById("gMore").addEventListener("click", goBack);
+// Tab stays on the end card's two buttons (also where the board behind it cannot be made inert)
+gDone.addEventListener("keydown", (e) => {
+  if (e.key !== "Tab") return;
+  e.preventDefault();
+  const a = document.getElementById("gAgain"), m = document.getElementById("gMore");
+  (document.activeElement === a ? m : a).focus({ preventScroll: true });
+});
+document.getElementById("gAgain").addEventListener("click", () => {
+  if (!gameCur || locked()) return;
+  startGameSession(gameCur);
+  gGuardArm();
+  // the end card is hidden with the focused button inside it: put keyboard / TV-remote focus into
+  // the new board (the X only as a late fallback, so a double press of OK cannot close the game)
+  const s = gameSession;
+  [60, 400].forEach((ms, last) => setTimeout(() => {
+    if (s !== gameSession || !gameCur || locked() || gPlay.contains(document.activeElement)) return;
+    const c = [...gStage.querySelectorAll('button:not([disabled]):not([tabindex="-1"])')];
+    if (last) c.push(document.getElementById("gClose"));
+    c.some(b => { try { b.focus({ preventScroll: true }); } catch (e) {} return document.activeElement === b; });
+  }, ms));
+});
+["pointerdown", "click"].forEach(t => gStage.addEventListener(t, (e) => {
+  if (gEarly(e)) { e.stopPropagation(); e.preventDefault(); }
+}, true));
+// a held OK / Enter must not open, close and reopen a game
+views.games.addEventListener("keydown", (e) => {
+  if (e.repeat && (e.key === "Enter" || e.key === " ")) e.preventDefault();
+}, true);
+// any touch or key while a game is open counts as active play (for the screen-time counter);
+// keys are caught on the document, because focus can sit on <body> while a child types
+gPlay.addEventListener("pointerdown", () => { gameLastInput = Date.now(); }, { passive: true, capture: true });
+document.addEventListener("keydown", () => { if (gameCur) gameLastInput = Date.now(); }, true);
+// keeps the lock clock (gLockTick), and when a lock screen lands (or the app goes to the
+// background) mid-sentence, stops the talking
+setInterval(() => {
+  const l = gLockTick();
+  if (gameCur && (l || document.hidden)) { try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} }
+}, 250);
+/* Keep the offline copy of the games in step with every deploy: once the app has settled, ask for
+   the current bundle through the service worker (a fetch only: nothing runs until the Games tab opens). */
+function prefetchGames() {
+  if (isFileProto || cfg.gamesOn === false || window.__gamesLoaded || gamesLoadState !== "idle" || navigator.onLine === false) return;
+  if (!("serviceWorker" in navigator) || !navigator.serviceWorker.controller) return;
+  fetch("games.js?v=" + encodeURIComponent(GAMES_VER || "dev")).catch(() => {});
+}
+setTimeout(prefetchGames, 8000);
+if ("serviceWorker" in navigator && !isFileProto) {
+  try { navigator.serviceWorker.addEventListener("controllerchange", () => setTimeout(prefetchGames, 4000)); } catch (e) {}
+}
+
+/* GAMES-BLOCK START — each game is self-contained; add new ones below */
+
+/* ---- Bubble Pop (2-4): tap floating bubbles, hear the colour names ---- */
+registerGame({
+  id: "bubbles", title: "Bubble Pop", emoji: "🫧", blurb: "Pop the floating bubbles",
+  colors: ["#a5d8ff", "#d0bfff"], tiers: ["little"],
+  start(api) {
+    api.css(
+      ".g-bubbles{position:absolute;inset:0;overflow:hidden;touch-action:manipulation}" +
+      ".g-bubbles .bubbles-w{position:absolute;animation:gbubblesUp var(--d) linear forwards}" +
+      ".g-bubbles .bubbles-bub{width:100%;height:100%;border:none;padding:0;border-radius:50%;cursor:pointer;" +
+      "background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 12%,var(--c) 46%,var(--c));" +
+      "box-shadow:inset -8px -10px 18px rgba(0,0,0,.14),0 8px 18px rgba(0,0,0,.12)}" +
+      ".g-bubbles .bubbles-w.bubbles-pop{animation-play-state:paused}" +
+      ".g-bubbles .bubbles-w.bubbles-pop .bubbles-bub{animation:gbubblesPop .28s ease-out forwards}" +
+      ".g-bubbles .bubbles-hint{position:absolute;left:0;right:0;top:12px;text-align:center;font-size:22px;font-weight:800;color:#4f4370;pointer-events:none}" +
+      "@keyframes gbubblesUp{to{transform:translateY(calc(-1 * var(--h)))}}" +
+      "@keyframes gbubblesPop{to{transform:scale(1.5);opacity:0}}"
+    );
+    const COLORS = [["Red", "#ff6b6b"], ["Blue", "#4dabf7"], ["Yellow", "#ffd43b"], ["Green", "#69db7c"],
+                    ["Orange", "#ffa94d"], ["Purple", "#b197fc"], ["Pink", "#f783ac"]];
+    const GOAL = 12;
+    let popped = 0;
+    const root = api.el("div", "g-bubbles");
+    root.appendChild(api.el("div", "bubbles-hint", "Pop the bubbles! 🫧"));
+    api.stage.appendChild(root);
+    api.progress(0, GOAL);
+    function spawn() {
+      const W = root.clientWidth, H = root.clientHeight;
+      if (!W || !H) return;
+      // still bubbles (reduced motion) were placed for the screen as it was: after a turn, the ones
+      // left outside go, so new ones can come where the child can reach them
+      if (api.reducedMotion) root.querySelectorAll(".bubbles-w:not(.bubbles-pop)").forEach(w => {
+        if (w.offsetLeft + w.offsetWidth > W || w.offsetTop + w.offsetHeight > H) w.remove();
+      });
+      if (popped >= GOAL || root.querySelectorAll(".bubbles-w:not(.bubbles-pop)").length >= 5) return;
+      const [name, col] = COLORS[api.rand(COLORS.length)];
+      const size = Math.round(Math.min(W, H) * 0.2) + 40 + api.rand(30);
+      const w = api.el("div", "bubbles-w");
+      const left = api.rand(Math.max(1, W - size));
+      const top = api.reducedMotion ? 50 + api.rand(Math.max(1, H - size - 50)) : H;
+      w.style.cssText = "left:" + left + "px;top:" + top + "px;width:" + size + "px;height:" + size + "px;" +
+        "--h:" + (H + size) + "px;--d:" + (7 + api.rand(4)) + "s;--c:" + col + (api.reducedMotion ? ";animation:none" : "");
+      const b = api.el("button", "bubbles-bub");
+      b.style.setProperty("--c", col);
+      b.setAttribute("aria-label", name + " bubble");
+      b.addEventListener("click", () => {
+        if (w.classList.contains("bubbles-pop")) return;
+        w.classList.add("bubbles-pop");
+        popped++;
+        api.sound("tap");
+        api.speak(name);
+        api.progress(popped, GOAL);
+        api.timeout(() => w.remove(), 300);
+        if (popped >= GOAL) api.timeout(() => api.done({ title: "Pop-tastic!", message: "You popped " + GOAL + " bubbles!" }), 600);
+      });
+      // a bubble that floats away is just gone — no penalty
+      w.addEventListener("animationend", (ev) => { if (ev.target === w) w.remove(); });
+      w.appendChild(b);
+      root.appendChild(w);
+    }
+    spawn();
+    api.interval(spawn, api.reducedMotion ? 1600 : 1100);
+  }
+});
+
+/* GAMES-BLOCK END */
+
 /* ---------------- cross-tab settings sync ----------------
    A second open copy (browser tab + installed app) must never clobber the
    parent's settings: adopt any change another tab writes, keeping the larger
@@ -4853,6 +5524,21 @@ window.addEventListener("storage", (e) => {
       let killed = false;
       entries.forEach(en => { if (en.kind === "yt" && !allowed.has(en.id)) { en.dead = true; killed = true; } });
       if (killed && active !== null && entries[active] && entries[active].dead) { spPause(); nextReel(); }
+    }
+    if (curView === "games") {
+      // an open parent gate would take the Back below for itself: close it first
+      if (gateWrap.style.display === "flex" && (cfg.gamesOn === false || (gameCur && !(gameCur.tiers || []).includes(tier())))) {
+        gateWrap.style.display = "none"; gateCb = null;
+      }
+      if (cfg.gamesOn === false) {
+        // games switched off elsewhere: leave the games tab the way Back would, so history stays in step
+        curCat = "all";
+        if (gameCur) closeGame();
+        if (navDepth > 0) history.go(-navDepth); else { showView("home"); renderHome(); }
+      }
+      // the age or the child changed elsewhere: a game of the old age group closes, the hub shows the new one
+      else if (gameCur) { if (!(gameCur.tiers || []).includes(tier())) goBack(); }
+      else renderGamesHub();
     }
     updateNav();
   } catch (err) {}
