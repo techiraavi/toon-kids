@@ -1,0 +1,65 @@
+name: Daily feed
+
+# Every morning: pick up the newest uploads of the vetted channels (.github/feed-sources.json),
+# filter them (.github/scripts/build-feed.mjs) and publish them as feed.json, which the app reads.
+# Needs no API key and no secrets. A failed run changes nothing: the app keeps yesterday's feed.
+# To take one video out for good: add its id to .github/feed-block.json and push (or run this by hand).
+
+on:
+  schedule:
+    - cron: "17 0 * * *"   # 00:17 UTC = 05:47 in India, before the children are up
+  workflow_dispatch:        # "Run workflow" button on the Actions tab
+
+permissions:
+  contents: write           # commit feed.json
+  pages: write              # ask GitHub Pages to republish
+
+concurrency:
+  group: daily-feed
+  cancel-in-progress: false
+
+jobs:
+  feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main         # a queued run builds on the latest feed, not the one it was started on
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build feed.json
+        id: build
+        run: node .github/scripts/build-feed.mjs
+
+      - name: Publish
+        id: publish
+        run: |
+          git add feed.json
+          if git diff --cached --quiet; then
+            echo "feed.json unchanged"
+            exit 0
+          fi
+          git config user.name "toon-kids-feed[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Daily feed $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main   # a push made while this ran must not cost the day's feed
+          git push origin HEAD:main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      # Commits pushed with the workflow's own token do not start a Pages build by themselves.
+      - name: Republish GitHub Pages
+        if: steps.publish.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" > /dev/null || { echo "::error::The Pages build request failed; feed.json is committed but not published yet."; exit 1; }
+
+      # YouTube refused or ignored many requests: what could be published was, but say so loudly.
+      - name: Report a degraded run
+        if: steps.build.outputs.degraded == 'true'
+        run: |
+          echo "::error::YouTube refused or ignored many of today's requests (see the build step's summary). The feed may not have grown today."
+          exit 1
