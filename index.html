@@ -1241,16 +1241,26 @@
       </div>
 
       <div class="pp-card">
-        <h4>🔄 Fresh shorts (automatic)</h4>
+        <h4>🔄 New videos &amp; shorts every day</h4>
         <div class="pp-row" style="margin-bottom:8px">
-          <label class="switch"><input type="checkbox" id="ppFreshOn" aria-label="Automatically fetch fresh shorts"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">Pull new shorts daily from this app's trusted channels</span>
+          <label class="switch"><input type="checkbox" id="ppFreshOn" aria-label="Add new videos and shorts every day"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">Add new videos and shorts every day from this app's trusted channels</span>
         </div>
         <div class="pp-row" style="margin-bottom:8px">
-          <label class="switch"><input type="checkbox" id="ppFreshApprove" aria-label="New shorts wait for approval"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">New shorts wait for my OK before kids see them</span>
+          <label class="switch"><input type="checkbox" id="ppFreshApprove" aria-label="New ones wait for approval"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:#6b6486">New ones wait for my OK before kids see them</span>
         </div>
         <p class="pp-note" id="ppFreshStatus" style="margin-top:0"></p>
+        <details style="margin-top:6px">
+          <summary id="ppFeedChCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Channels in the daily feed</summary>
+          <p class="pp-note" style="margin-top:6px">Switch a channel off and its new uploads stop arriving on this device. Hand-picked videos in the app are not affected.</p>
+          <div class="plist" id="ppFeedCh" style="margin-top:8px"></div>
+        </details>
+        <details style="margin-top:6px">
+          <summary id="ppFeedRecentHead" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Newest from the daily feed</summary>
+          <p class="pp-note" style="margin-top:6px">Remove any video and it never comes back on this device.</p>
+          <div class="plist" id="ppFeedRecent" style="margin-top:8px"></div>
+        </details>
         <div id="ppPendingWrap" style="display:none">
           <p class="pp-note" id="ppPendingHead" style="margin-top:10px;font-weight:800;color:#4f4370">Waiting for your OK (0)</p>
           <div class="plist" id="ppPendingList"></div>
@@ -1264,14 +1274,14 @@
         </div>
         <div class="plist" id="ppKwList" style="margin-top:8px"></div>
         <details style="margin-top:10px">
-          <summary id="ppFreshCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">View pulled shorts (0)</summary>
+          <summary id="ppFreshCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Kept on this device (0)</summary>
           <div class="plist" id="ppFreshItems" style="margin-top:8px"></div>
         </details>
         <div class="pp-row" style="margin-top:10px">
           <button class="pp-btn soft" id="ppFreshNow" style="flex:1">Refresh now</button>
           <button class="pp-btn warn" id="ppFreshClear">Clear pool</button>
         </div>
-        <p class="pp-note">Channel pulls come only from the official channels already vetted in this app, filtered to the right age groups. Keyword pulls use YouTube strict Safe Search for the age groups ticked above — spot-check them in the Shorts feed. Requires your API key.</p>
+        <p class="pp-note">The daily feed needs no setup. Once a day the app picks up the newest uploads of the official channels vetted for it, sorts them into the right age groups, and skips trailers, live streams and anything that does not look made for children. Nobody previews them first: switch off any channel above, remove any video from the newest list, or make new ones wait for your OK. Your own keywords are extra: they need your free API key and use YouTube strict Safe Search for the age groups ticked above.</p>
       </div>
 
       <div class="pp-card">
@@ -2025,6 +2035,45 @@ const isFileProto = location.protocol === "file:";
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function okId(id) { return /^[A-Za-z0-9_-]{11}$/.test(id || ""); }
 
+/* ---------------- the daily feed ----------------
+   New videos and shorts for every age group arrive each day in feed.json, built by a
+   scheduled job in the app's repository (.github/workflows/daily-feed.yml) from the newest
+   uploads of the vetted official channels. No API key, nothing for a parent to set up.
+   The last feed is kept on the device, so it is there at launch and offline. */
+const FEED_KEY = "toonKids.feed.v1";
+const FEED_CANON = "https://techiraavi.github.io/toon-kids/feed.json";
+const FEED_CATS = ["cartoon", "play", "song", "learn", "quiz", "telugu", "hindi", "story", "move", "craft", "calm"];
+let dailyFeed = { updated: "", at: 0, sources: [], items: [], gone: [] };
+let feedLive = null; // the feed items this device shows right now; see feedItems()
+/* Nothing in the file is trusted beyond its shape: every field is checked, and a file that
+   does not look right is ignored whole. */
+function parseFeed(j) {
+  if (!j || typeof j !== "object" || j.v !== 1 || !Array.isArray(j.sources) || !Array.isArray(j.items)) return null;
+  if (j.sources.length > 400 || j.items.length > 4000) return null;
+  const sources = j.sources.map(s => {
+    if (!s || typeof s !== "object" || !/^UC[\w-]{22}$/.test(s.k || "") || typeof s.n !== "string" || !s.n.trim()) return null;
+    const tiers = Array.isArray(s.t) ? ["little", "big", "super"].filter(t => s.t.includes(t)) : [];
+    if (!tiers.length || !FEED_CATS.includes(s.c)) return null;
+    return { key: s.k, ch: s.n.trim().slice(0, 40), cat: s.c, tiers };
+  });
+  const items = [], seen = new Set();
+  for (const it of j.items) {
+    if (!Array.isArray(it)) continue;
+    const src = sources[it[0]], title = typeof it[3] === "string" ? it[3].trim().slice(0, 120) : "";
+    if (!src || !okId(it[2]) || !title || seen.has(it[2])) continue;
+    seen.add(it[2]);
+    items.push({ kind: "yt", id: it[2], title, ch: src.ch, cat: src.cat, fmt: it[1] ? "short" : "video",
+                 tiers: src.tiers, feed: true, src: src.key, added: Number(it[5]) || 0 });
+  }
+  const gone = Array.isArray(j.gone) ? j.gone.filter(okId).slice(-3000) : [];
+  return { updated: typeof j.updated === "string" ? j.updated.slice(0, 30) : "", sources: sources.filter(Boolean), items, gone };
+}
+try {
+  const kept = JSON.parse(localStorage.getItem(FEED_KEY) || "null");
+  const f = kept && parseFeed(kept.data);
+  if (f) { f.at = Number(kept.at) || 0; dailyFeed = f; }
+} catch (e) {}
+
 /* Settings loader hardened for the long haul:
    - a corrupted store is BACKED UP (toonKids.v1.bak) before defaults ever
      overwrite it, so PIN/API key/custom lists stay recoverable
@@ -2059,7 +2108,7 @@ function loadCfg() {
     eye: { warm: 0, dim: 0, autoEve: true, breakMin: 20 },
     bedtime: { on: false, start: 21, end: 7 },
     bedOverrideUntil: 0, pausedUntil: 0, removedCustom: [],
-    fresh: { on: true, requireApproval: false, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [] },
+    fresh: { on: true, requireApproval: false, lastRun: 0, rot: 0, lastError: null, items: [], kws: [], blocked: [], offCh: [], okIds: [] },
     gClientId: null, gEmail: null, gLastSync: 0
   };
   const m = {};
@@ -2072,7 +2121,9 @@ function loadCfg() {
     }
   });
   if (c.apiKey) m.apiKey = c.apiKey;
-  ["items", "kws", "blocked"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
+  ["items", "kws", "blocked", "offCh", "okIds"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
+  m.fresh.okIds = m.fresh.okIds.filter(okId).slice(-1000);
+  m.fresh.offCh = m.fresh.offCh.filter(k => typeof k === "string" && /^UC[\w-]{22}$/.test(k)).slice(-300);
   if (!Array.isArray(m.custom)) m.custom = [];
   if (!Array.isArray(m.removedCustom)) m.removedCustom = [];
   if (!Array.isArray(m.hiddenKeys)) m.hiddenKeys = [];
@@ -2104,7 +2155,7 @@ function loadCfg() {
   m.fresh.blocked = m.fresh.blocked.filter(okId);
   if (m.watch.date !== todayStr()) m.watch = { date: todayStr(), secs: 0, bonus: 0 };
   // prune watch-history entries for content no longer in the app and >60 days old
-  const keep = new Set(CATALOG.concat(m.custom).concat(m.fresh.items).map(it => itemKey(it)));
+  const keep = new Set(CATALOG.concat(m.custom).concat(m.fresh.items).concat(dailyFeed.items).map(it => itemKey(it)));
   const cutoff = Date.now() - 60 * 24 * 3600 * 1000;
   Object.keys(m.seen).forEach(k => {
     const entry = m.seen[k];
@@ -2169,11 +2220,14 @@ function blockFresh(id) {
 let cfg = loadCfg();
 let saveFailed = false; // surfaced as a Parent Zone banner — never fail silently
 function saveCfg() {
+  feedLive = null;
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(cfg));
     saveFailed = false;
   } catch (e) {
-    // storage full: shed the oldest watch-history and retry once so parental
+    // storage full: first drop the copy of the daily feed (it is fetched again within hours)
+    try { localStorage.removeItem(FEED_KEY); localStorage.setItem(LS_KEY, JSON.stringify(cfg)); saveFailed = false; return; } catch (e1) {}
+    // then shed the oldest watch-history and retry once so parental
     // settings are never silently dropped
     try {
       const shed = (seen) => {
@@ -2218,7 +2272,74 @@ async function idbGet(k) { const d = await idbOpen(); return new Promise((res, r
 async function idbDel(k) { const d = await idbOpen(); return new Promise((res) => { const t = d.transaction("videos","readwrite"); t.objectStore("videos").delete(k); t.oncomplete=res; t.onerror=res; }); }
 
 /* ---------------- content selection ---------------- */
-function allItems() { return CATALOG.concat(cfg.custom).concat(cfg.fresh.items.filter(it => !it.pending)); }
+/* The feed items this device shows right now: the daily feed minus anything the app already has,
+   anything a parent removed, and any channel a parent switched off. With "wait for my OK" on, only
+   the ones the parent approved (cfg.fresh.okIds); the rest wait in the approval list
+   (queueFeedForApproval). Worked out once and reused until the settings or the feed change. */
+const CATALOG_IDS = new Set(CATALOG.filter(it => it.kind === "yt").map(it => it.id));
+function feedItems() {
+  if (feedLive) return feedLive;
+  const f = cfg.fresh;
+  if (!f.on || !dailyFeed.items.length) return (feedLive = []);
+  const ok = f.requireApproval ? new Set(f.okIds || []) : null;
+  const have = new Set(f.blocked);
+  cfg.custom.forEach(it => { if (it.kind === "yt") have.add(it.id); });
+  f.items.forEach(it => have.add(it.id));
+  (cfg.removedCustom || []).forEach(id => have.add(id));
+  const off = new Set(f.offCh || []);
+  return (feedLive = dailyFeed.items.filter(it => !CATALOG_IDS.has(it.id) && !have.has(it.id) && !off.has(it.src) && (!ok || ok.has(it.id))));
+}
+/* Copies kept on the device from the daily feed remember their channel (src) and answer to it every
+   time: the feed switch, the channel switch, a takedown (feed.json "gone"), and the latest vetted
+   list (a channel that left it, or now has fewer age groups). Other kept items show as they are. */
+function keptItems() {
+  const f = cfg.fresh, off = new Set(f.offCh || []), gone = new Set(dailyFeed.gone || []);
+  const live = new Map(dailyFeed.sources.map(s => [s.key, s.tiers]));
+  const out = [];
+  for (const it of f.items) {
+    if (it.pending || gone.has(it.id)) continue;
+    if (!it.src) { out.push(it); continue; }
+    if (!f.on || off.has(it.src) || (live.size && !live.has(it.src))) continue;
+    if (!live.has(it.src)) { out.push(it); continue; } // no feed on this device yet: as kept
+    const tiers = it.tiers.filter(t => live.get(it.src).includes(t));
+    if (tiers.length) out.push(tiers.length === it.tiers.length ? it : Object.assign({}, it, { tiers }));
+  }
+  return out;
+}
+function allItems() { return CATALOG.concat(cfg.custom).concat(keptItems()).concat(feedItems()); }
+/* A feed item rotates out after a week or two. One a child has hearted is copied into the
+   device's own list first, so a favourite never silently disappears. */
+function keepFeedItem(it) {
+  if (!it || !it.feed || !okId(it.id) || cfg.fresh.items.some(x => x.id === it.id)) return;
+  cfg.fresh.items.push({ kind: "yt", id: it.id, title: it.title, ch: it.ch, cat: it.cat, fmt: it.fmt, tiers: it.tiers.slice(), fresh: true, src: it.src, fav: true });
+  trimFreshPool();
+}
+/* An un-heart drops the favourite's copy again, unless another child on this device still loves it. */
+function dropFeedCopy(it) {
+  if (!it) return;
+  const k = itemKey(it);
+  if (cfg.liked[k] || Object.values(cfg.kidData || {}).some(d => d && d.liked && d.liked[k])) return;
+  cfg.fresh.items = cfg.fresh.items.filter(x => !(x.id === it.id && x.fav));
+}
+/* "Wait for my OK": an approval is remembered on its own, so trimming the kept list never hides an
+   approved video or asks for it again. */
+function approveFresh(id) {
+  const f = cfg.fresh;
+  if (!okId(id) || f.okIds.includes(id)) return;
+  f.okIds.push(id);
+  if (f.okIds.length > 1000) f.okIds = f.okIds.slice(-1000);
+}
+/* The device's own list of pulled items stays bounded: the oldest go first, but never one that is
+   waiting for a parent's OK or that any child on this device has hearted. */
+function trimFreshPool() {
+  const f = cfg.fresh;
+  if (f.items.length <= 150) return;
+  const loved = new Set(Object.keys(cfg.liked || {}).filter(k => cfg.liked[k]));
+  Object.values(cfg.kidData || {}).forEach(d => Object.keys((d && d.liked) || {}).forEach(k => { if (d.liked[k]) loved.add(k); }));
+  const stay = f.items.filter(it => it.pending || loved.has(itemKey(it)));
+  const rest = f.items.filter(it => !it.pending && !loved.has(itemKey(it)));
+  f.items = rest.slice(Math.max(0, rest.length - Math.max(0, 150 - stay.length))).concat(stay);
+}
 function tier() { return TIER_OF_AGE(cfg.age || 4); }
 
 /* Festival calendar: fixed-date festivals forever; lunar ones from a local
@@ -2242,12 +2363,22 @@ function activeFestival() {
   return null;
 }
 
+/* Drawing Home asks for this list some 30 times. With the daily feed it runs to over 2,000
+   items, so one answer is shared for the rest of the current synchronous run (a whole render),
+   and recomputed whenever the age group, the settings or the feed change (saveCfg resets
+   feedLive, so a new feedItems() array means the memo is stale). Callers only read it. */
+let ifaMemo = null;
 function itemsForAge() {
+  const t = tier(), fl = feedItems();
+  if (ifaMemo && ifaMemo.t === t && ifaMemo.fl === fl) return ifaMemo.list;
   const hid = new Set(cfg.hiddenKeys || []), dead = new Set(cfg.deadIds || []);
   const fest = activeFestival();
-  return allItems().filter(it => (it.tiers || []).includes(tier()) &&
+  const list = allItems().filter(it => (it.tiers || []).includes(t) &&
     !hid.has(itemKey(it)) && !(it.kind === "yt" && dead.has(it.id)) &&
     (!it.fest || it.fest === fest)); // festival items only around their festival
+  ifaMemo = { t, fl, list };
+  Promise.resolve().then(() => { ifaMemo = null; });
+  return list;
 }
 function gridItems(cat) {
   if (cat === "fav") return itemsForAge().filter(it => cfg.liked[itemKey(it)]);
@@ -2330,15 +2461,16 @@ function bumpSeen(key) {
   s.n++; s.t = Date.now();
   saveCfg();
 }
-function hashJitter(key) {
+function hashJitter(key, day) {
   let h = 0;
-  const s = key + todayStr();
+  const s = key + (day || todayStr());
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
   return h / 997;
 }
 function freshSort(items, dailyStable) {
+  const day = todayStr(); // once per sort, not once per item
   return items
-    .map(it => ({ it, score: seenCount(it) + (dailyStable ? hashJitter(itemKey(it)) : Math.random()) * 0.9 }))
+    .map(it => ({ it, score: seenCount(it) + (dailyStable ? hashJitter(itemKey(it), day) : Math.random()) * 0.9 + (it.feed ? 0.3 : 0) }))
     .sort((a, b) => a.score - b.score)
     .map(x => x.it);
 }
@@ -2716,10 +2848,40 @@ function makeShelf(title, items, kind, cat) {
       row.appendChild(b);
     });
   } else {
-    items.forEach(it => row.appendChild(makeCard(it, items)));
+    // With the daily feed Home holds 300 cards and each one costs a few milliseconds on a budget
+    // phone, so a shelf draws its first 8 at once (more than a phone screen shows) and the rest
+    // follows a moment later, a shelf at a time between frames. A shelf whose sideways scroll is
+    // being restored gets all its cards first (sec._fillAll).
+    const FIRST = 8;
+    items.slice(0, FIRST).forEach(it => row.appendChild(makeCard(it, items)));
+    let rest = items.slice(FIRST);
+    if (rest.length) {
+      sec._fillAll = () => {
+        if (!rest.length) return;
+        const f = document.createDocumentFragment();
+        rest.forEach(it => f.appendChild(makeCard(it, items)));
+        rest = [];
+        row.appendChild(f);
+      };
+      shelfQueue.push(sec);
+      scheduleShelfFill();
+    }
   }
   sec.appendChild(row);
   return sec;
+}
+const shelfQueue = [];
+let shelfFillT = 0;
+function scheduleShelfFill() {
+  if (shelfFillT) return;
+  shelfFillT = setTimeout(function fillNext() {
+    shelfFillT = 0;
+    // a shelf that was thrown away by a newer render is skipped, not filled
+    let sec;
+    while ((sec = shelfQueue.shift()) && !sec.isConnected) {}
+    if (sec) sec._fillAll();
+    if (shelfQueue.length) shelfFillT = setTimeout(fillNext, 16);
+  }, 60);
 }
 
 const SHELF_CATS = [["song", "🎵 Songs"], ["cartoon", "🎬 Cartoons"], ["play", "🧸 Play Time"], ["learn", "🧠 Learning"], ["quiz", "🧩 Quiz & Riddles"], ["telugu", "🌸 Telugu Rhymes"], ["hindi", "🌼 Hindi Rhymes"], ["story", "📖 Stories"], ["move", "🤸 Move & Dance"], ["craft", "🎨 Art & Drawing"], ["classic", "🍿 Classics"], ["calm", "🌙 Bedtime Songs"], ["my", "📁 My Videos"]];
@@ -2749,7 +2911,10 @@ function renderHome() {
     grid.querySelectorAll(".shelf").forEach(s => {
       const h = s.querySelector("h3"), r = s.querySelector(".shelf-row");
       const k = s.dataset.cat || (h && h.textContent);
-      if (k && r && prevRows[k]) r.scrollLeft = prevRows[k];
+      if (k && r && prevRows[k]) {
+        if (s._fillAll) s._fillAll(); // the cards it was scrolled to must exist first
+        r.scrollLeft = prevRows[k];
+      }
     });
     if (!wasSearch) grid.scrollTop = prevTop;
   };
@@ -2879,7 +3044,13 @@ function renderHome() {
       }
     }
   }
-  const newItems = all.filter(it => seenCount(it) === 0).slice(0, 12);
+  // straight from the daily feed: what joined the app in the last week and has not been watched, newest first
+  const weekAgo = Math.floor(Date.now() / 86400000) - 7;
+  const justIn = all.filter(it => it.feed && it.added >= weekAgo && seenCount(it) === 0)
+    .sort((a, b) => b.added - a.added).slice(0, 12);
+  if (justIn.length) grid.appendChild(makeShelf("🆕 New this week", justIn, "video", "feednew"));
+  const inJustIn = new Set(justIn);
+  const newItems = all.filter(it => seenCount(it) === 0 && !inJustIn.has(it)).slice(0, 12);
   if (newItems.length) grid.appendChild(makeShelf("✨ New for you", newItems, "video"));
   const shortsShelf = freshSort(shortItems(), true).slice(0, 12);
   if (shortsShelf.length) grid.appendChild(makeShelf("⚡ Shorts", shortsShelf, "shorts"));
@@ -3312,6 +3483,7 @@ function spawnBigHeart(reelEl, ev) {
 function toggleLike(i) {
   const key = itemKey(entries[i]);
   cfg.liked[key] = !cfg.liked[key];
+  if (cfg.liked[key]) keepFeedItem(entries[i]); else dropFeedCopy(entries[i]);
   saveCfg();
   const btn = reelEls[i].querySelector(".btn-like");
   btn.textContent = cfg.liked[key] ? "❤️" : "🤍";
@@ -3503,6 +3675,7 @@ document.getElementById("pvLike").addEventListener("click", () => {
   if (!it) return;
   const k = itemKey(it);
   cfg.liked[k] = !cfg.liked[k];
+  if (cfg.liked[k]) keepFeedItem(it); else dropFeedCopy(it);
   saveCfg();
   const btn = document.getElementById("pvLike");
   btn.textContent = cfg.liked[k] ? "❤️" : "🤍";
@@ -4170,15 +4343,24 @@ async function autoRefreshFresh(force) {
     const freshItems = [];
     try {
       // rotate through 8 trusted channels per run; "UUSH…" is a channel's
-      // shorts-only uploads playlist (fall back to all uploads "UU…")
+      // shorts-only uploads playlist (fall back to all uploads "UU…").
+      // The daily feed already covers these channels: this is only a fallback for
+      // when it has not arrived for days, and then only from channels the latest
+      // vetted list still has (with its age groups) and the parent has not switched off.
       const off = f.rot || 0;
-      for (let n = 0; n < 8; n++) {
-        const src = CHANNEL_SOURCES[(off + n) % CHANNEL_SOURCES.length];
+      const feedFresh = dailyFeed.items.length && Date.now() - (Date.parse(dailyFeed.updated) || 0) < 3 * 86400000;
+      const vetted = new Map(dailyFeed.sources.map(s => [s.key, s]));
+      const chans = feedFresh ? [] : CHANNEL_SOURCES
+        .filter(s => !vetted.size || vetted.has(s.cid))
+        .filter(s => !(f.offCh || []).includes(s.cid))
+        .map(s => vetted.has(s.cid) ? { cid: s.cid, ch: s.ch, cat: vetted.get(s.cid).cat, tiers: vetted.get(s.cid).tiers } : s);
+      for (let n = 0; n < Math.min(8, chans.length); n++) {
+        const src = chans[(off + n) % chans.length];
         let got = await fetchPlaylistIds("UUSH" + src.cid.slice(2), key);
         if (!got.length) got = await fetchPlaylistIds("UU" + src.cid.slice(2), key);
-        got.forEach(x => { if (!known.has(x.id) && !candidates[x.id]) candidates[x.id] = { title: x.title, ch: src.ch, cat: src.cat, tiers: src.tiers }; });
+        got.forEach(x => { if (!known.has(x.id) && !candidates[x.id]) candidates[x.id] = { title: x.title, ch: src.ch, cat: src.cat, tiers: src.tiers, src: src.cid }; });
       }
-      f.rot = (off + 8) % CHANNEL_SOURCES.length;
+      if (chans.length) f.rot = (off + 8) % chans.length;
       // parent keywords: strict Safe Search, tagged to the keyword's age groups
       for (const kw of f.kws) {
         const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&safeSearch=strict&maxResults=10&q=" + encodeURIComponent(kw.q + " shorts") + "&key=" + key);
@@ -4201,7 +4383,7 @@ async function autoRefreshFresh(force) {
           const c = candidates[v.id];
           const secs = isoDurToSecs(v.contentDetails && v.contentDetails.duration);
           if (c && okId(v.id) && v.status && v.status.embeddable && secs > 0 && secs <= 183) {
-            freshItems.push({ kind: "yt", id: v.id, title: c.title, ch: c.ch, cat: c.cat, fmt: "short", tiers: c.tiers.slice(), fresh: true, ...(f.requireApproval ? { pending: true } : {}) });
+            freshItems.push({ kind: "yt", id: v.id, title: c.title, ch: c.ch, cat: c.cat, fmt: "short", tiers: c.tiers.slice(), fresh: true, ...(c.src ? { src: c.src } : {}), ...(f.requireApproval ? { pending: true } : {}) });
           }
         });
       }
@@ -4239,6 +4421,72 @@ async function autoRefreshFresh(force) {
   }
 }
 setTimeout(() => autoRefreshFresh(false), 6000);
+
+/* ---------------- loading the daily feed ---------------- */
+function feedUrl() {
+  // The app's own copy on its home host (and on a developer's machine). Every other copy of the app
+  // (the mirror, the single-file edition) reads the home host's feed, because that is the fresh one.
+  const host = location.hostname;
+  return (!isFileProto && (/\.github\.io$/.test(host) || host === "localhost" || host === "127.0.0.1")) ? "feed.json" : FEED_CANON;
+}
+/* "New ones wait for my OK": instead of showing, the newest feed items for this family's age groups
+   go into the approval list, 30 at a time; approving or rejecting some makes room for more. */
+function queueFeedForApproval() {
+  const f = cfg.fresh;
+  if (!f.on || !f.requireApproval || !dailyFeed.items.length) return 0;
+  let room = 30 - f.items.filter(it => it.pending).length;
+  if (room <= 0) return 0;
+  const tiers = new Set((cfg.kids || []).length ? cfg.kids.map(k => TIER_OF_AGE(Number(k.age) || 4)) : [tier()]);
+  const have = new Set(f.blocked), off = new Set(f.offCh || []);
+  cfg.custom.forEach(it => { if (it.kind === "yt") have.add(it.id); });
+  (cfg.removedCustom || []).forEach(id => have.add(id));
+  f.items.forEach(it => have.add(it.id));
+  (f.okIds || []).forEach(id => have.add(id));
+  let added = 0;
+  for (const it of dailyFeed.items) { // the feed is newest first
+    if (room <= 0) break;
+    if (CATALOG_IDS.has(it.id) || have.has(it.id) || off.has(it.src) || !it.tiers.some(t => tiers.has(t))) continue;
+    f.items.push({ kind: "yt", id: it.id, title: it.title, ch: it.ch, cat: it.cat, fmt: it.fmt, tiers: it.tiers.slice(), fresh: true, pending: true, src: it.src });
+    room--; added++;
+  }
+  if (added) saveCfg();
+  return added;
+}
+function feedArrived() {
+  queueFeedForApproval();
+  // show the new items at once only where that cannot disturb anyone: Home, at the top, nothing open
+  if (curView === "home" && searchQ === null && curCat !== "fav" && !locked() &&
+      panel.style.display !== "flex" && gateWrap.style.display !== "flex" &&
+      document.getElementById("grid").scrollTop < 40) renderHome();
+  if (panel.style.display === "flex") renderFreshZone();
+}
+let feedLoading = false;
+async function loadFeed(force) {
+  if (feedLoading || !cfg.fresh.on) return false;
+  if (!force && Date.now() - dailyFeed.at < 3 * 3600 * 1000) return false; // the feed changes once a day
+  feedLoading = true;
+  try {
+    const r = await fetch(feedUrl(), { cache: "no-cache" });
+    if (!r.ok) return false;
+    const text = await r.text();
+    if (text.length > 2000000) return false;
+    const data = JSON.parse(text);
+    const f = parseFeed(data);
+    if (!f || !f.items.length) return false;
+    const changed = f.updated !== dailyFeed.updated || f.items.length !== dailyFeed.items.length;
+    f.at = Date.now();
+    dailyFeed = f;
+    feedLive = null;
+    try { localStorage.setItem(FEED_KEY, JSON.stringify({ at: f.at, data: data })); } catch (e) {} // a full store only costs the offline copy
+    if (changed) feedArrived();
+    return changed;
+  } catch (e) { return false; }
+  finally { feedLoading = false; }
+}
+queueFeedForApproval(); // approval mode: top the list up from the copy kept on the device
+setTimeout(() => loadFeed(false), 2500);
+setInterval(() => loadFeed(false), 3 * 3600 * 1000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadFeed(false); });
 
 /* Weekly Watch Report — rendered from data the app already collects */
 function renderWeekReport() {
@@ -4307,7 +4555,7 @@ function renderHiddenZone() {
   if (!list) return;
   list.innerHTML = "";
   const byKey = {}, byId = {};
-  CATALOG.concat(cfg.custom).concat(cfg.fresh.items).forEach(it => {
+  CATALOG.concat(cfg.custom).concat(cfg.fresh.items).concat(dailyFeed.items).forEach(it => {
     byKey[itemKey(it)] = it;
     if (it.kind === "yt") byId[it.id] = it;
   });
@@ -4406,15 +4654,59 @@ function renderFreshZone() {
   document.getElementById("ppFreshOn").checked = !!cfg.fresh.on;
   document.getElementById("ppFreshApprove").checked = !!cfg.fresh.requireApproval;
   const st = document.getElementById("ppFreshStatus");
-  if (!cfg.apiKey) {
-    st.textContent = cfg.fresh.items.length
-      ? cfg.fresh.items.length + " synced shorts in the pool. New ones arrive via Google sync when you tap Restore — or add your own API key above."
-      : "Needs your free API key (set it in the search card above) — or approved shorts arrive via Google sync when you tap Restore.";
+  let when = "";
+  try { when = dailyFeed.updated ? new Date(dailyFeed.updated).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : ""; } catch (e) {}
+  if (!cfg.fresh.on) st.textContent = "The daily feed is off: children see the hand-picked catalog and what you added yourself.";
+  else if (!dailyFeed.items.length) st.textContent = "Waiting for the daily feed. It arrives the next time the app is online.";
+  else if (cfg.fresh.requireApproval) st.textContent = "Daily feed updated " + when + ". New items wait below for your OK, 30 at a time.";
+  else {
+    const mine = feedItems().filter(it => it.tiers.includes(tier()));
+    st.textContent = "✓ Daily feed updated " + when + ": " + mine.filter(it => it.fmt !== "short").length + " videos and " +
+      mine.filter(it => it.fmt === "short").length + " shorts for this age group right now.";
   }
-  else if (!cfg.fresh.on) st.textContent = "Automatic refresh is off.";
-  else if (cfg.fresh.lastError) st.textContent = "⚠️ " + cfg.fresh.lastError;
-  else st.textContent = cfg.fresh.items.filter(it => !it.pending).length + " fresh shorts in the pool" +
-    (cfg.fresh.lastRun ? " • last refresh " + new Date(cfg.fresh.lastRun).toLocaleString() : " • not refreshed yet");
+  if (cfg.apiKey && cfg.fresh.on && cfg.fresh.lastError) st.textContent += " ⚠️ Your keywords: " + cfg.fresh.lastError;
+  // one switch per channel of the daily feed
+  const offCh = new Set(cfg.fresh.offCh || []);
+  const chList = document.getElementById("ppFeedCh");
+  const srcs = dailyFeed.sources.slice().sort((a, b) => a.ch.localeCompare(b.ch));
+  const offNow = srcs.filter(s => offCh.has(s.key)).length;
+  document.getElementById("ppFeedChCount").textContent = "Channels in the daily feed (" + srcs.length + (offNow ? ", " + offNow + " off" : "") + ")";
+  chList.innerHTML = srcs.length ? "" : '<p class="pp-note">The list appears once the daily feed has arrived.</p>';
+  srcs.forEach(s => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML = '<div class="ph">📺</div><div class="nm">' + escapeHtml(s.ch) + ' <span style="color:#6b6486">(' +
+      s.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ')</span></div>' +
+      '<label class="switch"><input type="checkbox"' + (offCh.has(s.key) ? "" : " checked") + '><span></span></label>';
+    const box = row.querySelector("input");
+    box.setAttribute("aria-label", s.ch + " in the daily feed");
+    box.addEventListener("change", () => {
+      const set = new Set(cfg.fresh.offCh || []);
+      if (box.checked) set.delete(s.key); else set.add(s.key);
+      cfg.fresh.offCh = Array.from(set).slice(-300);
+      saveCfg();
+      renderFreshZone();
+    });
+    chList.appendChild(row);
+  });
+  // the newest feed items the family's children can see, each removable
+  const famTiers = new Set((cfg.kids || []).length ? cfg.kids.map(k => TIER_OF_AGE(Number(k.age) || 4)) : [tier()]);
+  const recent = feedItems().filter(it => it.tiers.some(t => famTiers.has(t))).slice(0, 40);
+  document.getElementById("ppFeedRecentHead").textContent = "Newest from the daily feed (" + recent.length + ")";
+  const rl = document.getElementById("ppFeedRecent");
+  rl.innerHTML = recent.length ? "" : '<p class="pp-note">Nothing yet.</p>';
+  recent.forEach(it => {
+    const row = document.createElement("div");
+    row.className = "pitem";
+    row.innerHTML =
+      '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
+      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#6b6486">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · short" : "") + "</span></div>" +
+      '<button class="pv" title="Preview on YouTube" style="background:#efecf9;color:#4f4370">👁</button>' +
+      '<button class="del" title="Remove forever">✕</button>';
+    row.querySelector(".pv").addEventListener("click", () => window.open("https://www.youtube.com/watch?v=" + it.id, "_blank"));
+    row.querySelector(".del").addEventListener("click", () => { blockFresh(it.id); saveCfg(); renderFreshZone(); });
+    rl.appendChild(row);
+  });
   // approval queue: nothing reaches the kids until the parent taps ✓
   const pend = cfg.fresh.items.filter(it => it.pending);
   const wrap = document.getElementById("ppPendingWrap");
@@ -4433,11 +4725,11 @@ function renderFreshZone() {
         '<button class="ok" title="Approve" style="background:#e8f5e9;color:#2e7d32">✓</button>' +
         '<button class="del" title="Reject forever">✕</button>';
       row.querySelector(".pv").addEventListener("click", () => window.open("https://www.youtube.com/watch?v=" + it.id, "_blank"));
-      row.querySelector(".ok").addEventListener("click", () => { delete it.pending; saveCfg(); renderFreshZone(); });
+      row.querySelector(".ok").addEventListener("click", () => { delete it.pending; approveFresh(it.id); trimFreshPool(); saveCfg(); queueFeedForApproval(); renderFreshZone(); });
       row.querySelector(".del").addEventListener("click", () => {
         blockFresh(it.id);
         cfg.fresh.items = cfg.fresh.items.filter(x => x.id !== it.id);
-        saveCfg(); renderFreshZone();
+        saveCfg(); queueFeedForApproval(); renderFreshZone();
       });
       pl.appendChild(row);
     });
@@ -4456,10 +4748,10 @@ function renderFreshZone() {
     list.appendChild(row);
   });
   // individually removable list of every auto-pulled short (removal blocks re-adding)
-  document.getElementById("ppFreshCount").textContent = "View pulled shorts (" + cfg.fresh.items.length + ")";
+  document.getElementById("ppFreshCount").textContent = "Kept on this device (" + cfg.fresh.items.length + ")";
   const fl = document.getElementById("ppFreshItems");
   fl.innerHTML = "";
-  if (!cfg.fresh.items.length) fl.innerHTML = '<p class="pp-note">Nothing pulled yet.</p>';
+  if (!cfg.fresh.items.length) fl.innerHTML = '<p class="pp-note">Nothing yet. Videos you approve, favourites from the daily feed and keyword picks are kept here.</p>';
   cfg.fresh.items.forEach((it, idx) => {
     const row = document.createElement("div");
     row.className = "pitem";
@@ -4476,11 +4768,19 @@ function renderFreshZone() {
     fl.appendChild(row);
   });
 }
-document.getElementById("ppFreshOn").addEventListener("change", (e) => { cfg.fresh.on = e.target.checked; saveCfg(); renderFreshZone(); });
-document.getElementById("ppFreshApprove").addEventListener("change", (e) => { cfg.fresh.requireApproval = e.target.checked; saveCfg(); renderFreshZone(); });
+document.getElementById("ppFreshOn").addEventListener("change", (e) => {
+  cfg.fresh.on = e.target.checked; saveCfg(); renderFreshZone();
+  if (cfg.fresh.on) loadFeed(true).then(() => renderFreshZone());
+});
+document.getElementById("ppFreshApprove").addEventListener("change", (e) => {
+  cfg.fresh.requireApproval = e.target.checked; saveCfg();
+  queueFeedForApproval();
+  renderFreshZone();
+});
 document.getElementById("ppApproveAll").addEventListener("click", () => {
-  cfg.fresh.items.forEach(it => { delete it.pending; });
-  saveCfg(); renderFreshZone();
+  cfg.fresh.items.forEach(it => { if (it.pending) approveFresh(it.id); delete it.pending; });
+  trimFreshPool();
+  saveCfg(); queueFeedForApproval(); renderFreshZone();
 });
 document.getElementById("ppKwAdd").addEventListener("click", () => {
   const inp = document.getElementById("ppKwInput");
@@ -4494,19 +4794,20 @@ document.getElementById("ppKwAdd").addEventListener("click", () => {
 document.getElementById("ppKwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("ppKwAdd").click(); });
 document.getElementById("ppFreshNow").addEventListener("click", async (e) => {
   const btn = e.target;
-  if (!cfg.apiKey) { document.getElementById("ppFreshStatus").textContent = "Needs your free API key (set it in the search card above)."; return; }
+  if (!cfg.fresh.on) { document.getElementById("ppFreshStatus").textContent = "Switch the daily feed on first."; return; }
   btn.disabled = true; btn.textContent = "Refreshing…";
-  const n = await autoRefreshFresh(true);
+  const got = await loadFeed(true);                             // the daily feed needs no key
+  const n = cfg.apiKey ? await autoRefreshFresh(true) : 0;      // your own keywords do
   btn.disabled = false; btn.textContent = "Refresh now";
   renderFreshZone();
-  if (!cfg.fresh.lastError) {
-    document.getElementById("ppFreshStatus").textContent = (n > 0 ? "✓ Added " + n + " new shorts! " : "No new shorts found this time. ") + cfg.fresh.items.length + " in the pool.";
-  }
+  if (!got && !n) document.getElementById("ppFreshStatus").textContent += navigator.onLine === false ? " (No internet right now.)" : " (Already up to date.)";
 });
 document.getElementById("ppFreshClear").addEventListener("click", () => {
-  if (!confirm("Remove all automatically pulled shorts? They will not come back.")) return;
-  cfg.fresh.items.forEach(it => blockFresh(it.id));
-  cfg.fresh.items = [];
+  if (!confirm("Remove everything kept on this device from the daily feed and your keywords (approved and waiting videos included)? They will not come back. Videos a child has hearted stay.")) return;
+  const loved = new Set(Object.keys(cfg.liked || {}).filter(k => cfg.liked[k]));
+  Object.values(cfg.kidData || {}).forEach(d => Object.keys((d && d.liked) || {}).forEach(k => { if (d.liked[k]) loved.add(k); }));
+  cfg.fresh.items.filter(it => !loved.has(itemKey(it))).forEach(it => blockFresh(it.id));
+  cfg.fresh.items = cfg.fresh.items.filter(it => loved.has(itemKey(it)));
   saveCfg();
   renderFreshZone();
 });
@@ -4603,9 +4904,26 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 /* ---------------- auto-update for installed (home-screen) apps ----------------
    The server's ETag changes with every deploy. We snapshot it at launch and
-   re-check on resume + every 30 min; a change means a new version was deployed,
-   so the app refreshes itself at a safe moment (never mid-video). */
-let appEtag = null, pendingUpdate = false;
+   re-check on resume + every 15 min; a change means something was deployed.
+   The host re-stamps EVERY file on each publish, and the daily feed publishes
+   every day without touching the app, so a changed ETag only raises the
+   question. The answer is whether the page itself changed: its text is
+   reduced to a short signature at launch (pageSig) and compared again then.
+   A real new version refreshes the app at a safe moment (never mid-video). */
+let appEtag = null, pendingUpdate = false, bootSig = null;
+function sigOf(text) {
+  let x = 2166136261;
+  for (let i = 0; i < text.length; i++) { x ^= text.charCodeAt(i); x = Math.imul(x, 16777619); }
+  return text.length + ":" + (x >>> 0);
+}
+async function pageSig(cacheMode) {
+  try {
+    // the cached copy is read under the exact address this session was launched with: that entry is
+    // the page that is running (another address could hold an older version)
+    const r = await fetch(cacheMode === "force-cache" ? location.href.split("#")[0] : (location.pathname || "/"), { cache: cacheMode });
+    return r.ok ? sigOf(await r.text()) : null;
+  } catch (e) { return null; }
+}
 async function fetchEtag() {
   try {
     const r = await fetch(location.pathname || "/", { method: "HEAD", cache: "no-store" });
@@ -4616,8 +4934,18 @@ async function checkForUpdate(initial) {
   if (isFileProto) return;
   const e = await fetchEtag();
   if (!e) return;
-  if (initial || appEtag === null) { appEtag = e; return; }
-  if (e !== appEtag) pendingUpdate = true;
+  if (initial || appEtag === null) {
+    appEtag = e;
+    // the copy this session started from is still in the browser's cache: remember what it looked like
+    if (bootSig === null) bootSig = await pageSig("force-cache");
+    return;
+  }
+  if (e !== appEtag && !pendingUpdate) {
+    const now = bootSig ? await pageSig("no-store") : null;
+    if (bootSig && now === bootSig) appEtag = e;   // published, but the app is the same (the daily feed)
+    else if (bootSig && !now) return;              // could not look (offline?): ask again next time
+    else pendingUpdate = true;
+  }
   maybeApplyUpdate();
 }
 function updateBlocked() {
@@ -4704,13 +5032,16 @@ function gsSyncPayload() {
     bedtime: cfg.bedtime,
     eye: cfg.eye,
     freshOn: cfg.fresh.on,
+    freshApprove: !!cfg.fresh.requireApproval,
+    okIds: (cfg.fresh.okIds || []).slice(-1000),
     kws: cfg.fresh.kws,
     blocked: cfg.fresh.blocked,
+    offCh: cfg.fresh.offCh || [],
     removedCustom: cfg.removedCustom || [],
     hiddenKeys: cfg.hiddenKeys || [],
     deadIds: cfg.deadIds || [],
     freshItems: (cfg.fresh.items || []).filter(it => !it.pending).slice(-120)
-      .map(it => ({ id: it.id, title: it.title, ch: it.ch, cat: it.cat, tiers: it.tiers })),
+      .map(it => ({ id: it.id, title: it.title, ch: it.ch, cat: it.cat, tiers: it.tiers, fmt: it.fmt, ...(it.src ? { src: it.src } : {}) })),
     custom: cfg.custom.filter(it => it.kind === "yt")
   };
 }
@@ -4749,6 +5080,8 @@ function gsApplyPayload(p) {
     };
   }
   if (typeof p.freshOn === "boolean") cfg.fresh.on = p.freshOn;
+  if (p.freshApprove === true) cfg.fresh.requireApproval = true; // only ever strengthens, like the PIN and pause rules
+  if (Array.isArray(p.okIds)) cfg.fresh.okIds = Array.from(new Set((cfg.fresh.okIds || []).concat(p.okIds.filter(okId)))).slice(-1000);
   if (Array.isArray(p.kws)) cfg.fresh.kws = p.kws.filter(k => k && typeof k.q === "string" && Array.isArray(k.tiers)).slice(0, 30);
   // MERGE blocklists and tombstones — a restore must never resurrect content
   // the parent removed on any device
@@ -4757,6 +5090,9 @@ function gsApplyPayload(p) {
   }
   if (Array.isArray(p.removedCustom)) {
     cfg.removedCustom = Array.from(new Set((cfg.removedCustom || []).concat(p.removedCustom.filter(okId)))).slice(-200);
+  }
+  if (Array.isArray(p.offCh)) { // merged like the blocklists: a restore never switches a channel back on
+    cfg.fresh.offCh = Array.from(new Set((cfg.fresh.offCh || []).concat(p.offCh.filter(k => typeof k === "string" && /^UC[\w-]{22}$/.test(k))))).slice(-300);
   }
   if (Array.isArray(p.hiddenKeys)) {
     cfg.hiddenKeys = Array.from(new Set((cfg.hiddenKeys || []).concat(p.hiddenKeys.filter(k => typeof k === "string" && k.length < 80)))).slice(-200);
@@ -4775,9 +5111,10 @@ function gsApplyPayload(p) {
         title: String(it.title || "Short").slice(0, 120),
         ch: String(it.ch || "").slice(0, 60),
         cat: typeof it.cat === "string" ? it.cat.slice(0, 12) : "cartoon",
-        fmt: "short",
+        fmt: it.fmt === "video" ? "video" : "short",  // older payloads had shorts only
         tiers: it.tiers.filter(t => ["little", "big", "super"].includes(t)),
-        fresh: true
+        fresh: true,
+        ...(typeof it.src === "string" && /^UC[\w-]{22}$/.test(it.src) ? { src: it.src } : {})
       }));
     if (cfg.fresh.items.length > 150) {
       // same loved-and-pending-exempt rotation as the auto-refresh cap — a
@@ -4798,6 +5135,7 @@ function gsApplyPayload(p) {
       .forEach(it => addCustomYt(it.id, it.title || "Video", it.ch || "Synced", it.fmt === "short" ? "short" : "video", it.tiers));
   }
   saveCfg();
+  queueFeedForApproval();
   applyEye();
   checkBedtime();
   // a restored caption setting must reach the warm persistent players too
@@ -4907,7 +5245,8 @@ document.getElementById("gsSignIn").addEventListener("click", async () => {
     // auto-restore ONLY on a genuinely unconfigured device — a parent's
     // freshly built local settings must never be silently overwritten
     const locallyConfigured = !!(cfg.apiKey || cfg.pin || cfg.timeLimitMin > 0 || cfg.bedtime.on ||
-      cfg.custom.length || cfg.fresh.kws.length || cfg.fresh.blocked.length || cfg.gamesOn === false);
+      cfg.custom.length || cfg.fresh.kws.length || cfg.fresh.blocked.length || (cfg.fresh.offCh || []).length ||
+      cfg.fresh.requireApproval || cfg.gamesOn === false);
     if (!locallyConfigured) {
       try {
         await gsPullSettings();
@@ -5408,10 +5747,12 @@ setInterval(() => {
 }, 250);
 /* Keep the offline copy of the games in step with every deploy: once the app has settled, ask for
    the current bundle through the service worker (a fetch only: nothing runs until the Games tab opens). */
+let gamesPrefetched = false; // once per session (the worker taking over and the timer can both ask)
 function prefetchGames() {
-  if (isFileProto || cfg.gamesOn === false || window.__gamesLoaded || gamesLoadState !== "idle" || navigator.onLine === false) return;
+  if (gamesPrefetched || isFileProto || cfg.gamesOn === false || window.__gamesLoaded || gamesLoadState !== "idle" || navigator.onLine === false) return;
   if (!("serviceWorker" in navigator) || !navigator.serviceWorker.controller) return;
-  fetch("games.js?v=" + encodeURIComponent(GAMES_VER || "dev")).catch(() => {});
+  gamesPrefetched = true;
+  fetch("games.js?v=" + encodeURIComponent(GAMES_VER || "dev")).catch(() => { gamesPrefetched = false; });
 }
 setTimeout(prefetchGames, 8000);
 if ("serviceWorker" in navigator && !isFileProto) {
@@ -5491,14 +5832,26 @@ registerGame({
    parent's settings: adopt any change another tab writes, keeping the larger
    of the two watch-time counters. */
 window.addEventListener("storage", (e) => {
+  if (e.key === FEED_KEY && e.newValue) { // another open copy fetched a newer daily feed
+    try {
+      const kept = JSON.parse(e.newValue), f = kept && parseFeed(kept.data);
+      if (f && f.updated !== dailyFeed.updated) { f.at = Number(kept.at) || Date.now(); dailyFeed = f; feedLive = null; }
+    } catch (err) {}
+    return;
+  }
   if (e.key !== LS_KEY || !e.newValue) return;
   try {
     const inc = JSON.parse(e.newValue);
     if (!inc || typeof inc !== "object") return;
     const mySecs = cfg.watch && inc.watch && cfg.watch.date === inc.watch.date ? cfg.watch.secs : 0;
     cfg = inc;
+    feedLive = null;
     if (!cfg.fresh) cfg.fresh = { on: true, lastRun: 0, rot: 0, items: [], kws: [], blocked: [] };
     if (!cfg.fresh.blocked) cfg.fresh.blocked = [];
+    if (!Array.isArray(cfg.fresh.offCh)) cfg.fresh.offCh = [];
+    if (!Array.isArray(cfg.fresh.okIds)) cfg.fresh.okIds = [];
+    if (!Array.isArray(cfg.fresh.items)) cfg.fresh.items = [];
+    if (!Array.isArray(cfg.custom)) cfg.custom = [];
     if (!Array.isArray(cfg.removedCustom)) cfg.removedCustom = [];
     // an old-version tab writes an old-shape cfg: re-default every field this
     // version depends on, or the watch interval throws and profiles get wiped
