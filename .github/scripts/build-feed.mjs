@@ -85,13 +85,29 @@ const decode = s => String(s || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+\d*);/gi, 
 // A title a child (or a parent reading over a shoulder) can take in: no hashtags, no channel
 // tagline after the first " | ", no control characters, at most 80 characters. Joiners (U+200C/D)
 // stay: emoji sequences and Indic words need them. The title arrives already decoded.
-function cleanTitle(raw) {
-  let s = String(raw || '').replace(/[\u0000-\u001f\u007f​‎‏‪-‮⁦-⁩]/g, ' ')
-    .replace(/#[\p{L}\p{M}\p{N}_]+/gu, ' ')
-    .replace(/\s*[([]\s*(official|full)\s+(music\s+)?(video|episode|movie)s?\s*[)\]]/gi, ' ')
-    .replace(/\s+/g, ' ').trim();
-  const parts = s.split(/\s+[|｜]\s+/).map(x => x.trim()).filter(Boolean);
+// A part the channel repeats on many uploads ("Paddington | Happy birthday!", "... | CBeebies") is its
+// label, not the video's name: labels = labelsOf(that channel's newest uploads), and those parts are
+// skipped when the title has another part to show.
+const preClean = raw => String(raw || '').replace(/[\u0000-\u001f\u007f​‎‏‪-‮⁦-⁩]/g, ' ')
+  .replace(/#[\p{L}\p{M}\p{N}_]+/gu, ' ')
+  .replace(/\s*[([]\s*(official|full)\s+(music\s+)?(video|episode|movie)s?\s*[)\]]/gi, ' ')
+  .replace(/\s+/g, ' ').trim();
+const partsOf = s => s.split(/\s+[|｜]\s+/).map(x => x.trim()).filter(Boolean);
+const partKey = p => p.toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ').trim();
+function labelsOf(entries) {
+  const seen = new Map();
+  for (const e of entries) for (const k of new Set(partsOf(preClean(e.rawTitle)).map(partKey))) if (k) seen.set(k, (seen.get(k) || 0) + 1);
+  return new Set([...seen].filter(([, n]) => n >= 3).map(([k]) => k));
+}
+function cleanTitle(raw, labels) {
+  let s = preClean(raw);
+  let parts = partsOf(s);
+  if (labels && labels.size && parts.length > 1) {
+    const own = parts.filter(p => !labels.has(partKey(p)));
+    if (own.length && own.length < parts.length) parts = own;
+  }
   if (parts.length > 1) s = parts[0].length >= 8 ? parts[0] : parts.slice(0, 2).join(' | ');
+  else if (parts.length === 1) s = parts[0];
   s = s.replace(/[\s\-–—|:•·]+$/u, '').trim();
   if ([...s].length > 80) s = [...s].slice(0, 78).join('').replace(/\s+\S*$/, '') + '…';
   return s;
@@ -152,14 +168,14 @@ function titleRule(t, src, raw) {
   if (src.deny.some(re => (raw || !/^\^\(\?!/.test(re.source)) && re.test(t))) return 'title: channel rule';
   return null;
 }
-function whyDropped(e, src) {
+function whyDropped(e, src, labels) {
   if (BLOCK.has(e.id)) return 'taken down by hand';
   if ((Date.now() - e.published) / 3600000 < MIN_AGE_HOURS) return 'too new';
   if (e.views < src.minViews) return 'under ' + src.minViews + ' views';
   const tr = titleRule(e.rawTitle, src, true);
   if (tr) return tr;
   // (marks count too: Telugu and Hindi words are letters interleaved with vowel signs)
-  if (!/[\p{L}\p{M}]{3}/u.test(cleanTitle(e.rawTitle))) return 'title: nothing readable';
+  if (!/[\p{L}\p{M}]{3}/u.test(cleanTitle(e.rawTitle, labels))) return 'title: nothing readable';
   return null;
 }
 // 'ok' = public and embeddable; 'off' = the owner switched embedding off (a real answer about that
@@ -227,6 +243,7 @@ sources.forEach((src, i) => {
   const wanted = ['short', 'video'].filter(f => src[f]);
   if (wanted.every(f => got[f] === null)) { stats.sourcesFailed.push(src.ch); return; }
   stats.sourcesOk++;
+  const labels = labelsOf([...(got.short || []), ...(got.video || [])]);
   for (const fmt of wanted) {
     if (!got[fmt]) continue;
     const have = kept.get(src.cid)[fmt];
@@ -238,9 +255,9 @@ sources.forEach((src, i) => {
     for (const e of fresh) {
       if (room <= 0) break;
       if (epochDay(e.published) <= oldest) continue; // would not make the shelf anyway (and must not flap in and out)
-      const why = whyDropped(e, src);
+      const why = whyDropped(e, src, labels);
       if (why) { drop(why, src, e); continue; }
-      candidates.push({ src, fmt, e });
+      candidates.push({ src, fmt, e, labels });
       room--;
     }
   }
@@ -265,7 +282,7 @@ if (checkerDown) console.warn('WARN: availability checks look unreliable (' + un
 candidates.forEach((c, i) => {
   const v = checks[i];
   if (v !== 'ok' || checkerDown) { drop(v === 'gone' || v === 'off' ? 'not embeddable or gone' : 'could not be checked', c.src, c.e); return; }
-  kept.get(c.src.cid)[c.fmt].push({ cid: c.src.cid, fmt: c.fmt, id: c.e.id, title: cleanTitle(c.e.rawTitle), p: epochDay(c.e.published), a: TODAY });
+  kept.get(c.src.cid)[c.fmt].push({ cid: c.src.cid, fmt: c.fmt, id: c.e.id, title: cleanTitle(c.e.rawTitle, c.labels), p: epochDay(c.e.published), a: TODAY });
   stats.added++; stats.addedBy.push(c.src.ch);
 });
 recheck.forEach((r, i) => {
