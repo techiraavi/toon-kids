@@ -39,16 +39,10 @@ The live app is served by **GitHub Pages** from the `main` branch — every push
 
 Any static host works. To run your own copy, fork this repo and enable Pages (Settings → Pages → Deploy from a branch → `main` / root).
 
-A secondary mirror is kept on Netlify (https://toon-kids-raavi.netlify.app):
-
-```bash
-npx netlify-cli deploy --prod --dir . --site 9168d97b-b789-4769-8355-ad76e7275478
-```
-
 ## Notes
 
 - YouTube embeds require the page to be served over http(s) — opening `index.html` directly from disk plays only the classics and local videos.
 - Keyword search requires the parent's own YouTube Data API v3 key (free tier ≈ 100 searches/day), stored only on the device. The daily feed does not.
-- To change which channels feed the app, edit `.github/feed-sources.json` and push; the next daily run follows the new list. To take one video out everywhere, add its 11-character id to `.github/feed-block.json` and push (then press "Run workflow" on the Actions tab to apply it at once). New title rules and takedowns also apply to videos already in the feed. Copies of the app on other hosts (the Netlify mirror, a fork, the single-file edition) read the feed from the live GitHub Pages address.
+- To change which channels feed the app, edit `.github/feed-sources.json` and push; the next daily run follows the new list. To take one video out everywhere, add its 11-character id to `.github/feed-block.json` and push (then press "Run workflow" on the Actions tab to apply it at once). New title rules and takedowns also apply to videos already in the feed. Copies of the app on other hosts (a fork, the single-file edition) read the feed from the live GitHub Pages address.
 - GitHub pauses scheduled jobs in a public repository after 60 days without any activity there. The daily feed commits keep it active; if it ever stops, re-enable it on the Actions tab.
 - No accounts, no tracking, no analytics: all state (age, favorites, watch history, PIN, settings) lives in the device's localStorage/IndexedDB.

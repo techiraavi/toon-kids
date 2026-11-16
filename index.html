@@ -5208,8 +5208,8 @@ async function gsWhoAmI(token) {
   } catch (e) { return null; }
 }
 function renderGsZone() {
-  // the OAuth origin must match wherever this copy is served from (Pages,
-  // Netlify, a fork) — a hardcoded host sends parents to the wrong setting
+  // the OAuth origin must match wherever this copy is served from (Pages, a
+  // fork, any other host) — a hardcoded host sends parents to the wrong setting
   if (/^https?:$/.test(location.protocol)) document.getElementById("gsOrigin").textContent = location.origin;
   const has = !!gcid();
   document.getElementById("gsSetup").style.display = has ? "none" : "block";
