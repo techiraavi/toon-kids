@@ -46,6 +46,27 @@
           --t-tap: .16s; --t-nav: .3s;
           --brand: #7b3fe4; --brand-2: #9d4ce0; --brand-deep: #5426ad;
           --sun: #ffd54a; --ink: #26203d; --muted: #6b6486; --paper: #f4f1fb; }
+  /* ---- colour tokens for the app's own screens. These light values are exactly the colours the
+     screens always had; dark mode (data-theme="dark" on <html>, set before first paint) swaps them.
+     Videos, the shorts feed, the player, the kid/lock screens and the games' play boards keep
+     their own colours in both themes. ---- */
+  :root { color-scheme: light;
+          --bg: #fff; --tx: #0f0f0f; --tx2: #606060; --chipbg: #f2f2f2; --line: #e5e5e5; --focus: #065fd4;
+          --thumb-ph: linear-gradient(135deg, #b39ddb, #90caf9);
+          --panel: #f4f1fb; --surface: #fff; --soft: #efecf9; --soft-ink: #4f4370; --soft-press: #ddd6f0;
+          --field-bg: #fff; --field-line: #ddd6f0; --gate-line: #d8d2ee; --row-bg: #faf9ff; --row-line: #eee9fa;
+          --ph: #ddd6f0; --toggle-off: #d8d2ee; --del-bg: #fdecea; --del-tx: #c62828; --del-line: #f5c6cb;
+          --ok-bg: #e8f5e9; --ok-tx: #2e7d32;
+          --warn-bg: #fff3cd; --warn-line: #ffe08a; --warn-tx: #7a4f01; --spin-track: #e5e0f5; }
+  :root[data-theme="dark"] { color-scheme: dark;
+          --bg: #0f0f0f; --tx: #f1f1f1; --tx2: #aaaaaa; --chipbg: #272727; --line: #303030; --focus: #3ea6ff;
+          --thumb-ph: linear-gradient(135deg, #3b3355, #263a52);
+          --panel: #0f0f0f; --surface: #212121; --ink: #f1f1f1; --muted: #aaaaaa;
+          --soft: #2e2a40; --soft-ink: #dcd4f7; --soft-press: #3d3757;
+          --field-bg: #121212; --field-line: #3f3f3f; --gate-line: #4a4560; --row-bg: #181818; --row-line: #2e2e2e;
+          --ph: #333333; --toggle-off: #4d4d4d; --del-bg: #3c1f1f; --del-tx: #ff8a80; --del-line: #6b2b2b;
+          --ok-bg: #1b3320; --ok-tx: #8fd694;
+          --warn-bg: #332a00; --warn-line: #5c4a00; --warn-tx: #ffd866; --spin-track: #3a3a3a; }
   /* per-age-tier accent skins: warm for 2–4, purple for 5–7, cool for 8–10
      (values pre-darkened so white text stays readable on every accent) */
   #app[data-tier="little"] { --brand: #d9480f; --brand-2: #f76707; --brand-deep: #a63603; }
@@ -205,7 +226,7 @@
   .shelf-row::-webkit-scrollbar { display: none; }
   .shelf-row .card { flex: 0 0 var(--shelfcard); width: var(--shelfcard); scroll-snap-align: start; }
   .sshort { flex: 0 0 118px; width: 118px; border: none; cursor: pointer; font-family: inherit; padding: 0; background: none; scroll-snap-align: start; }
-  .sshort .sthumb { width: 118px; height: 200px; border-radius: 14px; background: linear-gradient(135deg, #b39ddb, #90caf9); overflow: hidden; position: relative; box-shadow: 0 3px 10px rgba(60,40,120,.14); }
+  .sshort .sthumb { width: 118px; height: 200px; border-radius: 14px; background: var(--thumb-ph); overflow: hidden; position: relative; box-shadow: 0 3px 10px rgba(60,40,120,.14); }
   .sshort .sthumb img { width: 100%; height: 100%; object-fit: cover; display: block; position: relative; }
   .sshort .sthumb .sph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 34px; }
   .sshort:active .sthumb { transform: scale(.96); }
@@ -224,7 +245,7 @@
     display: flex; flex-direction: column;
   }
   .card:active { transform: scale(.97); }
-  .thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #b39ddb, #90caf9);
+  .thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: var(--thumb-ph);
            display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; }
   .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .thumb .pl { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.55); color: #fff;
@@ -237,11 +258,11 @@
   .card .t { font-size: 13px; font-weight: 800; color: #26203d; padding: 8px 10px 2px; line-height: 1.25;
              display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .card .c { font-size: 11px; font-weight: 700; color: #6b6486; padding: 0 10px 10px; }
-  .empty { text-align: center; color: #6b6486; font-weight: 700; padding: 40px 20px; }
+  .empty { text-align: center; color: var(--muted); font-weight: 700; padding: 40px 20px; }
 
   #fileWarn {
-    display: none; margin: 0 0 12px; font-size: 12.5px; font-weight: 700; color: #7a4f01;
-    background: #fff3cd; border: 1px solid #ffe08a; border-radius: 14px; padding: 10px 12px;
+    display: none; margin: 0 0 12px; font-size: 12.5px; font-weight: 700; color: var(--warn-tx);
+    background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 14px; padding: 10px 12px;
   }
 
   /* ================= AGE PICKER + WHO'S WATCHING ================= */
@@ -377,6 +398,22 @@
   .pv-media { position: relative; width: min(100%, calc((100vh - 200px) * 1.7778)); width: min(100%, calc((100dvh - 200px) * 1.7778)); aspect-ratio: 16/9; max-height: 100%; background: #000;
               border-radius: 18px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,.45); }
   .pv-media iframe, .pv-media video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; background: #000; }
+  /* device videos and classics: the box takes the video's own shape (portrait, square, 4:3, 16:9) and
+     grows to the largest size the screen allows; YouTube videos keep the 16:9 box above. Fallbacks
+     step down for browsers without container units (cq*) or dvh. */
+  .pv-body { container-type: size; }
+  .pv-media { width: min(100cqw, 100cqh * 1.7778); } /* the 16:9 box: exact fit where container units exist */
+  /* (each step sits behind @supports: a declaration holding var() is never dropped at parse time, so a
+     plain fallback list would let an unsupported unit win and collapse the box to nothing on iOS 15) */
+  .pv-media.nat { aspect-ratio: var(--ar, 1.7778);
+                  width: min(100%, calc((100vh - 200px) * var(--ar, 1.7778))); }
+  @supports (height: 1dvh) {
+    .pv-media.nat { width: min(100%, calc((100dvh - 200px) * var(--ar, 1.7778))); }
+  }
+  @supports (width: 1cqw) {
+    .pv-media.nat { width: min(100cqw, 100cqh * var(--ar, 1.7778)); }
+  }
+  .pv-media video { object-fit: contain; }
   .pv-tap { position: absolute; inset: 0; z-index: 5; }
   .pv-controls { flex: none; padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 14px; }
   .pv-controls .bar { flex: 1; height: 8px; border-radius: 6px; background: rgba(255,255,255,.18); overflow: hidden; }
@@ -384,6 +421,15 @@
   .pv-btn { border: none; cursor: pointer; width: 52px; height: 52px; border-radius: 50%;
             background: rgba(255,255,255,.16); color: #fff; font-size: 22px; flex: none; }
   .pv-btn.main { width: 64px; height: 64px; font-size: 26px; background: #ffb300; color: #4b2b00; box-shadow: 0 5px 0 #c88700; }
+  /* a phone on its side: slimmer bars, so the video gets most of the short screen */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .pv-top { padding: calc(4px + env(safe-area-inset-top)) 10px 4px; }
+    .pv-top button { width: 38px; height: 38px; font-size: 17px; }
+    .pv-top .t { font-size: 14px; }
+    .pv-controls { padding: 4px 14px calc(6px + env(safe-area-inset-bottom)); }
+    .pv-btn { width: 42px; height: 42px; font-size: 19px; }
+    .pv-btn.main { width: 50px; height: 50px; font-size: 22px; box-shadow: 0 4px 0 #c88700; }
+  }
 
   /* ================= BREAK / GATE / PANEL ================= */
   #breakScreen { position: absolute; inset: 0; z-index: 70; display: none; flex-direction: column; align-items: center;
@@ -398,24 +444,25 @@
 
   .modal-wrap { position: absolute; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center;
                 background: rgba(8,5,20,.7); backdrop-filter: blur(4px); padding: 20px; }
-  .modal { background: #fff; color: #26203d; border-radius: 24px; padding: 22px; width: 100%; max-width: 340px;
+  .modal { background: var(--surface); color: var(--ink); border-radius: 24px; padding: 22px; width: 100%; max-width: 340px;
            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5);
            max-height: calc(100% - 24px); overflow-y: auto; }
   .gate-pad { display: grid; grid-template-columns: repeat(3, 64px); gap: 10px; justify-content: center; margin-top: 14px; }
-  .gate-key { width: 64px; height: 56px; border: none; border-radius: 16px; background: #efecf9;
-              font-family: inherit; font-size: 22px; font-weight: 800; color: #26203d; cursor: pointer;
+  .gate-key { width: 64px; height: 56px; border: none; border-radius: 16px; background: var(--soft);
+              font-family: inherit; font-size: 22px; font-weight: 800; color: var(--ink); cursor: pointer;
               transition: transform var(--t-tap) var(--spring), background .15s; }
-  .gate-key:active { transform: scale(.9); background: #ddd6f0; }
+  .gate-key:active { transform: scale(.9); background: var(--soft-press); }
   .modal h3 { margin: 0 0 6px; font-size: 20px; }
-  .modal .sub { margin: 0 0 14px; font-size: 14px; color: #6b6486; font-weight: 600; }
+  .modal .sub { margin: 0 0 14px; font-size: 14px; color: var(--muted); font-weight: 600; }
   .gate-q { font-size: 30px; font-weight: 800; margin: 8px 0 14px; }
   .gate-input { width: 130px; font-family: inherit; font-size: 26px; font-weight: 800; text-align: center;
-                padding: 10px; border-radius: 14px; border: 3px solid #d8d2ee; outline: none; }
+                padding: 10px; border-radius: 14px; border: 3px solid var(--gate-line); outline: none;
+                background: var(--field-bg); }
   .gate-input:focus { border-color: var(--brand); }
   .mrow { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
   .mbtn { border: none; cursor: pointer; font-family: inherit; font-size: 16px; font-weight: 800; padding: 12px 22px; border-radius: 999px; }
   .mbtn.primary { background: var(--brand); color: #fff; box-shadow: 0 5px 0 var(--brand-deep); }
-  .mbtn.ghost { background: #efecf9; color: #4f4370; }
+  .mbtn.ghost { background: var(--soft); color: var(--soft-ink); }
   /* entrance-only animations (closes are synchronous display:none inside the
      history logic). Placed BEFORE .shake so a wrong-PIN shake still wins. */
   .modal-wrap { animation: wrapFade .25s ease-out; }
@@ -427,32 +474,33 @@
   .shake { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
 
-  #parentPanel { position: absolute; inset: 0; z-index: 75; display: none; flex-direction: column; background: #f4f1fb; color: #26203d; }
+  #parentPanel { position: absolute; inset: 0; z-index: 75; display: none; flex-direction: column; background: var(--panel); color: var(--ink); }
   .pp-head { display: flex; align-items: center; justify-content: space-between;
              padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: var(--brand); color: #fff; }
   .pp-head h2 { margin: 0; font-size: 20px; }
   .pp-close { border: none; background: rgba(255,255,255,.2); color: #fff; font-size: 18px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; }
   .pp-body { flex: 1; overflow-y: auto; overscroll-behavior-y: contain; padding: 16px 16px calc(40px + env(safe-area-inset-bottom)); }
-  .pp-card { background: #fff; border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 3px 12px rgba(60,40,120,.08); }
-  .pp-card h4 { margin: 0 0 10px; font-size: 15px; color: #4f4370; }
+  .pp-card { background: var(--surface); border-radius: 18px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 3px 12px rgba(60,40,120,.08); }
+  .pp-card h4 { margin: 0 0 10px; font-size: 15px; color: var(--soft-ink); }
   .pp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .pp-select, .pp-input { font-family: inherit; font-size: 15px; font-weight: 600; color: #26203d; padding: 10px 12px;
-                          border-radius: 12px; border: 2px solid #ddd6f0; background: #fff; outline: none; }
+  .pp-select, .pp-input { font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink); padding: 10px 12px;
+                          border-radius: 12px; border: 2px solid var(--field-line); background: var(--field-bg); outline: none; }
   .pp-input { flex: 1; min-width: 0; }
   .pp-input:focus, .pp-select:focus { border-color: #7b3fe4; }
   .pp-btn { border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 800; background: var(--brand);
             color: #fff; padding: 10px 16px; border-radius: 12px; white-space: nowrap; }
   .pp-btn.warn { background: #e5544b; }
-  .pp-btn.soft { background: #efecf9; color: #4f4370; }
+  .pp-btn.soft { background: var(--soft); color: var(--soft-ink); }
   .plist { display: flex; flex-direction: column; gap: 8px; }
-  .pitem { display: flex; align-items: center; gap: 10px; background: #faf9ff; border: 1px solid #eee9fa; border-radius: 14px; padding: 8px; }
-  .pitem img, .pitem .ph { width: 64px; height: 40px; border-radius: 8px; object-fit: cover; background: #ddd6f0; flex: none;
+  .pitem { display: flex; align-items: center; gap: 10px; background: var(--row-bg); border: 1px solid var(--row-line); border-radius: 14px; padding: 8px; }
+  .pitem img, .pitem .ph { width: 64px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--ph); flex: none;
                            display: flex; align-items: center; justify-content: center; font-size: 20px; }
   .pitem .nm { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pitem button { border: none; cursor: pointer; background: #fdecea; color: #c62828; width: 40px; height: 40px; border-radius: 10px; font-size: 16px; flex: none; }
-  .pp-note { font-size: 12px; color: #6b6486; margin: 8px 0 0; font-weight: 600; }
+  .pitem button { border: none; cursor: pointer; background: var(--del-bg); color: var(--del-tx); width: 40px; height: 40px; border-radius: 10px; font-size: 16px; flex: none; }
+  #parentPanel a { color: var(--focus); }
+  .pp-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; font-weight: 600; }
   .tierChecks { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-  .tierChecks label { font-size: 14px; font-weight: 800; color: #4f4370; background: #efecf9; border-radius: 10px;
+  .tierChecks label { font-size: 14px; font-weight: 800; color: var(--soft-ink); background: var(--soft); border-radius: 10px;
                       padding: 10px 16px; min-height: 44px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
   .tierChecks input { accent-color: var(--brand); }
   .tierChecks label:has(input:checked) { background: var(--brand); color: #fff; }
@@ -460,7 +508,7 @@
   /* iOS-style safety toggles (the .switch markup previously had no CSS at all) */
   .switch { position: relative; display: inline-flex; width: 52px; height: 32px; flex: none; cursor: pointer; }
   .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-  .switch span { position: absolute; inset: 0; border-radius: 999px; background: #d8d2ee; transition: background .2s; pointer-events: none; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--toggle-off); transition: background .2s; pointer-events: none; }
   .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
                         background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .2s var(--swift); }
   .switch input:checked + span { background: var(--brand); }
@@ -497,7 +545,7 @@
 
   /* kid catalog search */
   .searchBar { display: flex; gap: 8px; max-width: 600px; margin: 0 auto 14px; }
-  .searchBar .pp-input { background: #fff; }
+  .searchBar .pp-input { background: var(--field-bg); }
   #homeView.t-little #searchBtn { display: none; } /* pre-readers navigate by tiles */
 
   /* Ollie the Owl — one drawn mascot, posed per screen via wrapper classes */
@@ -644,28 +692,28 @@
   #splash, #ageView, #kidView, #breakScreen, #bedScreen, #pauseScreen, #eyeBreak {
     font-family: "Baloo 2", "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
   }
-  .app, #homeView { background: #fff; }
+  .app, #homeView { background: var(--bg); }
   .hd {
-    background: #fff; color: #0f0f0f;
-    border-radius: 0; box-shadow: none; border-bottom: 1px solid #e5e5e5;
+    background: var(--bg); color: var(--tx);
+    border-radius: 0; box-shadow: none; border-bottom: 1px solid var(--line);
     padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
   }
   .hd .logoimg { width: 30px; height: 30px; border: none; transform: none; border-radius: 7px; box-shadow: none; }
-  .hd h1 { color: #0f0f0f; font-size: 20px; letter-spacing: -0.5px; font-weight: 700; font-family: "Roboto", "Segoe UI", sans-serif; }
-  #searchBtn, .gearBtn { background: none; color: #0f0f0f; width: 40px; height: 40px; font-size: 20px; }
-  .agePill { background: #f2f2f2; color: #0f0f0f; box-shadow: none; padding: 5px 10px; font-size: 13px; }
-  #app[data-tier="little"] .agePill { background: #f2f2f2; color: #0f0f0f; box-shadow: none; }
-  .grid { background: #fff; padding: 8px 14px calc(var(--navh) + 14px + env(safe-area-inset-bottom)); }
+  .hd h1 { color: var(--tx); font-size: 20px; letter-spacing: -0.5px; font-weight: 700; font-family: "Roboto", "Segoe UI", sans-serif; }
+  #searchBtn, .gearBtn { background: none; color: var(--tx); width: 40px; height: 40px; font-size: 20px; }
+  .agePill { background: var(--chipbg); color: var(--tx); box-shadow: none; padding: 5px 10px; font-size: 13px; }
+  #app[data-tier="little"] .agePill { background: var(--chipbg); color: var(--tx); box-shadow: none; }
+  .grid { background: var(--bg); padding: 8px 14px calc(var(--navh) + 14px + env(safe-area-inset-bottom)); }
 
   /* filter chips */
   .catRail { gap: 8px; padding: 10px 2px 12px; }
-  .catTile { flex-direction: row; gap: 6px; min-width: 0; border-radius: 8px; background: #f2f2f2;
-             color: #0f0f0f; padding: 7px 12px; font-size: 14px; font-weight: 500;
+  .catTile { flex-direction: row; gap: 6px; min-width: 0; border-radius: 8px; background: var(--chipbg);
+             color: var(--tx); padding: 7px 12px; font-size: 14px; font-weight: 500;
              font-family: "Roboto", "Segoe UI", sans-serif; }
   .catTile .em { font-size: 16px; line-height: 1; }
 
   /* shelves + cards */
-  .shelf h3 { color: #0f0f0f; font-size: 16px; font-weight: 700; font-family: "Roboto", "Segoe UI", sans-serif; }
+  .shelf h3 { color: var(--tx); font-size: 16px; font-weight: 700; font-family: "Roboto", "Segoe UI", sans-serif; }
   .card { background: none; box-shadow: none; border-radius: 0; overflow: visible; }
   .card:hover { transform: none; box-shadow: none; }
   .sshort:hover .sthumb { transform: none; }
@@ -677,20 +725,20 @@
              justify-content: center; color: #fff; font-size: 15px; font-weight: 500;
              font-family: "Roboto", "Segoe UI", sans-serif; }
   .ctxt { min-width: 0; }
-  .card .t { color: #0f0f0f; font-weight: 500; font-size: 14px; padding: 0; line-height: 1.35;
+  .card .t { color: var(--tx); font-weight: 500; font-size: 14px; padding: 0; line-height: 1.35;
              font-family: "Roboto", "Segoe UI", sans-serif; }
-  .card .c { color: #606060; font-weight: 400; font-size: 12px; padding: 2px 0 0; }
+  .card .c { color: var(--tx2); font-weight: 400; font-size: 12px; padding: 2px 0 0; }
   #homeView.t-little .card .t { padding: 0; }
   #homeView.t-little .cavatar { display: none; } /* pre-readers: picture + big title only */
   .sshort .sthumb { border-radius: 12px; box-shadow: none; }
-  .sshort .t { color: #0f0f0f; font-weight: 500; font-family: "Roboto", "Segoe UI", sans-serif; }
-  .searchBar .pp-input { border-radius: 999px; border-color: #e5e5e5; }
+  .sshort .t { color: var(--tx); font-weight: 500; font-family: "Roboto", "Segoe UI", sans-serif; }
+  .searchBar .pp-input { border-radius: 999px; border-color: var(--line); }
 
   /* flat labeled bottom bar, exactly like the app */
   #bottomNav {
     left: 0; right: 0; bottom: 0; transform: none;
     border-radius: 0; padding: 3px 0 calc(3px + env(safe-area-inset-bottom));
-    background: #fff; border: none; border-top: 1px solid #e5e5e5;
+    background: var(--bg); border: none; border-top: 1px solid var(--line);
     box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
     gap: 0; justify-content: space-around;
   }
@@ -699,11 +747,11 @@
   #bottomNav.navHidden { transform: translateY(110%); }
   #navPill { display: none; }
   .navBtn { flex: 1; flex-direction: column; gap: 2px; padding: 4px 0; min-height: 0; min-width: 0;
-            font-size: 10px; color: #0f0f0f; font-weight: 400; border-radius: 0;
+            font-size: 10px; color: var(--tx); font-weight: 400; border-radius: 0;
             font-family: "Roboto", "Segoe UI", sans-serif; }
   #bottomNav.dark .navBtn { color: #f1f1f1; }
   .navBtn .ico { width: 24px; height: 24px; }
-  .navBtn.active { color: #0f0f0f; font-weight: 500; }
+  .navBtn.active { color: var(--tx); font-weight: 500; }
   #bottomNav.dark .navBtn.active { color: #fff; }
   .navBtn.active .ico { transform: none; }
 
@@ -741,24 +789,24 @@
      safe-area-top padding is spent inside the page */
 
   /* yellow focus rings vanish on white chrome; blue for home, yellow stays on the dark bar */
-  #homeView button:focus-visible, #bottomNav button:focus-visible { outline-color: #065fd4; }
+  #homeView button:focus-visible, #bottomNav button:focus-visible { outline-color: var(--focus); }
   #bottomNav.dark button:focus-visible { outline-color: #ffd54a; }
 
   /* pre-readers keep their BIG colorful picture tiles — the grey chips are
      for children who can read (see "pre-readers jump by picture" above) */
-  #homeView.t-little .catTile { flex-direction: column; background: var(--cbg, #efecf9);
+  #homeView.t-little .catTile { flex-direction: column; background: var(--cbg, #efecf9); color: #0f0f0f;
     border-radius: 18px; padding: 10px 16px; min-width: 78px; font-size: 12px; gap: 4px; }
   #homeView.t-little .catTile .em { font-size: 28px; }
 
   /* ==================== GAMES ==================== */
-  #gamesView { background: #fff; }
+  #gamesView { background: var(--bg); }
   .ghub { flex: 1; overflow-y: auto; overscroll-behavior-y: contain;
           padding: 12px 14px calc(var(--navh) + 16px + env(safe-area-inset-bottom));
           scroll-padding-bottom: calc(var(--navh) + 16px + env(safe-area-inset-bottom)); }
-  .ghub button:focus-visible { outline: 4px solid #065fd4; outline-offset: 2px; } /* yellow vanishes on white */
-  .ghub h3 { max-width: 1460px; margin: 6px auto 12px; color: #0f0f0f; font-size: 16px; font-weight: 700;
+  .ghub button:focus-visible { outline: 4px solid var(--focus); outline-offset: 2px; } /* yellow vanishes on white */
+  .ghub h3 { max-width: 1460px; margin: 6px auto 12px; color: var(--tx); font-size: 16px; font-weight: 700;
              font-family: "Roboto", "Segoe UI", sans-serif; }
-  .ghub .gnote { max-width: 1460px; margin: 18px auto 0; color: #606060; font-size: 12px; text-align: center; }
+  .ghub .gnote { max-width: 1460px; margin: 18px auto 0; color: var(--tx2); font-size: 12px; text-align: center; }
   .gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 16px 12px; /* 2 columns from 320px up */
             max-width: 1460px; margin: 0 auto; }
   .gcard { border: none; background: none; padding: 0; text-align: left; cursor: pointer; font-family: inherit;
@@ -766,18 +814,18 @@
   .gcard:active { transform: scale(.95); }
   .gcard .gart { aspect-ratio: 1 / 1; border-radius: 16px; display: flex; align-items: center; justify-content: center;
                  font-size: 64px; line-height: 1; background: linear-gradient(135deg, var(--g1), var(--g2)); }
-  .gcard .gt { color: #0f0f0f; font: 500 14px "Roboto", "Segoe UI", sans-serif; margin-top: 8px; }
-  .gcard .gb { color: #606060; font: 400 12px "Roboto", "Segoe UI", sans-serif; margin-top: 2px; }
+  .gcard .gt { color: var(--tx); font: 500 14px "Roboto", "Segoe UI", sans-serif; margin-top: 8px; }
+  .gcard .gb { color: var(--tx2); font: 400 12px "Roboto", "Segoe UI", sans-serif; margin-top: 2px; }
   #gamesView.t-little .gcard .gb { display: none; }
   #gamesView.t-little .gcard .gt { font-size: 15px; }
   /* games.js arrives on the first visit to the hub: a calm wait, or a retry when offline */
   .gload { max-width: 1460px; margin: 22px auto 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
-           color: #606060; font: 500 14px "Roboto", "Segoe UI", sans-serif; text-align: center; }
-  .gload .gspin { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #e5e0f5; border-top-color: #7b3fe4;
+           color: var(--tx2); font: 500 14px "Roboto", "Segoe UI", sans-serif; text-align: center; }
+  .gload .gspin { width: 34px; height: 34px; border-radius: 50%; border: 4px solid var(--spin-track); border-top-color: #7b3fe4;
                   animation: spin .9s linear infinite; }
   .gload .gretry { border: none; cursor: pointer; font: 700 15px "Roboto", "Segoe UI", sans-serif; padding: 11px 22px;
-                   border-radius: 999px; background: #0f0f0f; color: #fff; min-height: 44px; }
-  .gload .gretry:focus-visible { outline: 4px solid #065fd4; outline-offset: 2px; }
+                   border-radius: 999px; background: var(--tx); color: var(--bg); min-height: 44px; }
+  .gload .gretry:focus-visible { outline: 4px solid var(--focus); outline-offset: 2px; }
   @media (min-width: 1900px) {
     .ghub h3 { font-size: 26px; } .ghub .gnote { font-size: 18px; }
     .gload { font-size: 20px; } .gload .gretry { font-size: 20px; min-height: 60px; padding: 14px 30px; }
@@ -788,6 +836,7 @@
            background: linear-gradient(160deg, #fff6e5, #efe7ff 60%, #e3f2ff);
            font-family: "Baloo 2", "Segoe UI", "Comic Sans MS", system-ui, sans-serif; color: #26203d; }
   .gplay.on { display: flex; }
+  .gplay .empty { color: #6b6486; } /* the board stays light in dark mode: keep its "Oops" text dark */
   .gbar { flex: none; display: flex; align-items: center; gap: 10px; padding: calc(8px + env(safe-area-inset-top)) 12px 6px; }
   .gclose { flex: none; width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer; background: #fff;
             color: #26203d; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(60,40,120,.15); }
@@ -851,6 +900,15 @@
     .gconf { animation: none; transform: translate(-50%, -50%); }
   }
 </style>
+<script>
+/* first paint in the chosen theme: "dark", or "auto" (the default) while the device is in dark mode.
+   applyTheme() in the app script takes over (and follows the device) once the app loads. */
+try {
+  var tkT = (JSON.parse(localStorage.getItem("toonKids.v1") || "null") || {}).theme;
+  if (tkT === "dark" || (tkT !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches))
+    document.documentElement.setAttribute("data-theme", "dark");
+} catch (e) {}
+</script>
 </head>
 <body>
 
@@ -1015,7 +1073,7 @@
         <button class="mbtn ghost" id="gateCancel">Cancel</button>
         <button class="mbtn primary" id="gateOk">Unlock</button>
       </div>
-      <button id="gateForgotBtn" style="display:none;border:none;background:none;color:#6b6486;font-family:inherit;font-weight:700;font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline">Forgot PIN?</button>
+      <button id="gateForgotBtn" style="display:none;border:none;background:none;color:var(--muted);font-family:inherit;font-weight:700;font-size:12px;margin-top:12px;cursor:pointer;text-decoration:underline">Forgot PIN?</button>
     </div>
   </div>
 
@@ -1026,7 +1084,7 @@
       <button class="pp-close" id="ppClose" aria-label="Close parent zone">✕</button>
     </div>
     <div class="pp-body">
-      <div id="ppSaveWarn" class="pp-note" style="display:none;background:#fdecea;border:1px solid #f5c6cb;border-radius:12px;padding:10px 12px;color:#c62828;font-weight:700;margin:0 0 12px">⚠️ Settings can't be saved — this device's storage is full. Free some space, then change any setting to re-try.</div>
+      <div id="ppSaveWarn" class="pp-note" style="display:none;background:var(--del-bg);border:1px solid var(--del-line);border-radius:12px;padding:10px 12px;color:var(--del-tx);font-weight:700;margin:0 0 12px">⚠️ Settings can't be saved — this device's storage is full. Free some space, then change any setting to re-try.</div>
       <div class="pp-card">
         <h4>🧸 Pause cartoons now</h4>
         <div class="pp-row">
@@ -1057,7 +1115,7 @@
         </div>
         <div class="pp-row" style="margin-top:8px">
           <input class="pp-input" id="ppKidBday" type="date" style="flex:1" aria-label="Active child's birthday">
-          <span style="font-size:12px;color:#6b6486;font-weight:700">🎂 birthday of the active child (optional)</span>
+          <span style="font-size:12px;color:var(--muted);font-weight:700">🎂 birthday of the active child (optional)</span>
         </div>
         <p class="pp-note">Each child gets their own favorites and continue-watching. The app asks "Who's watching?" at launch; switching to an OLDER child's profile asks for the parent gate.</p>
       </div>
@@ -1078,7 +1136,7 @@
         <p class="pp-note" id="ppWatched">Watched today: 0 min</p>
         <div class="pp-row" style="margin-top:10px">
           <label class="switch"><input type="checkbox" id="ppGamesOn" aria-label="Show the Games tab"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">🎮 Show the Games tab</span>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">🎮 Show the Games tab</span>
         </div>
         <p class="pp-note">Each game ends after a few rounds. Game time counts toward the daily limit, just like videos.</p>
       </div>
@@ -1107,8 +1165,8 @@
         <div id="gsSetup">
           <p class="pp-note" style="margin-top:0">Sign in with Google to keep your parent settings — API key, PIN, limits, keywords, added videos — saved to <b>your own Google account</b>. Set up once, restore on any device. Stored in your own Google Drive's hidden app storage; no third-party servers.</p>
           <details style="margin:8px 0">
-            <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">One-time setup (same Google project as the API key, ~5 min)</summary>
-            <ol style="font-size:12px;color:#6b6486;font-weight:600;padding-left:18px;margin:8px 0">
+            <summary style="cursor:pointer;font-size:13px;font-weight:800;color:var(--soft-ink)">One-time setup (same Google project as the API key, ~5 min)</summary>
+            <ol style="font-size:12px;color:var(--muted);font-weight:600;padding-left:18px;margin:8px 0">
               <li>console.cloud.google.com → APIs &amp; Services → <b>OAuth consent screen</b>: External, app name "Toon Kids", add your Gmail under <b>Test users</b></li>
               <li>Library → enable the <b>Google Drive API</b></li>
               <li>Credentials → Create credentials → <b>OAuth client ID</b> → Web application</li>
@@ -1145,35 +1203,47 @@
         <h4>😴 Bedtime lock</h4>
         <div class="pp-row" style="margin-bottom:8px">
           <label class="switch"><input type="checkbox" id="ppBedOn" aria-label="Bedtime lock"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">Lock the app during sleep hours</span>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">Lock the app during sleep hours</span>
         </div>
         <div class="pp-row">
-          <span style="font-size:13px;font-weight:800;color:#4f4370">From</span>
+          <span style="font-size:13px;font-weight:800;color:var(--soft-ink)">From</span>
           <select class="pp-select" id="ppBedStart" style="flex:1"></select>
-          <span style="font-size:13px;font-weight:800;color:#4f4370">to</span>
+          <span style="font-size:13px;font-weight:800;color:var(--soft-ink)">to</span>
           <select class="pp-select" id="ppBedEnd" style="flex:1"></select>
         </div>
         <p class="pp-note">Parents can always unlock 15 minutes with the gate.</p>
       </div>
 
       <div class="pp-card">
+        <h4>🌓 Appearance</h4>
+        <div class="pp-row">
+          <select class="pp-select" id="ppTheme" style="flex:1" aria-label="Appearance">
+            <option value="auto">Same as this device</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <p class="pp-note">Dark mode turns the app's screens and menus dark, gentler on the eyes in the evening. Videos and games keep their own colours. Saved on this device only.</p>
+      </div>
+
+      <div class="pp-card">
         <h4>👁️ Eye comfort</h4>
         <div class="pp-row" style="margin-bottom:8px">
-          <span style="font-size:13px;font-weight:800;color:#4f4370;width:110px">🌙 Warm light</span>
+          <span style="font-size:13px;font-weight:800;color:var(--soft-ink);width:110px">🌙 Warm light</span>
           <select class="pp-select" id="ppWarm" style="flex:1">
             <option value="0">Off</option><option value="1">Low</option>
             <option value="2">Medium</option><option value="3">High</option>
           </select>
         </div>
         <div class="pp-row" style="margin-bottom:8px">
-          <span style="font-size:13px;font-weight:800;color:#4f4370;width:110px">🔅 Dim screen</span>
+          <span style="font-size:13px;font-weight:800;color:var(--soft-ink);width:110px">🔅 Dim screen</span>
           <select class="pp-select" id="ppDim" style="flex:1">
             <option value="0">Off</option><option value="1">Gentle</option>
             <option value="2">Medium</option><option value="3">Strong</option>
           </select>
         </div>
         <div class="pp-row" style="margin-bottom:8px">
-          <span style="font-size:13px;font-weight:800;color:#4f4370;width:110px">🦉 Blink breaks</span>
+          <span style="font-size:13px;font-weight:800;color:var(--soft-ink);width:110px">🦉 Blink breaks</span>
           <select class="pp-select" id="ppEyeBreak" style="flex:1">
             <option value="0">Off</option><option value="15">Every 15 min</option>
             <option value="20">Every 20 min</option><option value="30">Every 30 min</option>
@@ -1181,11 +1251,11 @@
         </div>
         <div class="pp-row">
           <label class="switch"><input type="checkbox" id="ppAutoEve" aria-label="Automatic evening eye comfort"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">Auto evening mode (7 PM – 6 AM: warm + dim)</span>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">Auto evening mode (7 PM – 6 AM: warm + dim)</span>
         </div>
         <div class="pp-row" style="margin-top:8px">
           <label class="switch"><input type="checkbox" id="ppCc" aria-label="Show subtitles when available"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">Subtitles on YouTube videos (when the channel provides them)</span>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">Subtitles on YouTube videos (when the channel provides them)</span>
         </div>
         <p class="pp-note">Blink breaks follow the doctors' 20-20-20 rule: pause every 20 minutes and look far away for 20 seconds. Note: apps cannot change the device's hardware brightness — please also lower it in the device settings.</p>
       </div>
@@ -1211,8 +1281,8 @@
         <div id="ppKeyZone">
           <p class="pp-note" style="margin-top:0">To search any keyword ("tom and jerry", "batman", "animals"…) the app needs your own free YouTube API key. It is saved only on this device.</p>
           <details style="margin:8px 0">
-            <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">How to get a free key (about 5 minutes)</summary>
-            <ol style="font-size:12px;color:#6b6486;font-weight:600;padding-left:18px;margin:8px 0">
+            <summary style="cursor:pointer;font-size:13px;font-weight:800;color:var(--soft-ink)">How to get a free key (about 5 minutes)</summary>
+            <ol style="font-size:12px;color:var(--muted);font-weight:600;padding-left:18px;margin:8px 0">
               <li>Open <b>console.cloud.google.com</b> and sign in with your Google account</li>
               <li>Create a new project (any name)</li>
               <li>Search for "<b>YouTube Data API v3</b>" and press Enable</li>
@@ -1244,25 +1314,25 @@
         <h4>🔄 New videos &amp; shorts every day</h4>
         <div class="pp-row" style="margin-bottom:8px">
           <label class="switch"><input type="checkbox" id="ppFreshOn" aria-label="Add new videos and shorts every day"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">Add new videos and shorts every day from this app's trusted channels</span>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">Add new videos and shorts every day from this app's trusted channels</span>
         </div>
         <div class="pp-row" style="margin-bottom:8px">
           <label class="switch"><input type="checkbox" id="ppFreshApprove" aria-label="New ones wait for approval"><span></span></label>
-          <span style="font-size:13px;font-weight:700;color:#6b6486">New ones wait for my OK before kids see them</span>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">New ones wait for my OK before kids see them</span>
         </div>
         <p class="pp-note" id="ppFreshStatus" style="margin-top:0"></p>
         <details style="margin-top:6px">
-          <summary id="ppFeedChCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Channels in the daily feed</summary>
+          <summary id="ppFeedChCount" style="cursor:pointer;font-size:13px;font-weight:800;color:var(--soft-ink)">Channels in the daily feed</summary>
           <p class="pp-note" style="margin-top:6px">Switch a channel off and its new uploads stop arriving on this device. Hand-picked videos in the app are not affected.</p>
           <div class="plist" id="ppFeedCh" style="margin-top:8px"></div>
         </details>
         <details style="margin-top:6px">
-          <summary id="ppFeedRecentHead" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Newest from the daily feed</summary>
+          <summary id="ppFeedRecentHead" style="cursor:pointer;font-size:13px;font-weight:800;color:var(--soft-ink)">Newest from the daily feed</summary>
           <p class="pp-note" style="margin-top:6px">Remove any video and it never comes back on this device.</p>
           <div class="plist" id="ppFeedRecent" style="margin-top:8px"></div>
         </details>
         <div id="ppPendingWrap" style="display:none">
-          <p class="pp-note" id="ppPendingHead" style="margin-top:10px;font-weight:800;color:#4f4370">Waiting for your OK (0)</p>
+          <p class="pp-note" id="ppPendingHead" style="margin-top:10px;font-weight:800;color:var(--soft-ink)">Waiting for your OK (0)</p>
           <div class="plist" id="ppPendingList"></div>
           <div class="pp-row" style="margin-top:8px">
             <button class="pp-btn" id="ppApproveAll" style="flex:1">✓ Approve all</button>
@@ -1274,7 +1344,7 @@
         </div>
         <div class="plist" id="ppKwList" style="margin-top:8px"></div>
         <details style="margin-top:10px">
-          <summary id="ppFreshCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Kept on this device (0)</summary>
+          <summary id="ppFreshCount" style="cursor:pointer;font-size:13px;font-weight:800;color:var(--soft-ink)">Kept on this device (0)</summary>
           <div class="plist" id="ppFreshItems" style="margin-top:8px"></div>
         </details>
         <div class="pp-row" style="margin-top:10px">
@@ -1293,7 +1363,7 @@
         <p class="pp-note" id="ppScanStatus" style="display:none"></p>
         <div class="plist" id="ppScanList" style="margin-top:8px"></div>
         <details style="margin-top:10px">
-          <summary id="ppHiddenCount" style="cursor:pointer;font-size:13px;font-weight:800;color:#4f4370">Hidden videos (0)</summary>
+          <summary id="ppHiddenCount" style="cursor:pointer;font-size:13px;font-weight:800;color:var(--soft-ink)">Hidden videos (0)</summary>
           <div class="plist" id="ppHiddenList" style="margin-top:8px"></div>
         </details>
       </div>
@@ -2100,7 +2170,7 @@ function loadCfg() {
   }
   if (!c || typeof c !== "object") c = {};
   const D = {
-    age: null, soundOn: true, captions: false, gamesOn: true, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
+    age: null, soundOn: true, captions: false, gamesOn: true, theme: "auto", timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
     liked: {}, custom: [], seen: {}, resume: {},
     watch: { date: todayStr(), secs: 0, bonus: 0 },
     watchLog: {}, hiddenKeys: [], failCounts: {}, deadIds: [],
@@ -2121,6 +2191,7 @@ function loadCfg() {
     }
   });
   if (c.apiKey) m.apiKey = c.apiKey;
+  if (m.theme !== "light" && m.theme !== "dark") m.theme = "auto"; // "auto" follows the device
   ["items", "kws", "blocked", "offCh", "okIds"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
   m.fresh.okIds = m.fresh.okIds.filter(okId).slice(-1000);
   m.fresh.offCh = m.fresh.offCh.filter(k => typeof k === "string" && /^UC[\w-]{22}$/.test(k)).slice(-300);
@@ -2414,41 +2485,85 @@ function thumbErr(img) {
   else img.remove(); // truly unloadable: reveal the drawn placeholder tile
 }
 
-/* Local videos get a REAL thumbnail: one frame captured to a canvas the
-   first time their card renders, then cached in IndexedDB forever. */
+/* Local videos get a REAL thumbnail: one frame captured the first time their card renders, then
+   cached in IndexedDB. The frame keeps its own shape: a phone video filmed upright sits whole in
+   the middle of the 16:9 card over a blurred, darkened copy of itself - never squashed, never
+   cropped. (":thumb" = the old squashed 320x180 capture; replaced by ":thumb2" on first use.) */
 const localThumbBusy = {};
-async function localThumb(localKey) {
-  const tkey = localKey + ":thumb";
-  let t = null;
-  try { t = await idbGet(tkey); } catch (e) {}
-  if (t) return t;
-  if (localThumbBusy[localKey]) return null;
-  localThumbBusy[localKey] = true;
-  try {
+function localThumb(localKey) {
+  // a video on two shelves asks twice at once: both cards get the same capture
+  if (localThumbBusy[localKey]) return localThumbBusy[localKey];
+  const tkey = localKey + ":thumb2";
+  const job = (async () => {
+    let t = null;
+    try { t = await idbGet(tkey); } catch (e) {}
+    if (t) return t;
     const blob = await idbGet(localKey);
     if (!blob) return null;
-    t = await new Promise((res) => {
-      const url = URL.createObjectURL(blob);
-      const v = document.createElement("video");
-      let settled = false;
-      const done = (val) => { if (settled) return; settled = true; URL.revokeObjectURL(url); res(val); };
-      v.muted = true; v.playsInline = true; v.preload = "metadata";
-      v.onerror = () => done(null);
-      v.onloadeddata = () => { try { v.currentTime = Math.min(1, (v.duration || 2) / 2); } catch (e) { done(null); } };
-      v.onseeked = () => {
-        try {
-          const c = document.createElement("canvas");
-          c.width = 320; c.height = 180;
-          c.getContext("2d").drawImage(v, 0, 0, 320, 180);
-          done(c.toDataURL("image/jpeg", 0.72));
-        } catch (e) { done(null); }
-      };
-      v.src = url;
-      setTimeout(() => done(null), 8000);
-    });
-    if (t) { try { await idbPut(tkey, t); } catch (e) {} }
+    t = await captureFrame(blob);
+    // the parent may have removed the video while its frame was being captured: store nothing then
+    if (t && cfg.custom.some(r => r.kind === "local" && r.localKey === localKey)) {
+      try { await idbPut(tkey, t); } catch (e) {}
+    }
+    idbDel(localKey + ":thumb").catch(() => {});
     return t;
-  } finally { delete localThumbBusy[localKey]; }
+  })().catch(() => null);
+  localThumbBusy[localKey] = job;
+  job.then(() => { delete localThumbBusy[localKey]; });
+  return job;
+}
+function captureFrame(blob) {
+  return new Promise((res) => {
+    const url = URL.createObjectURL(blob);
+    const v = document.createElement("video");
+    let settled = false, timer = 0;
+    const done = (val) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      try { v.removeAttribute("src"); v.load(); } catch (e) {}
+      URL.revokeObjectURL(url);
+      res(val);
+    };
+    const draw = () => {
+      try {
+        const vw = v.videoWidth, vh = v.videoHeight;
+        if (!vw || !vh) { done(null); return; }
+        const W = 480, H = 270, c = document.createElement("canvas");
+        c.width = W; c.height = H;
+        const g = c.getContext("2d");
+        if (Math.abs(vw / vh - W / H) > 0.03) {
+          // not 16:9: fill the card with a soft, dark copy of the frame first
+          const cover = Math.max(W / vw, H / vh) * 1.12, canFilter = typeof g.filter === "string";
+          if (canFilter) g.filter = "blur(16px) brightness(0.55)";
+          g.drawImage(v, (W - vw * cover) / 2, (H - vh * cover) / 2, vw * cover, vh * cover);
+          if (canFilter) g.filter = "none";
+          else { g.fillStyle = "rgba(0,0,0,.6)"; g.fillRect(0, 0, W, H); } // Safari without canvas filters
+        }
+        const fit = Math.min(W / vw, H / vh);
+        g.drawImage(v, (W - vw * fit) / 2, (H - vh * fit) / 2, vw * fit, vh * fit);
+        done(c.toDataURL("image/jpeg", 0.8));
+      } catch (e) { done(null); }
+    };
+    v.muted = true; v.playsInline = true; v.preload = "auto";
+    v.onerror = () => done(null);
+    v.onloadeddata = () => {
+      // a frame a moment in (the very first is often black); if seeking is refused, this one will do
+      const at = Math.min(1, (v.duration || 2) / 2);
+      if (!(at > 0.05)) { draw(); return; }
+      try { v.currentTime = at; } catch (e) { draw(); }
+    };
+    v.onseeked = draw;
+    timer = setTimeout(() => done(null), 8000);
+    v.src = url;
+  });
+}
+/* everything a device video keeps in storage: the file and its thumbnails */
+function dropLocalVideo(localKey) {
+  if (!localKey) return;
+  [localKey, localKey + ":thumb", localKey + ":thumb2"].forEach(k => idbDel(k).catch(() => {}));
+  // a capture still running finishes after this: clear whatever it leaves behind
+  const busy = localThumbBusy[localKey];
+  if (busy) busy.then(() => idbDel(localKey + ":thumb2").catch(() => {}));
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
@@ -2537,10 +2652,29 @@ window.addEventListener("popstate", (e) => {
   }
 });
 let curView = null;
+/* Appearance: light, dark, or "auto" (the default) = whatever the device is set to, live.
+   The <head> script already painted the first frame in the right theme; this keeps it in step
+   with the Parent Zone setting and with the device switching to dark mode at sunset. */
+const DARK_MQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function themeIsDark() {
+  return cfg.theme === "dark" || (cfg.theme !== "light" && !!(DARK_MQ && DARK_MQ.matches));
+}
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", themeIsDark() ? "dark" : "light");
+  syncThemeColor();
+}
+if (DARK_MQ) {
+  const onDeviceTheme = () => { if (cfg.theme !== "light" && cfg.theme !== "dark") applyTheme(); };
+  if (DARK_MQ.addEventListener) DARK_MQ.addEventListener("change", onDeviceTheme);
+  else if (DARK_MQ.addListener) DARK_MQ.addListener(onDeviceTheme); // Safari before 14
+}
+
 /* OS status bar follows the current screen (and the tier accent on home/age) */
 const themeMeta = document.querySelector('meta[name="theme-color"]');
+applyTheme();
 function syncThemeColor() {
-  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4", home: "#ffffff", games: "#ffffff" };
+  const page = themeIsDark() ? "#0f0f0f" : "#ffffff";
+  const VIEW_THEME = { shorts: "#05030f", player: "#0e0a1f", age: "#7b3fe4", home: page, games: page };
   let c = VIEW_THEME[curView];
   if (!c) { try { c = getComputedStyle(document.getElementById("app")).getPropertyValue("--brand").trim(); } catch (e) {} }
   if (themeMeta) themeMeta.setAttribute("content", c || "#7b3fe4");
@@ -2731,7 +2865,7 @@ function renderKidZone() {
     row.innerHTML =
       '<div class="ph">' + kidEmoji(k) + "</div>" +
       '<div class="nm">' + escapeHtml(k.name || "(no name)") + " · " + k.age + " yrs" +
-        (isActive ? ' <span style="color:#2e7d32">✓ active</span>' : "") +
+        (isActive ? ' <span style="color:var(--ok-tx)">✓ active</span>' : "") +
         (k.birthday ? " · 🎂 " + escapeHtml(String(k.birthday).slice(5)) : "") + "</div>" +
       (isActive || cfg.kids.length <= 1 ? "" : '<button class="del" title="Remove profile">✕</button>');
     const del = row.querySelector(".del");
@@ -3518,6 +3652,9 @@ function loadPvItem() {
   const pvb = document.getElementById("pvBar");
   pvb.style.transition = "none"; pvb.style.width = "0%"; void pvb.offsetWidth; pvb.style.transition = "";
   pvPaused = false;
+  // back to the 16:9 box until a device video or classic reports its own shape
+  pvMedia.classList.remove("nat");
+  pvMedia.style.removeProperty("--ar");
 
   // fast path: reuse the live YouTube player — video swaps beat full reboots
   if (it.kind === "yt" && pv && pv.kind === "yt" && pv.ready) {
@@ -3607,21 +3744,35 @@ function loadPvItem() {
       if (pp) pp.remove();
     };
     v.onended = () => { delete cfg.resume[itemKey(it)]; saveCfg(); pvNext(); };
+    let fileFound = false; // a device video whose file is here but will not play = a format this device can't decode
     v.onerror = () => pvFail(it.kind === "local"
-      ? "This video is no longer on this device — add it again from the Parent Zone"
+      ? (fileFound
+        ? "This video's format can't play on this device — add an MP4 copy of it from the Parent Zone"
+        : "This video is no longer on this device — add it again from the Parent Zone")
       : (navigator.onLine ? "This classic isn't loading right now — try again in a bit" : "Internet needed for this video"));
     v.onloadedmetadata = () => {
+      // the box takes the video's own shape (upright phone video, square, 4:3, 16:9) at full screen size
+      if (v.videoWidth > 0 && v.videoHeight > 0 && pv && pv.v === v) {
+        pvMedia.style.setProperty("--ar", (v.videoWidth / v.videoHeight).toFixed(4));
+        pvMedia.classList.add("nat");
+      }
       const rsv = cfg.resume[itemKey(it)];
       if (rsv && rsv.t > 10 && v.duration > rsv.t + 30) v.currentTime = rsv.t;
     };
+    // the child may have left the player, paused, or met a lock while the file or the network loaded
+    const showing = () => curView === "player" && !pvPaused && !!pv && pv.v === v && !locked();
     const start = () => {
+      if (!showing()) return;
       const pr = v.play();
-      if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play().catch(() => {}); });
+      // sound refused by the autoplay policy: play muted. Any other refusal (a pause while it was still
+      // buffering, a source that will not load) is no reason to start it again behind another screen.
+      if (pr && pr.catch) pr.catch(err => { if (err && err.name === "NotAllowedError" && showing()) { v.muted = true; v.play().catch(() => {}); } });
     };
     const localGone = "This video is no longer on this device — add it again from the Parent Zone";
     if (it.kind === "mp4") { v.src = it.url; start(); }
     else idbGet(it.localKey).then(b => {
-      if (b) { pv.blobUrl = URL.createObjectURL(b); v.src = pv.blobUrl; start(); }
+      if (!pv || pv.v !== v) return; // the player closed, or the child moved on to another video
+      if (b) { fileFound = true; pv.blobUrl = URL.createObjectURL(b); v.src = pv.blobUrl; start(); }
       else pvFail(localGone);
     }).catch(() => pvFail(localGone));
   }
@@ -4077,6 +4228,7 @@ function renderPanel() {
   document.getElementById("ppAutoEve").checked = !!cfg.eye.autoEve;
   document.getElementById("ppCc").checked = !!cfg.captions;
   document.getElementById("ppGamesOn").checked = cfg.gamesOn !== false;
+  document.getElementById("ppTheme").value = cfg.theme === "light" || cfg.theme === "dark" ? cfg.theme : "auto";
   document.getElementById("ppSaveWarn").style.display = saveFailed ? "block" : "none";
   const pActive = Date.now() < (cfg.pausedUntil || 0);
   document.getElementById("ppPauseActiveRow").style.display = pActive ? "flex" : "none";
@@ -4108,11 +4260,20 @@ function renderCustomList() {
     row.className = "pitem";
     row.innerHTML =
       (r.kind === "yt" ? '<img src="https://i.ytimg.com/vi/' + r.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' : '<div class="ph">🎞️</div>') +
-      '<div class="nm">' + escapeHtml(r.title || "Video") + " <span style='color:#6b6486'>(" + (r.tiers || []).map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
+      '<div class="nm">' + escapeHtml(r.title || "Video") + " <span style='color:var(--muted)'>(" + (r.tiers || []).map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
       '<button class="del" title="Remove">✕</button>';
+    if (r.kind === "local" && r.localKey) {
+      localThumb(r.localKey).then(d => {
+        const ph = row.querySelector(".ph");
+        if (!d || !ph || !row.isConnected) return;
+        const img = document.createElement("img");
+        img.alt = ""; img.src = d;
+        ph.replaceWith(img);
+      });
+    }
     row.querySelector(".del").addEventListener("click", () => {
       const rm = cfg.custom.splice(idx, 1)[0];
-      if (rm && rm.kind === "local") idbDel(rm.localKey);
+      if (rm && rm.kind === "local") dropLocalVideo(rm.localKey);
       if (rm && rm.kind === "yt") {
         // tombstone so a later Google-sync restore can't resurrect it
         cfg.removedCustom = (cfg.removedCustom || []).filter(x => x !== rm.id);
@@ -4130,6 +4291,12 @@ document.getElementById("ppWarm").addEventListener("change", (e) => { cfg.eye.wa
 document.getElementById("ppDim").addEventListener("change", (e) => { cfg.eye.dim = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
 document.getElementById("ppEyeBreak").addEventListener("change", (e) => { cfg.eye.breakMin = parseInt(e.target.value, 10) || 0; eyeSecs = 0; saveCfg(); });
 document.getElementById("ppAutoEve").addEventListener("change", (e) => { cfg.eye.autoEve = e.target.checked; saveCfg(); applyEye(); });
+document.getElementById("ppTheme").addEventListener("change", (e) => {
+  const v = e.target.value;
+  cfg.theme = v === "light" || v === "dark" ? v : "auto";
+  saveCfg();
+  applyTheme();
+});
 document.getElementById("ppGamesOn").addEventListener("change", (e) => {
   cfg.gamesOn = e.target.checked;
   saveCfg();
@@ -4287,8 +4454,8 @@ async function doSearch() {
       row.className = "pitem";
       row.innerHTML =
         '<img src="https://i.ytimg.com/vi/' + res.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
-        '<div class="nm">' + escapeHtml(res.title) + '<br><span style="color:#6b6486">' + escapeHtml(res.ch) + (fmt === "short" ? " · Short" : "") + "</span></div>" +
-        '<button class="addb" style="background:#e8f5e9;color:#2e7d32">➕</button>';
+        '<div class="nm">' + escapeHtml(res.title) + '<br><span style="color:var(--muted)">' + escapeHtml(res.ch) + (fmt === "short" ? " · Short" : "") + "</span></div>" +
+        '<button class="addb" style="background:var(--ok-bg);color:var(--ok-tx)">➕</button>';
       row.querySelector(".addb").addEventListener("click", (ev) => {
         addCustomYt(res.id, res.title, res.ch, fmt, pickedTiers());
         ev.target.textContent = "✓";
@@ -4509,7 +4676,7 @@ function renderWeekReport() {
     b.title = Math.round(d.secs / 60) + " min";
     bars.appendChild(b);
     const l = document.createElement("div");
-    l.style.cssText = "flex:1;text-align:center;font-size:11px;font-weight:800;color:#6b6486";
+    l.style.cssText = "flex:1;text-align:center;font-size:11px;font-weight:800;color:var(--muted)";
     l.textContent = d.label;
     dayRow.appendChild(l);
   });
@@ -4537,7 +4704,7 @@ function renderWeekReport() {
     row.className = "pitem";
     row.innerHTML =
       (th ? '<img src="' + th + '" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' : '<div class="ph">🎬</div>') +
-      '<div class="nm">' + escapeHtml(it.title) + ' <span style="color:#6b6486">· watched ' + s.n + "×</span></div>" +
+      '<div class="nm">' + escapeHtml(it.title) + ' <span style="color:var(--muted)">· watched ' + s.n + "×</span></div>" +
       '<button class="del" title="Hide from the app">🚫</button>';
     row.querySelector(".del").addEventListener("click", () => {
       if (!confirm('Hide "' + it.title + '" from the whole app?')) return;
@@ -4573,7 +4740,7 @@ function renderHiddenZone() {
     const row = document.createElement("div");
     row.className = "pitem";
     row.innerHTML = '<div class="ph">🚫</div><div class="nm">' + escapeHtml(r.label) + "</div>" +
-      '<button class="del" title="Show again" style="background:#e8f5e9;color:#2e7d32">↩</button>';
+      '<button class="del" title="Show again" style="background:var(--ok-bg);color:var(--ok-tx)">↩</button>';
     row.querySelector(".del").addEventListener("click", () => { r.undo(); saveCfg(); renderHiddenZone(); });
     list.appendChild(row);
   });
@@ -4621,7 +4788,7 @@ document.getElementById("ppScan").addEventListener("click", async () => {
       row.className = "pitem";
       row.innerHTML =
         '<div class="ph">💀</div>' +
-        '<div class="nm">' + escapeHtml((it && it.title) || id) + '<br><span style="color:#6b6486">' + escapeHtml((it && it.ch) || "") + "</span></div>" +
+        '<div class="nm">' + escapeHtml((it && it.title) || id) + '<br><span style="color:var(--muted)">' + escapeHtml((it && it.ch) || "") + "</span></div>" +
         '<button class="del" title="Hide from the app">🚫</button>';
       row.querySelector(".del").addEventListener("click", () => {
         if (!(cfg.deadIds || []).includes(id)) { (cfg.deadIds = cfg.deadIds || []).push(id); saveCfg(); }
@@ -4675,7 +4842,7 @@ function renderFreshZone() {
   srcs.forEach(s => {
     const row = document.createElement("div");
     row.className = "pitem";
-    row.innerHTML = '<div class="ph">📺</div><div class="nm">' + escapeHtml(s.ch) + ' <span style="color:#6b6486">(' +
+    row.innerHTML = '<div class="ph">📺</div><div class="nm">' + escapeHtml(s.ch) + ' <span style="color:var(--muted)">(' +
       s.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ')</span></div>' +
       '<label class="switch"><input type="checkbox"' + (offCh.has(s.key) ? "" : " checked") + '><span></span></label>';
     const box = row.querySelector("input");
@@ -4700,8 +4867,8 @@ function renderFreshZone() {
     row.className = "pitem";
     row.innerHTML =
       '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
-      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#6b6486">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · short" : "") + "</span></div>" +
-      '<button class="pv" title="Preview on YouTube" style="background:#efecf9;color:#4f4370">👁</button>' +
+      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:var(--muted)">' + escapeHtml(it.ch || "") + (it.fmt === "short" ? " · short" : "") + "</span></div>" +
+      '<button class="pv" title="Preview on YouTube" style="background:var(--soft);color:var(--soft-ink)">👁</button>' +
       '<button class="del" title="Remove forever">✕</button>';
     row.querySelector(".pv").addEventListener("click", () => window.open("https://www.youtube.com/watch?v=" + it.id, "_blank"));
     row.querySelector(".del").addEventListener("click", () => { blockFresh(it.id); saveCfg(); renderFreshZone(); });
@@ -4720,9 +4887,9 @@ function renderFreshZone() {
       row.className = "pitem";
       row.innerHTML =
         '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
-        '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#6b6486">' + escapeHtml(it.ch || "") + "</span></div>" +
-        '<button class="pv" title="Preview on YouTube" style="background:#efecf9;color:#4f4370">👁</button>' +
-        '<button class="ok" title="Approve" style="background:#e8f5e9;color:#2e7d32">✓</button>' +
+        '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:var(--muted)">' + escapeHtml(it.ch || "") + "</span></div>" +
+        '<button class="pv" title="Preview on YouTube" style="background:var(--soft);color:var(--soft-ink)">👁</button>' +
+        '<button class="ok" title="Approve" style="background:var(--ok-bg);color:var(--ok-tx)">✓</button>' +
         '<button class="del" title="Reject forever">✕</button>';
       row.querySelector(".pv").addEventListener("click", () => window.open("https://www.youtube.com/watch?v=" + it.id, "_blank"));
       row.querySelector(".ok").addEventListener("click", () => { delete it.pending; approveFresh(it.id); trimFreshPool(); saveCfg(); queueFeedForApproval(); renderFreshZone(); });
@@ -4742,7 +4909,7 @@ function renderFreshZone() {
     row.className = "pitem";
     row.innerHTML =
       '<div class="ph">🔎</div>' +
-      '<div class="nm">' + escapeHtml(kw.q) + ' <span style="color:#6b6486">(' + kw.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
+      '<div class="nm">' + escapeHtml(kw.q) + ' <span style="color:var(--muted)">(' + kw.tiers.map(t => t === "little" ? "2–4" : t === "big" ? "5–7" : "8–10").join(", ") + ")</span></div>" +
       '<button class="del" title="Remove">✕</button>';
     row.querySelector(".del").addEventListener("click", () => { cfg.fresh.kws.splice(idx, 1); saveCfg(); renderFreshZone(); });
     list.appendChild(row);
@@ -4757,7 +4924,7 @@ function renderFreshZone() {
     row.className = "pitem";
     row.innerHTML =
       '<img src="https://i.ytimg.com/vi/' + it.id + '/mqdefault.jpg" alt="" onerror="this.outerHTML=\'<div class=ph>🎬</div>\'">' +
-      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:#6b6486">' + escapeHtml(it.ch || "") + "</span></div>" +
+      '<div class="nm">' + escapeHtml(it.title) + '<br><span style="color:var(--muted)">' + escapeHtml(it.ch || "") + "</span></div>" +
       '<button class="del" title="Remove forever">✕</button>';
     row.querySelector(".del").addEventListener("click", () => {
       blockFresh(it.id);
@@ -4852,7 +5019,7 @@ document.getElementById("ppFile").addEventListener("change", async (e) => {
 });
 document.getElementById("ppReset").addEventListener("click", () => {
   if (!confirm("Remove all parent-added videos?")) return;
-  cfg.custom.filter(r => r.kind === "local").forEach(r => idbDel(r.localKey));
+  cfg.custom.filter(r => r.kind === "local").forEach(r => dropLocalVideo(r.localKey));
   cfg.custom = [];
   saveCfg(); renderCustomList();
 });
@@ -5297,7 +5464,7 @@ document.getElementById("bkSave").addEventListener("click", () => {
   if (!ta) {
     ta = document.createElement("textarea");
     ta.id = "bkTa"; ta.readOnly = true;
-    ta.style.cssText = "width:100%;height:120px;margin-top:8px;font-size:11px;border-radius:10px;border:2px solid #ddd6f0;padding:8px;font-family:monospace";
+    ta.style.cssText = "width:100%;height:120px;margin-top:8px;font-size:11px;border-radius:10px;border:2px solid var(--field-line);background:var(--field-bg);padding:8px;font-family:monospace";
     const msg = document.getElementById("bkMsg");
     msg.parentNode.insertBefore(ta, msg);
   }
@@ -5863,6 +6030,8 @@ window.addEventListener("storage", (e) => {
     if (!cfg.kidData || typeof cfg.kidData !== "object") cfg.kidData = {};
     if (cfg.kids.length && !cfg.kids.some(k => k.id === cfg.activeKid)) cfg.activeKid = cfg.kids[0].id;
     if (cfg.watch && cfg.watch.secs < mySecs) cfg.watch.secs = mySecs;
+    if (cfg.theme !== "light" && cfg.theme !== "dark") cfg.theme = "auto";
+    applyTheme(); // the appearance chosen in another open copy applies here too
     applyEye();
     checkBedtime();
     // reflect the other copy's changes IMMEDIATELY: removed/blocked content
