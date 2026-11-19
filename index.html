@@ -430,6 +430,47 @@
     .pv-btn { width: 42px; height: 42px; font-size: 19px; }
     .pv-btn.main { width: 50px; height: 50px; font-size: 22px; box-shadow: 0 4px 0 #c88700; }
   }
+  /* "All done": a still card when a video ends - nothing starts by itself, no countdown.
+     The child picks: the same one again, the next one (shown by its picture), or Home. */
+  .pvdone { position: absolute; inset: 0; z-index: 7; display: none; align-items: center; justify-content: center;
+            padding: 12px; background: rgba(8,5,20,.94); border-radius: 18px; /* hides YouTube's end screen */
+            font-family: "Baloo 2", "Segoe UI", "Comic Sans MS", system-ui, sans-serif; }
+  .pvdone.on { display: flex; animation: wrapFade .25s ease-out; }
+  .pvdcard { text-align: center; color: #fff; width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; }
+  .pvdcard .owlSvg { width: 84px; height: 84px; }
+  .pvdcard h2 { margin: 2px 0 14px; font-size: 26px; text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  /* three equal buttons that always share one row, from the smallest phone up */
+  .pvdbtns { display: flex; gap: 10px; justify-content: center; }
+  .pvdbtn { border: none; cursor: pointer; font-family: inherit; color: #fff; background: rgba(255,255,255,.15);
+            border-radius: 20px; padding: 9px; flex: 1 1 0; min-width: 0; max-width: 140px; display: flex; flex-direction: column;
+            align-items: center; gap: 6px; font-size: 17px; font-weight: 800; transition: transform var(--t-tap) var(--spring); }
+  .pvdbtn:active { transform: scale(.93); }
+  .pvdpic { width: 100%; aspect-ratio: 16 / 10; border-radius: 13px; background: rgba(255,255,255,.12); display: flex;
+            align-items: center; justify-content: center; font-size: 34px; line-height: 1; overflow: hidden; }
+  .pvdpic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pvdbtn.main { background: #ffb300; color: #4b2b00; box-shadow: 0 5px 0 #c88700; }
+  .pvdbtn.main .pvdpic { background: rgba(0,0,0,.14); }
+  .pvdone button:focus-visible { outline: 4px solid #ffd54a; outline-offset: 3px; }
+  /* a phone on its side: no owl, a short title and flat pictures, so the buttons fit without scrolling */
+  @media (max-height: 420px) {
+    .pvdcard .owlWrap { display: none; }
+    .pvdcard h2 { font-size: 18px; margin-bottom: 6px; }
+    .pvdbtn { max-width: 130px; padding: 6px; gap: 3px; font-size: 15px; }
+    .pvdpic { aspect-ratio: auto; height: 42px; font-size: 26px; }
+  }
+  @media (min-width: 1900px) {
+    .pvdbtn { max-width: 210px; font-size: 24px; } .pvdpic { font-size: 48px; }
+    .pvdcard h2 { font-size: 38px; } .pvdcard .owlSvg { width: 120px; height: 120px; }
+  }
+  /* the same choice at the end of a short: watch it again, or go up to the next one */
+  .reelDone { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 9;
+              display: flex; gap: 18px; }
+  .reelDone button { width: 84px; height: 84px; border-radius: 50%; cursor: pointer; font-size: 38px; line-height: 1;
+                     color: #fff; background: rgba(0,0,0,.5); border: 3px solid rgba(255,255,255,.7);
+                     display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+  .reelDone button:active { transform: scale(.9); }
+  /* a failed video: one big way to try again */
+  .pvretry { margin-top: 6px; font-size: 18px; padding: 14px 28px; background: rgba(255,255,255,.2); }
 
   /* ================= BREAK / GATE / PANEL ================= */
   #breakScreen { position: absolute; inset: 0; z-index: 70; display: none; flex-direction: column; align-items: center;
@@ -980,6 +1021,17 @@ try {
       <div class="pv-media" id="pvMedia"></div>
       <div class="pv-tap" id="pvTap"></div>
       <div class="spin" id="pvSpin" style="display:none"></div>
+      <div class="pvdone" id="pvDone" role="dialog" aria-label="Video finished">
+        <div class="pvdcard">
+          <div class="owlWrap owl-wave" id="pvDoneOwl"></div>
+          <h2 id="pvDoneTitle">All done!</h2>
+          <div class="pvdbtns">
+            <button class="pvdbtn" id="pvdAgain" aria-label="Watch it again"><span class="pvdpic">🔁</span><span>Again</span></button>
+            <button class="pvdbtn main" id="pvdNext" aria-label="Next video"><span class="pvdpic" id="pvdNextPic">▶</span><span>Next</span></button>
+            <button class="pvdbtn" id="pvdHome" aria-label="Back to home"><span class="pvdpic">🏠</span><span>Home</span></button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="pv-controls">
       <button class="pv-btn main" id="pvToggle" aria-label="Play or pause">⏸</button>
@@ -1134,6 +1186,20 @@ try {
           </select>
         </div>
         <p class="pp-note" id="ppWatched">Watched today: 0 min</p>
+        <div class="pp-row" style="margin-top:10px">
+          <span style="font-size:13px;font-weight:800;color:var(--soft-ink);width:110px">🎬 When a video or short ends</span>
+          <select class="pp-select" id="ppAfter" style="flex:1" aria-label="When a video or short ends">
+            <option value="auto">Ask what's next for ages 2–4, play on for 5–10</option>
+            <option value="stop">Always ask what's next</option>
+            <option value="two">Play up to 2 more, then ask</option>
+            <option value="next">Always play the next one</option>
+          </select>
+        </div>
+        <p class="pp-note">"Ask" shows Again, Next or Home when a video ends (↻ or ⬆ in Shorts), so the child picks what comes next. The count starts again whenever the child picks.</p>
+        <div class="pp-row" style="margin-top:10px">
+          <label class="switch"><input type="checkbox" id="ppGrace" aria-label="Let the last video finish"><span></span></label>
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">Let the video playing finish before a rest, bedtime or blink break (up to 5 minutes)</span>
+        </div>
         <div class="pp-row" style="margin-top:10px">
           <label class="switch"><input type="checkbox" id="ppGamesOn" aria-label="Show the Games tab"><span></span></label>
           <span style="font-size:13px;font-weight:700;color:var(--muted)">🎮 Show the Games tab</span>
@@ -2170,7 +2236,7 @@ function loadCfg() {
   }
   if (!c || typeof c !== "object") c = {};
   const D = {
-    age: null, soundOn: true, captions: false, gamesOn: true, theme: "auto", timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
+    age: null, soundOn: true, captions: false, gamesOn: true, theme: "auto", afterVideo: "auto", lastGrace: true, timeLimitMin: 0, pin: null, gateFails: 0, gateLockUntil: 0,
     liked: {}, custom: [], seen: {}, resume: {},
     watch: { date: todayStr(), secs: 0, bonus: 0 },
     watchLog: {}, hiddenKeys: [], failCounts: {}, deadIds: [],
@@ -2192,6 +2258,8 @@ function loadCfg() {
   });
   if (c.apiKey) m.apiKey = c.apiKey;
   if (m.theme !== "light" && m.theme !== "dark") m.theme = "auto"; // "auto" follows the device
+  if (!["auto", "stop", "two", "next"].includes(m.afterVideo)) m.afterVideo = "auto";
+  if (typeof m.lastGrace !== "boolean") m.lastGrace = true;
   ["items", "kws", "blocked", "offCh", "okIds"].forEach(k => { if (!Array.isArray(m.fresh[k])) m.fresh[k] = []; });
   m.fresh.okIds = m.fresh.okIds.filter(okId).slice(-1000);
   m.fresh.offCh = m.fresh.offCh.filter(k => typeof k === "string" && /^UC[\w-]{22}$/.test(k)).slice(-300);
@@ -2680,14 +2748,21 @@ function syncThemeColor() {
   if (themeMeta) themeMeta.setAttribute("content", c || "#7b3fe4");
 }
 function showView(name) {
+  const from = curView;
   if (curView === "shorts" && name !== "shorts") { spPause(); teardownFeedDom(); scheduleSpIdle(); }
   if (curView === "player" && name !== "player") pvSoftExit();
   if (curView === "games" && name !== "games" && gameCur) closeGame();
   if (name === "shorts") clearTimeout(spIdleTimer);
   if (name === "player") clearTimeout(pvIdleTimer);
+  if (name !== from) pendingEnd = null;
   Object.values(views).forEach(v => v.classList.remove("on"));
   views[name].classList.add("on");
   curView = name;
+  // leaving the "last one" for anything else ends its grace: the rest or bedtime lands now
+  if ((from === "player" || from === "shorts") && name !== from && !locked()) {
+    if (graceKey !== null && limitReached()) showBreak();
+    else if (bedGrace && inBedtime()) checkBedtime();
+  }
   updateNav();
   syncThemeColor();
   if (typeof navSetHidden === "function") navSetHidden(false);
@@ -3147,6 +3222,10 @@ function renderHome() {
     rail.appendChild(t);
   });
   if (rail.children.length) grid.appendChild(rail);
+  if (tier() === "little") {
+    const again = againItems();
+    if (again.length >= 2) grid.appendChild(makeShelf("⭐ Again!", again, "video", "again"));
+  }
   const all = freshSort(gridItems("all"), true);
   // most recently watched FIRST — that's the one they want to continue
   const resumeItems = all.filter(it => cfg.resume[itemKey(it)])
@@ -3214,6 +3293,24 @@ function renderHome() {
   updateNav();
 }
 
+/* Ages 2-4: the videos this child keeps coming back to, first on Home and in a steady order.
+   Pre-readers find "the bus song" by its place and its picture - they cannot search, and the
+   freshness rotation pushes anything watched behind the unwatched ones. Hearted ones count
+   extra; a video needs a heart or two plays within the last two weeks; at most 8; no counts shown. */
+function againItems() {
+  const since = Date.now() - 14 * 86400000;
+  return gridItems("all")
+    .map(it => {
+      const k = itemKey(it), s = cfg.seen[k], liked = !!cfg.liked[k];
+      const plays = s && s.t >= since ? s.n : 0;
+      return { it, k, score: (liked ? 3 : 0) + plays, ok: liked || plays >= 2 };
+    })
+    .filter(x => x.ok)
+    .sort((a, b) => b.score - a.score || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0))
+    .slice(0, 8)
+    .map(x => x.it);
+}
+
 function renderSearchResults() {
   const box = document.getElementById("searchResults");
   if (!box) return;
@@ -3248,19 +3345,26 @@ document.getElementById("agePill").addEventListener("click", () => {
 });
 
 /* ---------------- YouTube API ---------------- */
-let apiReady = false, apiFailed = false;
+/* apiFailed = "YouTube has not arrived yet" after 8 s. It is NOT final: a slow phone or patchy Wi-Fi
+   can deliver the API later, and the moment it lands every video works again (it used to stay
+   "failed" for the whole session, so every full-player video showed the 🙈 screen until a reload). */
+let apiReady = false, apiFailed = false, apiLoading = false, apiLoadAt = 0;
 const apiWaiters = [];
-window.onYouTubeIframeAPIReady = function () { apiReady = true; apiWaiters.splice(0).forEach(f => f()); };
+window.onYouTubeIframeAPIReady = function () { apiReady = true; apiFailed = false; apiLoading = false; apiWaiters.splice(0).forEach(f => f()); };
 function loadYT() {
+  apiLoading = true; apiLoadAt = Date.now();
   const s = document.createElement("script");
   s.src = "https://www.youtube.com/iframe_api";
-  s.onerror = () => { apiFailed = true; };
+  s.onerror = () => { apiFailed = true; apiLoading = false; };
   document.head.appendChild(s);
   setTimeout(() => { if (!apiReady) apiFailed = true; }, 8000);
 }
 loadYT();
 function retryYtApi() {
   if (apiReady) { apiFailed = false; return; }
+  // a load still on its way is left alone (and the "not arrived" mark stays, so the shorts feed keeps
+  // showing its own message); one stuck for 20 s gets a fresh try
+  if (apiLoading && Date.now() - apiLoadAt < 20000) return;
   apiFailed = false;
   loadYT();
 }
@@ -3295,6 +3399,7 @@ function openShorts(list, startIdx) {
   const src = list && list.length ? list : freshSort(shortItems(), false).slice(0, 60);
   entries = src.map(it => ({ ...it, dead: false }));
   deadStreak = 0;
+  autoRun = 0; reelAutoMove = false;
   document.getElementById("shortsOffline").style.display = "none";
   buildFeed((startIdx || 0) + 3);
   const prevView = curView;
@@ -3341,6 +3446,7 @@ function makeReel(i) {
   let lastTap = 0;
   sec.querySelector(".tapzone").addEventListener("click", (ev) => {
     const now = Date.now();
+    if (now < reelTapGuard) return; // the second tap of a double tap on ↻ / ⬆
     if (now - lastTap < 300) {
       lastTap = 0;
       onTap(i); // second toggle undoes the first tap's pause
@@ -3405,6 +3511,8 @@ function scheduleSpIdle(ms) {
   }, ms || 5 * 60 * 1000);
 }
 function pvSoftExit(ms) {
+  hidePvDone();
+  clearTimeout(pvSlowTimer);
   if (pv) {
     pvPaused = true;
     if (pv.kind === "yt") { try { pv.ready && pv.p.pauseVideo(); } catch (e) {} }
@@ -3465,9 +3573,10 @@ let spLastState = null;
 function onSpState(ev) {
   const prevState = spLastState;
   spLastState = ev.data;
-  if (ev.data === YT.PlayerState.ENDED) { if (!locked()) nextReel(); return; }
+  if (ev.data === YT.PlayerState.ENDED) { if (!locked()) shortEnded(); return; }
   if (ev.data === YT.PlayerState.PLAYING && locked()) { spPause(); return; }
   if (ev.data === YT.PlayerState.PLAYING && active !== null && reelEls[active]) {
+    hideReelDone();
     deadStreak = 0;
     hideSpin(active);
     reelEls[active].classList.add("playing");
@@ -3537,11 +3646,15 @@ function reelError(i, icon, msg) {
   deadStreak++;
   if (i === active) {
     if (deadStreak >= 3) { if (curView === "shorts") showShortsOffline(); return; }
-    if (!locked()) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 1400);
+    if (!locked()) setTimeout(() => { if (i === active && curView === "shorts") { reelAutoMove = true; nextReel(); } }, 1400);
   }
 }
 function setActive(i, force) {
   if ((i === active && !force) || !entries[i]) return;
+  hideReelDone();
+  pendingEnd = null;
+  // a swipe, the arrow keys or ⬆ = the child chose; only the app's own moves keep counting
+  if (reelAutoMove) reelAutoMove = false; else autoRun = 0;
   active = i;
   paused = locked(); // never auto-play behind a lock screen
   reelEls.forEach((el, k) => {
@@ -3560,7 +3673,7 @@ function setActive(i, force) {
   if (entries[i].dead) {
     deadStreak++;
     if (deadStreak >= 3) { if (curView === "shorts") showShortsOffline(); return; }
-    if (!paused) setTimeout(() => { if (i === active && curView === "shorts") nextReel(); }, 900);
+    if (!paused) setTimeout(() => { if (i === active && curView === "shorts") { reelAutoMove = true; nextReel(); } }, 900);
     return;
   }
   if (!sp) { if (!paused) createShortsPlayer(entries[i].id); }
@@ -3572,6 +3685,56 @@ function setActive(i, force) {
   }
   // if the player is still booting, onReady's catch-up handles it
 }
+/* the end of a short: a waiting rest lands first; then, like videos, the next one plays by
+   itself only if the parent's choice allows it - otherwise the child gets ↻ (again) and ⬆ (next) */
+let reelAutoMove = false, reelTapGuard = 0;
+/* is there another short to go to? (the same walk nextReel makes) */
+function hasNextReel() {
+  for (let s = 1; s < entries.length; s++) if (!entries[(active + s) % entries.length].dead) return true;
+  return false;
+}
+function shortEnded() {
+  expKey = null; expSecs = 0;
+  if (curView !== "shorts" || active === null) return;
+  if (landPendingLock()) { pendingEnd = shortAfterEnd; return; }
+  if (eyeBreakDue()) { startEyeBreak(shortAfterEnd); return; }
+  shortAfterEnd();
+}
+function shortAfterEnd() {
+  if (locked() || curView !== "shorts" || active === null) return;
+  const more = hasNextReel();
+  if (more && playOnByItself()) { autoRun++; reelAutoMove = true; nextReel(); return; }
+  showReelDone(active, more);
+}
+function showReelDone(i, more) {
+  const el = reelEls[i];
+  if (!el || el.querySelector(".reelDone")) return;
+  // the reel's own picture covers the finished player again: YouTube's end screen (suggested videos
+  // this app never checked) must not show around the buttons
+  el.classList.remove("playing");
+  const box = document.createElement("div");
+  box.className = "reelDone";
+  box.innerHTML = '<button type="button" aria-label="Watch it again">🔁</button>' +
+    (more ? '<button type="button" aria-label="Next short">⬆</button>' : "");
+  const [again, next] = box.querySelectorAll("button");
+  again.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (locked() || i !== active) return;
+    autoRun = 0; box.remove(); reelTapGuard = Date.now() + 450;
+    try { sp.seekTo(0, true); } catch (err) {}
+    paused = false; playReel(active);
+  });
+  if (next) next.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (locked() || i !== active) return;
+    autoRun = 0; box.remove(); reelTapGuard = Date.now() + 450;
+    nextReel();
+  });
+  el.appendChild(box);
+  // keyboard and TV remotes: OK presses the lit button
+  setTimeout(() => { if (box.isConnected && !locked()) try { (next || again).focus({ preventScroll: true }); } catch (e) {} }, 60);
+}
+function hideReelDone() { document.querySelectorAll(".reelDone").forEach(b => b.remove()); }
 function nextReel() {
   if (!entries.length) return;
   let n = active;
@@ -3634,6 +3797,7 @@ const pvMedia = document.getElementById("pvMedia");
 
 function openPlayer(list, idx) {
   if (locked()) return;
+  autoRun = 0; // the child picked this one
   pvList = list; pvIdx = idx;
   const wasPlayer = curView === "player";
   showView("player");
@@ -3655,6 +3819,16 @@ function loadPvItem() {
   // back to the 16:9 box until a device video or classic reports its own shape
   pvMedia.classList.remove("nat");
   pvMedia.style.removeProperty("--ar");
+  hidePvDone();
+  // a toddler's double tap: the second tap of the one that started this video (on the card's Again /
+  // Next, Try again, a Home tile) lands on the picture a moment later and must not pause it
+  pvTapGuard = Date.now() + 450;
+  // a slow connection: Ollie says it is coming, so a spinner never looks like "broken"
+  clearTimeout(pvSlowTimer);
+  pvSlowTimer = setTimeout(() => {
+    if (curView === "player" && pvList[pvIdx] === it && !locked() && !pvPaused &&
+        document.getElementById("pvSpin").style.display !== "none") kidHint("🦉 It's on its way…", 4000);
+  }, 7000);
 
   // fast path: reuse the live YouTube player — video swaps beat full reboots
   if (it.kind === "yt" && pv && pv.kind === "yt" && pv.ready) {
@@ -3666,16 +3840,20 @@ function loadPvItem() {
     try {
       pv.p.loadVideoById(rsf && rsf.t > 10 ? { videoId: it.id, startSeconds: rsf.t } : it.id);
       cfg.soundOn ? (pv.p.unMute(), pv.p.setVolume(100)) : pv.p.mute();
-    } catch (e) { pvFail(); }
+    } catch (e) { pvFail(undefined, true); }
     return;
   }
 
   teardownPlayer(true);
   if (it.kind === "yt") {
-    if (apiFailed) { pvFail(); return; }
+    // YouTube did not arrive at launch: ask again now
+    if (!apiReady) retryYtApi();
     pvMedia.innerHTML = '<img class="pvpre" src="https://i.ytimg.com/vi/' + it.id + '/hqdefault.jpg" data-vid="' + it.id + '" data-alt="mqdefault,default" onload="thumbOk(this)" onerror="thumbErr(this)"><div id="pv-hold"></div>';
     const rec = { kind: "yt", ready: false, p: null };
     pv = rec;
+    // if YouTube never arrives (offline, blocked), say so with Try again instead of spinning for ever;
+    // once it does arrive, the player gets its own 12 s to become ready (the check inside whenApi)
+    if (!apiReady) setTimeout(() => { if (pv === rec && !rec.p) pvFail(undefined, true); }, 12000);
     whenApi(() => {
       if (pv !== rec) return;
       rec.p = new YT.Player("pv-hold", {
@@ -3707,9 +3885,10 @@ function loadPvItem() {
             }, 3500);
           },
           onStateChange: (ev) => {
-            if (ev.data === YT.PlayerState.ENDED) { const cur = pvList[pvIdx]; if (cur) { delete cfg.resume[itemKey(cur)]; saveCfg(); } pvNext(); }
+            if (ev.data === YT.PlayerState.ENDED) pvEnded();
             if (ev.data === YT.PlayerState.PLAYING) {
               if (locked()) { try { pv.p.pauseVideo(); } catch (e) {} return; }
+              hidePvDone();
               pvPaused = false; // keep the ⏸/▶ button truthful
               const ptb = document.getElementById("pvToggle");
               ptb.textContent = "⏸"; ptb.setAttribute("aria-label", "Pause");
@@ -3722,11 +3901,12 @@ function loadPvItem() {
             let vid = null;
             try { vid = (ev.target.getVideoData() || {}).video_id; } catch (e) {}
             if (okId(vid)) noteYtError(vid, ev && ev.data);
-            pvFail();
+            // 100/101/150 = removed, private or not allowed here: trying again cannot help
+            pvFail(undefined, [100, 101, 150].indexOf(Number(ev && ev.data)) === -1);
           }
         }
       });
-      setTimeout(() => { if (pv === rec && !rec.ready) pvFail(); }, 12000);
+      setTimeout(() => { if (pv === rec && !rec.ready) pvFail(undefined, true); }, 12000);
     });
   } else if (it.kind === "mp4" || it.kind === "local") {
     const v = document.createElement("video");
@@ -3739,17 +3919,18 @@ function loadPvItem() {
     pvMedia.appendChild(v);
     pv = { kind: "vid", v };
     v.onplaying = () => {
+      hidePvDone();
       document.getElementById("pvSpin").style.display = "none";
       const pp = pvMedia.querySelector(".pvpre");
       if (pp) pp.remove();
     };
-    v.onended = () => { delete cfg.resume[itemKey(it)]; saveCfg(); pvNext(); };
+    v.onended = () => { if (pv && pv.v === v) pvEnded(); };
     let fileFound = false; // a device video whose file is here but will not play = a format this device can't decode
-    v.onerror = () => pvFail(it.kind === "local"
-      ? (fileFound
+    v.onerror = () => it.kind === "local"
+      ? pvFail(fileFound
         ? "This video's format can't play on this device — add an MP4 copy of it from the Parent Zone"
         : "This video is no longer on this device — add it again from the Parent Zone")
-      : (navigator.onLine ? "This classic isn't loading right now — try again in a bit" : "Internet needed for this video"));
+      : pvFail(navigator.onLine ? "This classic isn't loading right now — try again in a bit" : "Internet needed for this video", true);
     v.onloadedmetadata = () => {
       // the box takes the video's own shape (upright phone video, square, 4:3, 16:9) at full screen size
       if (v.videoWidth > 0 && v.videoHeight > 0 && pv && pv.v === v) {
@@ -3777,17 +3958,112 @@ function loadPvItem() {
     }).catch(() => pvFail(localGone));
   }
 }
-function pvFail(msg) {
+function pvFail(msg, canRetry) {
   // release the failed player before wiping its DOM — otherwise its message
   // listeners leak for the whole session
   if (pv && pv.kind === "yt") { try { pv.p && pv.p.destroy(); } catch (e) {} }
   if (pv && pv.kind === "vid" && pv.blobUrl) { try { URL.revokeObjectURL(pv.blobUrl); } catch (e) {} }
   document.getElementById("pvSpin").style.display = "none";
+  clearTimeout(pvSlowTimer);
+  // (z-index 6: above the tap layer, so the Try again button can be pressed)
   pvMedia.innerHTML =
-    '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;padding:20px;background:linear-gradient(160deg,#2b1c57,#0e0a1f)">' +
-    '<div style="font-size:56px">🙈</div><p style="margin:0;font-weight:700">' + escapeHtml(msg || ytFailMessage()) + "</p></div>";
+    '<div style="position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;padding:20px;background:linear-gradient(160deg,#2b1c57,#0e0a1f)">' +
+    '<div style="font-size:56px">🙈</div><p style="margin:0;font-weight:700">' + escapeHtml(msg || ytFailMessage()) + "</p>" +
+    (canRetry ? '<button class="softbtn pvretry" id="pvRetry">🔄 Try again</button>' : "") + "</div>";
+  if (canRetry) {
+    const rb = document.getElementById("pvRetry");
+    rb.addEventListener("click", () => {
+      if (locked() || curView !== "player") return;
+      retryYtApi();
+      loadPvItem();
+    });
+    // keyboard and TV remotes: OK presses it
+    setTimeout(() => { if (rb.isConnected && !locked() && curView === "player") try { rb.focus({ preventScroll: true }); } catch (e) {} }, 80);
+  }
   pv = null;
 }
+
+/* ---- when a video ends: nothing starts by itself unless the parent chose it ----
+   cfg.afterVideo: "auto" (ask for ages 2-4, play on for 5-10), "stop" (always ask), "two" (play up to
+   two more, then ask), "next" (always play on). autoRun counts the videos started on their own since
+   the child last chose one. A rest, bedtime or blink break that waited for this video lands first. */
+let autoRun = 0, pvSlowTimer = 0, pvTapGuard = 0;
+function afterVideoMode() {
+  const m = cfg.afterVideo;
+  if (m === "stop" || m === "two" || m === "next") return m;
+  return tier() === "little" ? "stop" : "next";
+}
+function playOnByItself() {
+  const m = afterVideoMode();
+  return m === "next" || (m === "two" && autoRun < 2);
+}
+function pvEnded() {
+  const cur = pvList[pvIdx];
+  if (cur) { delete cfg.resume[itemKey(cur)]; saveCfg(); }
+  // this play is over: watching it again (Again, ▶, Home and back) counts as a new play
+  expKey = null; expSecs = 0;
+  if (locked() || curView !== "player") return;
+  if (landPendingLock()) { pendingEnd = pvAfterEnd; return; }
+  if (eyeBreakDue()) { startEyeBreak(pvAfterEnd); return; }
+  pvAfterEnd();
+}
+function pvAfterEnd() {
+  if (locked() || curView !== "player") return;
+  if (playOnByItself()) { autoRun++; pvNext(true); return; }
+  showPvDone();
+}
+const pvDone = document.getElementById("pvDone");
+let pvDoneSeq = 0;
+function showPvDone() {
+  const seq = ++pvDoneSeq;
+  const nextIt = pvList.length > 1 ? pvList[(pvIdx + 1) % pvList.length] : null;
+  const nb = document.getElementById("pvdNext"), pic = document.getElementById("pvdNextPic");
+  nb.style.display = nextIt ? "" : "none";
+  pic.textContent = "▶";
+  if (nextIt) {
+    // the next video shown by its picture: a pre-reader chooses by what they see
+    const th = thumbFor(nextIt);
+    const put = (src) => {
+      if (seq !== pvDoneSeq || !src) return;
+      const img = new Image();
+      img.alt = "";
+      img.onload = () => { if (seq === pvDoneSeq && img.naturalWidth > 120) { pic.textContent = ""; pic.appendChild(img); } };
+      img.src = src;
+    };
+    if (th) put(th);
+    else if (nextIt.kind === "local" && nextIt.localKey) localThumb(nextIt.localKey).then(put);
+  }
+  const owl = document.getElementById("pvDoneOwl");
+  if (!owl.firstChild) owl.innerHTML = owlSvg();
+  const tb = document.getElementById("pvToggle");
+  tb.textContent = "▶"; tb.setAttribute("aria-label", "Play");
+  pvDone.classList.add("on");
+  setTimeout(() => {
+    if (seq !== pvDoneSeq || !pvDone.classList.contains("on")) return;
+    try { (nextIt ? nb : document.getElementById("pvdAgain")).focus({ preventScroll: true }); } catch (e) {}
+  }, 60);
+}
+function hidePvDone() {
+  if (!pvDone.classList.contains("on")) return;
+  pvDoneSeq++;
+  pvDone.classList.remove("on");
+}
+document.getElementById("pvdAgain").addEventListener("click", () => {
+  if (locked()) return;
+  hidePvDone(); autoRun = 0;
+  loadPvItem();
+});
+document.getElementById("pvdNext").addEventListener("click", () => { if (locked()) return; hidePvDone(); pvNext(); });
+document.getElementById("pvdHome").addEventListener("click", () => { hidePvDone(); goBack(); });
+// keyboard and TV remotes: Tab stays on the card's buttons
+pvDone.addEventListener("keydown", (e) => {
+  if (e.key !== "Tab") return;
+  e.preventDefault();
+  const bs = [...pvDone.querySelectorAll("button")].filter(b => b.style.display !== "none");
+  const i = bs.indexOf(document.activeElement);
+  const n = bs[(i + (e.shiftKey ? bs.length - 1 : 1)) % bs.length];
+  if (n) n.focus({ preventScroll: true });
+});
 function teardownPlayer(keepView) {
   if (pv) {
     if (pv.kind === "yt") { try { pv.p && pv.p.destroy(); } catch (e) {} }
@@ -3815,11 +4091,19 @@ function pvToggle() {
   if (pv.kind === "yt") { try { pvPaused ? pv.p.pauseVideo() : pv.p.playVideo(); } catch (e) {} }
   else pvPaused ? pv.v.pause() : pv.v.play().catch(() => {});
 }
-function pvNext() { pvIdx = (pvIdx + 1) % pvList.length; loadPvItem(); }
+function pvNext(byItself) {
+  if (byItself !== true) autoRun = 0; // ⏭, → or the card's Next: the child chose
+  pvIdx = (pvIdx + 1) % pvList.length;
+  loadPvItem();
+}
 document.getElementById("pvBack").addEventListener("click", goBack);
-document.getElementById("pvToggle").addEventListener("click", pvToggle);
-document.getElementById("pvTap").addEventListener("click", pvToggle);
-document.getElementById("pvNext").addEventListener("click", pvNext);
+document.getElementById("pvToggle").addEventListener("click", () => {
+  // ▶ on the "All done" card = watch it again
+  if (pvDone.classList.contains("on")) { if (!locked()) { hidePvDone(); autoRun = 0; loadPvItem(); } return; }
+  pvToggle();
+});
+document.getElementById("pvTap").addEventListener("click", () => { if (Date.now() >= pvTapGuard) pvToggle(); });
+document.getElementById("pvNext").addEventListener("click", () => pvNext());
 document.getElementById("pvSound").addEventListener("click", () => { toggleSound(); document.getElementById("pvSound").textContent = cfg.soundOn ? "🔊" : "🔇"; });
 document.getElementById("pvLike").addEventListener("click", () => {
   const it = pvList[pvIdx];
@@ -3861,6 +4145,7 @@ document.addEventListener("pointerdown", attemptAutoUnmute, true);
 document.addEventListener("touchstart", attemptAutoUnmute, true);
 
 /* ---------------- progress + watch time ---------------- */
+let clipLeft = { key: null, s: 0 }; // seconds left in the video or short playing now (for "last one")
 setInterval(() => {
   if (curView === "shorts" && active !== null && sp && spReady) {
     let t = 0, d = 0, match = true;
@@ -3873,6 +4158,7 @@ setInterval(() => {
     } catch (e) {}
     const bar = reelEls[active] && reelEls[active].querySelector(".progress i");
     if (bar && match) bar.style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
+    if (match) clipLeft = { key: entries[active] ? itemKey(entries[active]) : null, s: d > 0 ? Math.max(0, d - t) : 0 };
   }
   if (curView === "player" && pv) {
     let t = 0, d = 0, match = true;
@@ -3888,6 +4174,7 @@ setInterval(() => {
     }
     else { t = pv.v.currentTime; d = pv.v.duration || 0; }
     if (!match) return;
+    clipLeft = { key: pvList[pvIdx] ? itemKey(pvList[pvIdx]) : null, s: d > 0 && isFinite(d) ? Math.max(0, d - t) : 0 };
     document.getElementById("pvBar").style.width = (d > 0 ? Math.min(100, t / d * 100) : 0) + "%";
     // continue-watching: remember position in longer videos
     const cw = pvList[pvIdx];
@@ -3915,6 +4202,7 @@ setInterval(() => {
   if (cfg.watch.date !== todayStr()) {
     cfg.watch = { date: todayStr(), secs: 0, bonus: 0 };
     warned5 = warned1 = false;
+    graceKey = null; lastHintKey = null;
     saveCfg();
     if (breakScreen.style.display === "flex") breakScreen.style.display = "none";
   }
@@ -3940,18 +4228,82 @@ setInterval(() => {
   const wcat = inGame ? "games" : curItem && curItem.cat;
   if (wcat) wl.c[wcat] = (wl.c[wcat] || 0) + 1;
   if (cfg.watch.secs % 15 === 0) saveCfg();
-  const lim = cfg.timeLimitMin > 0 ? cfg.timeLimitMin * 60 + (cfg.watch.bonus || 0) : Infinity;
+  const lim = limitSecs();
+  const curKey = curItem ? itemKey(curItem) : null;
   if (lim !== Infinity) {
     const remain = lim - cfg.watch.secs;
     const what = inGame ? "games" : "cartoons";
     if (remain <= 300 && remain > 60 && !warned5) { warned5 = true; kidHint("🦉 5 more minutes of " + what + "!"); }
     if (remain <= 60 && remain > 0 && !warned1) { warned1 = true; kidHint("🦉 1 minute left — last one!"); }
+    // the video playing will run past the limit: tell the child it is the last one, once
+    if (remain > 0 && curKey && clipLeft.key === curKey && clipLeft.s > 0 && remain <= clipLeft.s &&
+        lastHintKey !== curKey && graceOn()) {
+      lastHintKey = curKey;
+      kidHint("🦉 This is the last one — then a rest!", 6000);
+    }
   }
-  if (cfg.watch.secs >= lim) { showBreak(); return; }
+  if (cfg.watch.secs >= lim) {
+    // "Last one": a limit crossed mid-video waits for THAT video to end (capped); playing another
+    // video or a game, or leaving it for Home (showView), brings the rest at once. Grace is given
+    // only on the tick that crosses the limit (secs rises by exactly 1 per watching tick): a video
+    // started later - after reopening the app, a lowered limit, a counter from another tab - gets none.
+    const over = cfg.watch.secs - lim;
+    if (graceKey === null) graceKey = over === 0 && curKey ? curKey : "";
+    const wait = graceOn() && curKey && curKey === graceKey &&
+      ((inPlayer && over < GRACE_PLAYER) || (inShorts && over < GRACE_SHORT));
+    if (!wait) { showBreak(); return; }
+  } else graceKey = null; // the limit moved up (Parent Zone, sync, another tab): no old grace survives
   eyeSecs++;
-  if (cfg.eye.breakMin > 0 && eyeSecs >= cfg.eye.breakMin * 60 &&
-      document.getElementById("eyeBreak").style.display !== "flex") startEyeBreak();
+  if (!eyeBreakDue()) eyeGraceKey = null;
+  else if (document.getElementById("eyeBreak").style.display !== "flex") {
+    // a blink break due mid-video waits for the end of THAT video (capped); ⏭ or a swipe brings it
+    if (eyeGraceKey === null) eyeGraceKey = curKey || "";
+    const over = eyeSecs - cfg.eye.breakMin * 60;
+    const wait = graceOn() && curKey && curKey === eyeGraceKey &&
+      ((inPlayer && over < GRACE_PLAYER) || (inShorts && over < GRACE_SHORT));
+    if (!wait) startEyeBreak();
+  }
+  // bedtime waiting for the end of one video: anything else that plays brings it now, not at the next 30 s check
+  if (bedGrace && bedGrace.key && curKey !== bedGrace.key && inBedtime()) checkBedtime();
 }, 1000);
+
+/* ---- "Last one": rests, bedtime and blink breaks land at the end of a video, not mid-song ----
+   cfg.lastGrace (default on) lets the video playing finish, up to 5 minutes (90 s for a short).
+   The end-of-video handlers call landPendingLock() first, so the lock appears the moment it ends. */
+const GRACE_PLAYER = 300, GRACE_SHORT = 90;
+let graceKey = null, lastHintKey = null, bedGrace = null, eyeGraceKey = null;
+/* a lock that landed at the end of a video: once a parent unlocks, the end's own next step (the
+   "All done" card, or the next video) still happens instead of leaving the child on a frozen frame */
+let pendingEnd = null;
+function runPendingEnd() {
+  const f = pendingEnd;
+  pendingEnd = null;
+  if (f && !locked()) f();
+}
+function graceOn() { return cfg.lastGrace !== false; }
+function limitSecs() { return cfg.timeLimitMin > 0 ? cfg.timeLimitMin * 60 + (cfg.watch.bonus || 0) : Infinity; }
+function limitReached() { return cfg.watch.secs >= limitSecs(); }
+function eyeBreakDue() { return cfg.eye.breakMin > 0 && eyeSecs >= cfg.eye.breakMin * 60; }
+/* the video or short playing right now, or null */
+function playingKey() {
+  if (curView === "player" && pv && !pvPaused && pvPlaying()) return pvList[pvIdx] ? itemKey(pvList[pvIdx]) : null;
+  if (curView === "shorts" && active !== null && !paused && reelPlaying(active)) return entries[active] ? itemKey(entries[active]) : null;
+  return null;
+}
+/* bedtime starting mid-video: may the video playing finish first? */
+function bedCanWait() {
+  if (!graceOn()) return false;
+  const k = playingKey();
+  if (!k) return false;
+  if (!bedGrace) bedGrace = { key: k, until: Date.now() + (curView === "shorts" ? GRACE_SHORT : GRACE_PLAYER) * 1000 };
+  return bedGrace.key === k && Date.now() < bedGrace.until;
+}
+/* a video just ended: a rest or bedtime that was waiting for it lands now */
+function landPendingLock() {
+  if (limitReached()) { showBreak(); return true; }
+  if (inBedtime()) { bedGrace = { key: "", until: 0 }; checkBedtime(); return true; }
+  return false;
+}
 
 /* ---------------- eye comfort ---------------- */
 const WARM_LEVELS = [0, .25, .4, .55];
@@ -3970,8 +4322,11 @@ setInterval(applyEye, 60000);
 applyEye();
 
 let eyeSecs = 0;
-function startEyeBreak() {
+/* then: a break that waited for the end of a video carries on with what that end would have done
+   (the "All done" card, or the next video) instead of resuming the finished one */
+function startEyeBreak(then) {
   eyeSecs = 0;
+  hidePvDone();
   const wasShorts = curView === "shorts" && active !== null;
   const wasPlayer = curView === "player" && !!pv;
   if (wasShorts) { paused = true; pauseReel(active); }
@@ -3987,6 +4342,13 @@ function startEyeBreak() {
     // bedtime or the daily limit may have engaged during the countdown —
     // never resume behind another lock screen
     if (locked()) return;
+    if (typeof then === "function") {
+      // the video had ended: no resume; on with the end's own next step (paused flags back as they were)
+      if (wasShorts) paused = false;
+      if (wasPlayer) pvPaused = false;
+      then();
+      return;
+    }
     if (wasShorts && curView === "shorts") { paused = false; playReel(active); }
     if (wasPlayer && curView === "player" && pvPaused) pvToggle();
   };
@@ -4045,6 +4407,10 @@ function checkBedtime() {
   }
   if (inBedtime()) {
     const wasShown = bs.style.display === "flex";
+    // "Last one": the video playing when bedtime starts may finish first (capped); its end
+    // handler calls landPendingLock(), and this 30-second check catches the cap
+    if (!wasShown && curView !== "home" && curView !== "games" && bedCanWait()) return;
+    bedGrace = null;
     bs.style.display = "flex";
     if (!wasShown && panel.style.display !== "flex" && gateWrap.style.display !== "flex")
       setTimeout(() => { try { document.getElementById("bedUnlockBtn").focus(); } catch (e) {} }, 100);
@@ -4054,8 +4420,9 @@ function checkBedtime() {
     if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
     if (curView === "player" && pv && !pvPaused) pvToggle();
     spPause();
-  } else if (bs.style.display === "flex") {
-    bs.style.display = "none";
+  } else {
+    bedGrace = null;
+    if (bs.style.display === "flex") bs.style.display = "none";
   }
 }
 setInterval(checkBedtime, 30000);
@@ -4065,10 +4432,11 @@ document.getElementById("bedUnlockBtn").addEventListener("click", () => {
     saveCfg();
     checkBedtime();
     gRefocus();
+    runPendingEnd();
   });
 });
 document.getElementById("pauseUnlockBtn").addEventListener("click", () => {
-  openGate(() => { cfg.pausedUntil = 0; saveCfg(); checkBedtime(); gRefocus(); });
+  openGate(() => { cfg.pausedUntil = 0; saveCfg(); checkBedtime(); gRefocus(); runPendingEnd(); });
 });
 function setPause(ms) { cfg.pausedUntil = Date.now() + ms; saveCfg(); checkBedtime(); renderPanel(); }
 document.getElementById("ppPause30").addEventListener("click", () => setPause(30 * 60 * 1000));
@@ -4081,6 +4449,8 @@ const breakScreen = document.getElementById("breakScreen");
 function showBreak() {
   const already = breakScreen.style.display === "flex";
   breakScreen.style.display = "flex";
+  graceKey = null;
+  hidePvDone();
   if (curView === "shorts" && active !== null && !paused) { paused = true; pauseReel(active); }
   if (curView === "player" && pv && !pvPaused) pvToggle();
   spPause(); // no surviving background player may play behind the lock
@@ -4093,9 +4463,11 @@ document.getElementById("unlockBtn").addEventListener("click", () => {
   openGate(() => {
     cfg.watch.bonus = (cfg.watch.bonus || 0) + 15 * 60;
     warned5 = warned1 = false; // the countdown warnings apply to the bonus too
+    graceKey = null; lastHintKey = null;
     saveCfg();
     breakScreen.style.display = "none";
     gRefocus();
+    runPendingEnd();
   });
 });
 
@@ -4229,6 +4601,8 @@ function renderPanel() {
   document.getElementById("ppCc").checked = !!cfg.captions;
   document.getElementById("ppGamesOn").checked = cfg.gamesOn !== false;
   document.getElementById("ppTheme").value = cfg.theme === "light" || cfg.theme === "dark" ? cfg.theme : "auto";
+  document.getElementById("ppAfter").value = ["stop", "two", "next"].includes(cfg.afterVideo) ? cfg.afterVideo : "auto";
+  document.getElementById("ppGrace").checked = cfg.lastGrace !== false;
   document.getElementById("ppSaveWarn").style.display = saveFailed ? "block" : "none";
   const pActive = Date.now() < (cfg.pausedUntil || 0);
   document.getElementById("ppPauseActiveRow").style.display = pActive ? "flex" : "none";
@@ -4286,11 +4660,18 @@ function renderCustomList() {
   });
 }
 ppAge.addEventListener("change", (e) => { cfg.age = parseInt(e.target.value, 10); syncActiveKid(); saveCfg(); });
-document.getElementById("ppLimit").addEventListener("change", (e) => { cfg.timeLimitMin = parseInt(e.target.value, 10) || 0; warned5 = warned1 = false; saveCfg(); });
+document.getElementById("ppLimit").addEventListener("change", (e) => { cfg.timeLimitMin = parseInt(e.target.value, 10) || 0; warned5 = warned1 = false; lastHintKey = null; saveCfg(); });
 document.getElementById("ppWarm").addEventListener("change", (e) => { cfg.eye.warm = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
 document.getElementById("ppDim").addEventListener("change", (e) => { cfg.eye.dim = parseInt(e.target.value, 10) || 0; saveCfg(); applyEye(); });
 document.getElementById("ppEyeBreak").addEventListener("change", (e) => { cfg.eye.breakMin = parseInt(e.target.value, 10) || 0; eyeSecs = 0; saveCfg(); });
 document.getElementById("ppAutoEve").addEventListener("change", (e) => { cfg.eye.autoEve = e.target.checked; saveCfg(); applyEye(); });
+document.getElementById("ppAfter").addEventListener("change", (e) => {
+  const v = e.target.value;
+  cfg.afterVideo = ["stop", "two", "next"].includes(v) ? v : "auto";
+  autoRun = 0;
+  saveCfg();
+});
+document.getElementById("ppGrace").addEventListener("change", (e) => { cfg.lastGrace = e.target.checked; saveCfg(); });
 document.getElementById("ppTheme").addEventListener("change", (e) => {
   const v = e.target.value;
   cfg.theme = v === "light" || v === "dark" ? v : "auto";
@@ -5056,7 +5437,21 @@ document.addEventListener("keydown", (e) => {
   }
   if (panel.style.display === "flex" || gateWrap.style.display === "flex") return;
   if (curView === "player") {
-    if (e.key === " " || e.key === "Enter") { e.preventDefault(); pvToggle(); }
+    const isPress = e.key === " " || e.key === "Enter";
+    // a focused "All done" or "Try again" button presses itself (the browser's own click)
+    if (isPress && e.target && e.target.closest && e.target.closest("#pvDone, #pvRetry")) return;
+    // the card is up: OK / Space = watch it again, like its ▶; the arrows move between its buttons
+    if (isPress && pvDone.classList.contains("on")) { e.preventDefault(); document.getElementById("pvdAgain").click(); return; }
+    if (pvDone.classList.contains("on") && /^Arrow/.test(e.key)) {
+      e.preventDefault();
+      const bs = [...pvDone.querySelectorAll("button")].filter(b => b.style.display !== "none");
+      const i = bs.indexOf(document.activeElement);
+      const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      const n = i < 0 ? bs[0] : bs[Math.max(0, Math.min(bs.length - 1, i + d))];
+      if (n) n.focus({ preventScroll: true });
+      return;
+    }
+    if (isPress) { e.preventDefault(); pvToggle(); }
     else if (e.key === "ArrowRight") { e.preventDefault(); pvNext(); }
     else if (e.key === "m" || e.key === "M") toggleSound();
     return;
@@ -5064,7 +5459,10 @@ document.addEventListener("keydown", (e) => {
   if (curView !== "shorts") return;
   if (e.key === "ArrowDown") { e.preventDefault(); nextReel(); }
   if (e.key === "ArrowUp") { e.preventDefault(); if (active > 0) feed.scrollTo({ top: (active - 1) * feed.clientHeight, behavior: RM.matches ? "auto" : "smooth" }); }
-  if (e.key === " ") { e.preventDefault(); onTap(active); }
+  if (e.key === " ") {
+    if (e.target && e.target.closest && e.target.closest(".reelDone")) return; // a lit ↻ / ⬆ presses itself
+    e.preventDefault(); onTap(active);
+  }
 });
 window.addEventListener("resize", () => { if (curView === "shorts" && active !== null) feed.scrollTop = active * feed.clientHeight; });
 document.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -5193,6 +5591,8 @@ function gsSyncPayload() {
     apiKey: cfg.apiKey || null,
     captions: !!cfg.captions,
     gamesOn: cfg.gamesOn !== false,
+    afterVideo: cfg.afterVideo || "auto",
+    lastGrace: cfg.lastGrace !== false,
     pausedUntil: cfg.pausedUntil || 0,
     pin: cfg.pin,
     timeLimitMin: cfg.timeLimitMin,
@@ -5224,6 +5624,8 @@ function gsApplyPayload(p) {
   const prevCc = !!cfg.captions;
   if (typeof p.captions === "boolean") cfg.captions = p.captions;
   if (typeof p.gamesOn === "boolean") cfg.gamesOn = p.gamesOn;
+  if (["auto", "stop", "two", "next"].includes(p.afterVideo)) cfg.afterVideo = p.afterVideo;
+  if (typeof p.lastGrace === "boolean") cfg.lastGrace = p.lastGrace;
   // a payload may only STRENGTHEN the pause lock, never clear one that's
   // running (same principle as the PIN rule below); expiry handles the rest
   const pu = Number(p.pausedUntil);
